@@ -1,0 +1,102 @@
+{
+  "ai_selfplay_01": {
+    "title": "AI対局 9路盤 Lv2 vs Lv2",
+    "blackPlayer": "GoEn AI Lv2",
+    "whitePlayer": "GoEn AI Lv2",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv2]PW[GoEn AI Lv2]RE[B+14.25];B[ee];W[de];B[fg];W[gf];B[if];W[cf];B[ah];W[dg];B[ce];W[fi];B[be];W[df];B[ec];W[ad];B[ge];W[af];B[ic];W[ab];B[bc];W[ff];B[eb];W[cg];B[ei];W[gb];B[];W[ga];B[hg];W[bb];B[cb];W[di];B[eh];W[gg];B[fh];W[ih];B[gi];W[ed];B[hd];W[bd];B[ag];W[ci];B[fc];W[eg];B[he];W[ie];B[id];W[fb];B[bf];W[fe];B[ae];W[ef];B[aa];W[ba];B[dh];W[dd];B[bi];W[ch];B[hc];W[ac];B[cc];W[ib];B[cd];W[db];B[gh];W[dc];B[gc];W[ii];B[ca];W[ig];B[aa];W[hf];B[ie];W[hh];B[ha];W[da];B[hb];W[hg];B[fa];W[bh];B[ai];W[bg];B[ia];W[af];B[ag];W[];B[ea];W[ac];B[ai];W[ga];B[fd];W[ah];B[ad];W[bi];B[ab];W[];B[gb];W[];B[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 1
+  },
+  "ai_selfplay_02": {
+    "title": "AI対局 9路盤 Lv3 vs Lv3",
+    "blackPlayer": "GoEn AI Lv3",
+    "whitePlayer": "GoEn AI Lv3",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv3]PW[GoEn AI Lv3]RE[W+5.75];B[ee];W[ff];B[hg];W[df];B[bh];W[de];B[eg];W[ed];B[cf];W[fd];B[gb];W[ic];B[gi];W[hf];B[he];W[gh];B[gd];W[bg];B[cd];W[fb];B[ib];W[ah];B[hd];W[cb];B[gc];W[cg];B[ce];W[bb];B[ge];W[dg];B[bi];W[ii];B[di];W[bc];B[fi];W[dd];B[ae];W[ba];B[ha];W[hh];B[fc];W[fa];B[ef];W[ig];B[gg];W[ac];B[dh];W[eb];B[fg];W[ad];B[ch];W[fe];B[gf];W[if];B[ec];W[dc];B[ga];W[ea];B[ei];W[be];B[af];W[eh];B[fh];W[db];B[];W[id];B[];W[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 1
+  },
+  "ai_selfplay_03": {
+    "title": "AI対局 9路盤 Lv4 vs Lv4",
+    "blackPlayer": "GoEn AI Lv4",
+    "whitePlayer": "GoEn AI Lv4",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv4]PW[GoEn AI Lv4]RE[W+38.75];B[ee];W[fg];B[dd];W[gh];B[df];W[ih];B[ce];W[ff];B[dc];W[cg];B[cd];W[hf];B[if];W[ec];B[eb];W[gd];B[ca];W[ef];B[gg];W[dh];B[hh];W[hb];B[cc];W[gf];B[hg];W[ab];B[fb];W[ha];B[ig];W[ei];B[ii];W[di];B[gc];W[bb];B[bc];W[hd];B[he];W[fd];B[gi];W[fh];B[cb];W[ed];B[ic];W[hc];B[ea];W[ci];B[de];W[fe];B[ib];W[cf];B[bi];W[bh];B[dg];W[ai];B[id];W[ah];B[fc];W[bg];B[ga];W[eg];B[hi];W[ag];B[be];W[ad];B[];W[aa];B[ge];W[gb];B[ie];W[fa];B[ia];W[ga];B[fi];W[ih];B[];W[ic];B[ge];W[he];B[ig];W[ie];B[if];W[hg];B[];W[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 2
+  },
+  "ai_selfplay_04": {
+    "title": "AI対局 9路盤 Lv5 vs Lv5",
+    "blackPlayer": "GoEn AI Lv5",
+    "whitePlayer": "GoEn AI Lv5",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv5]PW[GoEn AI Lv5]RE[W+10.75];B[ee];W[ec];B[ed];W[de];B[dc];W[bc];B[gf];W[gg];B[fb];W[df];B[ac];W[hf];B[hi];W[eh];B[hg];W[gb];B[bg];W[dg];B[eg];W[ff];B[ge];W[bf];B[af];W[fe];B[fg];W[gh];B[db];W[eb];B[gc];W[ef];B[hc];W[fh];B[ib];W[be];B[hd];W[if];B[ai];W[ba];B[ia];W[aa];B[ca];W[bb];B[fd];W[ig];B[hh];W[ch];B[ah];W[dh];B[dd];W[hb];B[ea];W[di];B[fc];W[cd];B[fg];W[eg];B[fi];W[];B[ha];W[id];B[ga];W[ce];B[ei];W[gi];B[];W[bh];B[cb];W[bd];B[];W[cc];B[];W[ih];B[];W[ii];B[];W[bi];B[ag];W[];B[fi];W[ei];B[];W[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 2
+  },
+  "ai_selfplay_05": {
+    "title": "AI対局 9路盤 Lv6 vs Lv6",
+    "blackPlayer": "GoEn AI Lv6",
+    "whitePlayer": "GoEn AI Lv6",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv6]PW[GoEn AI Lv6]RE[W+19.75];B[ee];W[dg];B[ff];W[hh];B[gc];W[cd];B[eb];W[bf];B[fc];W[if];B[hc];W[df];B[ia];W[ge];B[dh];W[fd];B[db];W[gd];B[ag];W[gg];B[bg];W[gh];B[fi];W[de];B[ab];W[ea];B[hb];W[bd];B[gb];W[ed];B[cg];W[hd];B[gi];W[eh];B[hi];W[ei];B[ch];W[ce];B[he];W[hf];B[id];W[ie];B[ic];W[ba];B[gf];W[be];B[aa];W[ih];B[bc];W[ef];B[cc];W[fe];B[fg];W[fh];B[ig];W[ii];B[ac];W[eg];B[gi];W[hg];B[ad];W[bh];B[dd];W[dc];B[bb];W[ca];B[fg];W[ff];B[ci];W[fa];B[];W[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 3
+  },
+  "ai_selfplay_06": {
+    "title": "AI対局 9路盤 Lv7 vs Lv7",
+    "blackPlayer": "GoEn AI Lv7",
+    "whitePlayer": "GoEn AI Lv7",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv7]PW[GoEn AI Lv7]RE[W+10.75];B[ee];W[de];B[gf];W[fg];B[hg];W[ef];B[gd];W[gi];B[ie];W[ce];B[hi];W[ed];B[fe];W[gh];B[bd];W[ff];B[dg];W[cb];B[gg];W[cd];B[gc];W[da];B[dh];W[fd];B[ge];W[ea];B[eg];W[bh];B[gb];W[df];B[di];W[eb];B[ii];W[cc];B[bb];W[if];B[];W[fh];B[ga];W[ad];B[dc];W[ag];B[bg];W[bf];B[cg];W[cf];B[hd];W[bi];B[hf];W[ch];B[ig];W[af];B[fi];W[ei];B[ib];W[];B[id];W[ci];B[aa];W[eh];B[dd];W[cg];B[ai];W[ah];B[be];W[fb];B[ba];W[hh];B[ih];W[];B[ab];W[];B[dg];W[ca];B[hb];W[];B[db];W[ec];B[];W[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 3
+  },
+  "ai_selfplay_07": {
+    "title": "AI対局 9路盤 Lv8 vs Lv8",
+    "blackPlayer": "GoEn AI Lv8",
+    "whitePlayer": "GoEn AI Lv8",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv8]PW[GoEn AI Lv8]RE[B+18.25];B[ee];W[fc];B[ef];W[cg];B[ce];W[gh];B[eb];W[hi];B[fg];W[dg];B[dc];W[cc];B[gf];W[hg];B[bb];W[cf];B[eg];W[fe];B[ae];W[bc];B[be];W[gd];B[ig];W[ch];B[cd];W[ih];B[if];W[ib];B[dh];W[fd];B[ie];W[id];B[ed];W[ea];B[gc];W[ha];B[ge];W[fi];B[hc];W[ff];B[ag];W[ci];B[eh];W[gg];B[fh];W[di];B[ei];W[gi];B[db];W[fb];B[bi];W[cb];B[da];W[fa];B[bd];W[ec];B[bf];W[ca];B[dd];W[ac];B[hd];W[ic];B[ba];W[bg];B[df];W[ad];B[bh];W[ch];B[ab];W[ad];B[ac];W[ah];B[ai];W[hf];B[he];W[];B[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 4
+  },
+  "ai_selfplay_08": {
+    "title": "AI対局 9路盤 Lv9 vs Lv9",
+    "blackPlayer": "GoEn AI Lv9",
+    "whitePlayer": "GoEn AI Lv9",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv9]PW[GoEn AI Lv9]RE[B+6.25];B[ee];W[fe];B[df];W[he];B[hf];W[dc];B[bf];W[cb];B[cf];W[id];B[bb];W[ed];B[if];W[hg];B[ff];W[ge];B[bh];W[eg];B[ch];W[gd];B[fg];W[ig];B[ad];W[bc];B[dg];W[hi];B[ac];W[de];B[ef];W[eh];B[fc];W[hb];B[ah];W[ea];B[gf];W[fh];B[bd];W[cc];B[fi];W[ih];B[gg];W[cd];B[gh];W[ba];B[ab];W[hc];B[da];W[be];B[ae];W[ce];B[af];W[bg];B[];W[fa];B[ci];W[gi];B[hh];W[ei];B[];W[ga];B[gb];W[bi];B[ai];W[ia];B[di];W[ca];B[];W[db];B[ie];W[fi];B[ag];W[ii];B[dh];W[];B[cg];W[eh];B[hi];W[];B[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 4
+  },
+  "ai_selfplay_09": {
+    "title": "AI対局 9路盤 Lv10 vs Lv10",
+    "blackPlayer": "GoEn AI Lv10",
+    "whitePlayer": "GoEn AI Lv10",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv10]PW[GoEn AI Lv10]RE[B+4.25];B[ee];W[eg];B[ge];W[ei];B[ed];W[dg];B[eb];W[bf];B[ae];W[gb];B[hd];W[ch];B[ac];W[ef];B[ec];W[cc];B[fg];W[ci];B[cd];W[df];B[ea];W[fb];B[ce];W[hh];B[de];W[bc];B[fe];W[gd];B[dd];W[dh];B[ah];W[ff];B[ab];W[fc];B[gh];W[ha];B[ca];W[ib];B[hc];W[fh];B[gg];W[bh];B[bd];W[bi];B[hg];W[gf];B[he];W[hf];B[bb];W[af];B[if];W[fa];B[hb];W[ig];B[ih];W[hi];B[];W[ai];B[ie];W[ag];B[];W[ba];B[aa];W[];B[ic];W[cb];B[db];W[be];B[dc];W[ad];B[fd];W[ae];B[gc];W[gi];B[ga];W[ig];B[ia];W[ii];B[cb];W[];B[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 5
+  },
+  "ai_selfplay_10": {
+    "title": "AI対局 9路盤 Lv10 vs Lv8",
+    "blackPlayer": "GoEn AI Lv10",
+    "whitePlayer": "GoEn AI Lv8",
+    "sgfData": "(;GM[1]FF[4]SZ[9]KM[3.75]PB[GoEn AI Lv10]PW[GoEn AI Lv8]RE[B+19.25];B[ee];W[ce];B[dg];W[bf];B[cg];W[de];B[ch];W[fg];B[eg];W[gg];B[cd];W[df];B[ef];W[cc];B[bd];W[dd];B[ah];W[bh];B[ec];W[fc];B[eb];W[gd];B[di];W[ed];B[ea];W[bg];B[db];W[eh];B[hc];W[fd];B[cb];W[];B[ge];W[af];B[bc];W[dc];B[gh];W[bb];B[ba];W[ab];B[ga];W[he];B[hg];W[fi];B[hf];W[ig];B[fh];W[fb];B[hh];W[fe];B[gf];W[ff];B[ei];W[cf];B[dh];W[ih];B[gi];W[fa];B[ac];W[be];B[aa];W[if];B[hd];W[ie];B[bb];W[ic];B[id];W[ib];B[ii];W[ca];B[da];W[ie];B[he];W[];B[if];W[];B[gc];W[];B[])",
+    "category": "copyright_free",
+    "isPremium": false,
+    "source": "GoEn内蔵AI同士の自己対局（オリジナル生成・著作権フリー）",
+    "difficulty": 5
+  }
+}

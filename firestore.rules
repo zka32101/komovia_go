@@ -1,0 +1,571 @@
+rules_version = '2';
+
+// GoEn (碁縁) Firestore security rules.
+//
+// There is no Cloud Functions backend in this project, so every write
+// listed here is a direct client write. These rules stop the clearest
+// abuses (writing another user's private data, tampering with fields a
+// client should never control, unauthenticated access) but several
+// features are architecturally self-reported by the client — game
+// results, ratings, streaks, achievement unlocks, tournament bracket
+// progression. Rules can restrict *who* writes and *which fields*, but
+// cannot verify a claimed Go game outcome is real. Genuine integrity for
+// those needs a Cloud Function; until one exists, this is documented
+// client trust, not a bug in these rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isParticipant(ids) {
+      return isSignedIn() && request.auth.uid in ids;
+    }
+
+    // Same as isEither(a, b) but written as an OR of equalities so
+    // list queries filtered on a or b are provably allowed (the `in [..]`
+    // form is rejected for queries).
+    function isEither(a, b) {
+      return isSignedIn() && (request.auth.uid == a || request.auth.uid == b);
+    }
+
+    function unchanged(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
+    function onlyChanged(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // ---------------- users/{uid} ----------------
+    match /users/{uid} {
+      // Profiles are readable by any signed-in user: friend/user search
+      // (friend_service.searchUsers) and displaying another user's
+      // displayName (sponsorship, social features) both need this.
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid);
+      // subscriptionActive/*Date must never move on a plain client write —
+      // only PurchaseService's own write path should ever set these, and
+      // even that goes through this same rule today since there is no
+      // App Store/Play Store server-to-server webhook wired up. This at
+      // least stops a client from setting its OWN subscription to active
+      // by hand-editing that field outside the purchase flow... but note
+      // it does NOT stop the purchase flow's own client-side write from
+      // lying about a purchase that never happened, since that write also
+      // goes through this uid. Real enforcement needs App Store/Play
+      // receipt verification in a Cloud Function.
+      allow update: if isOwner(uid);
+      // Account deletion (AccountDataDeletionService) removes the owner's own profile.
+      allow delete: if isOwner(uid);
+
+      match /friends/{friendUid} {
+        allow read, write: if isOwner(uid);
+        // friend_service.dart writes BOTH sides in one batch (addFriend,
+        // acceptFriendRequest, removeFriend, ...), so a user must also be
+        // able to touch their OWN mirror entry (friendUid == caller) inside
+        // another user's list. Kept narrow: a new entry must be a pending
+        // request that points back at the caller and records who sent it,
+        // an existing entry may only move to accepted/blocked (and only the
+        // side that did NOT send the request can accept it - the sender
+        // can still block, e.g. to withdraw into a blocked state), and the
+        // caller may remove their mirror (covers decline/cancel/unfriend/
+        // undoing a block mirror on unblockFriend - see FriendService).
+        // blockFriend also mirrors a block onto the OTHER side's entry (so
+        // a blocked former friend disappears from both people's friends
+        // list, not just the blocker's), stamping `blockedBy` alongside
+        // `status` so unblockFriend can tell that mirror apart from a
+        // block the other person placed independently.
+        allow create: if isOwner(friendUid) &&
+          request.resource.data.uid == request.auth.uid &&
+          request.resource.data.status == 'pending' &&
+          request.resource.data.requestedBy == request.auth.uid;
+        allow update: if isOwner(friendUid) &&
+          unchanged('uid') &&
+          onlyChanged(['status', 'blockedBy']) &&
+          (
+            request.resource.data.status == 'blocked' ||
+            (request.resource.data.status == 'accepted' &&
+              resource.data.get('requestedBy', null) != request.auth.uid)
+          );
+        allow delete: if isOwner(friendUid);
+      }
+
+      match /sponsorshipTiers/{tierId} {
+        allow read: if isSignedIn();
+        allow create, delete: if isOwner(uid);
+        // The tier owner may change any field. A different signed-in user
+        // (a sponsor) may only nudge currentSubscribers by exactly ±1, to
+        // bound (not eliminate) the fact that sponsorship_service.dart
+        // updates this from the sponsor's own client.
+        allow update: if isOwner(uid) ||
+          (isSignedIn() &&
+           onlyChanged(['currentSubscribers']) &&
+           (request.resource.data.currentSubscribers == resource.data.currentSubscribers + 1 ||
+            request.resource.data.currentSubscribers == resource.data.currentSubscribers - 1));
+      }
+
+      match /sponsorshipNotifications/{notifId} {
+        allow read, update, delete: if isOwner(uid);
+        // Written cross-user by the sponsor into the recipient's inbox.
+        allow create: if isSignedIn() && request.resource.data.sponsorUserId == request.auth.uid;
+      }
+
+      match /gameRecords/{recordId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /stats/{docId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /achievements/{achievementId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /gamePresets/{presetId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /oauth/{provider} {
+        // Holds (or will hold) OAuth tokens; nobody else may ever read this.
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ---------------- gameRecords/{recordId} (top-level) ----------------
+    match /gameRecords/{recordId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if false; // history is immutable
+      // ...but its owner may delete it when deleting their account
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ---------------- curated, admin/server-only content ----------------
+    match /tsumeGoProblems/{problemId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /kifuLibrary/{kifuId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /game_modes/{modeId} {
+      allow read: if isSignedIn();
+      // GameModeService.createGameMode/updateGameMode/deleteGameMode and
+      // getGameModeStats' cross-user `games` query exist in code but have
+      // no caller anywhere in the app today (dead code) — kept locked
+      // down rather than opened up for paths nothing currently uses.
+      allow write: if false;
+    }
+
+    // ---------------- userTsumeGoLogs/{autoId} ----------------
+    match /userTsumeGoLogs/{logId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ---------------- observationLogs/{autoId} ----------------
+    match /observationLogs/{logId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ---------------- pvp_games/{gameId} ----------------
+    match /pvp_games/{gameId} {
+      allow read: if isSignedIn();
+      allow create: if isEither(request.resource.data.blackUid, request.resource.data.whiteUid);
+      // GoRules itself (legality, captures, scoring) runs client-side and
+      // can't be re-verified by rules — a participant can still write an
+      // illegal board. What rules CAN enforce: only a participant writes,
+      // the identities/board size/tournament link never change, and any
+      // declared winner is one of the two players.
+      allow update: if isEither(resource.data.blackUid, resource.data.whiteUid) &&
+        unchanged('blackUid') && unchanged('whiteUid') && unchanged('boardSize') &&
+        (!('tournamentId' in resource.data) || unchanged('tournamentId')) &&
+        (!('winnerUid' in request.resource.data) ||
+         request.resource.data.winnerUid == null ||
+         request.resource.data.winnerUid in [resource.data.blackUid, resource.data.whiteUid]);
+      allow delete: if false;
+    }
+
+    // ---------------- matchmaking_queue/{uid} ----------------
+    match /matchmaking_queue/{queueUid} {
+      // The whole queue is scanned client-side to find a candidate.
+      allow read: if isSignedIn();
+      allow create, delete: if isOwner(queueUid);
+      allow update: if isOwner(queueUid) ||
+        // matching_service.findMatch flips a candidate's own status.
+        (isSignedIn() && onlyChanged(['status']) &&
+         resource.data.status == 'waiting' && request.resource.data.status == 'matched');
+    }
+
+    // ---------------- match_results/{matchId} ----------------
+    match /match_results/{matchId} {
+      allow read: if isEither(resource.data.player1Uid, resource.data.player2Uid);
+      allow create: if isSignedIn() && request.resource.data.player1Uid == request.auth.uid;
+      allow update: if isEither(resource.data.player1Uid, resource.data.player2Uid) &&
+        onlyChanged(['gameId']);
+      allow delete: if false;
+    }
+
+    // ---------------- tournaments/{tournamentId} ----------------
+    match /tournaments/{tournamentId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isSignedIn() && (
+        // Organizer: status/winnerId/lastAdvancedRound progression.
+        (resource.data.createdBy == request.auth.uid && unchanged('createdBy')) ||
+        // Any signed-in user may append only themselves to participantUids.
+        (onlyChanged(['participantUids']) &&
+         request.resource.data.participantUids == resource.data.participantUids.concat([request.auth.uid])) ||
+        // Bracket progression (status/winnerId/lastAdvancedRound) is actually
+        // triggered by whichever participant's match completion closes out a
+        // round, or by whoever taps "start" — not just the organizer. There's
+        // no Cloud Function to own this step, so any participant may do it.
+        (request.auth.uid in resource.data.participantUids &&
+         onlyChanged(['status', 'winnerId', 'lastAdvancedRound']))
+      );
+      // Organizer may delete only while still 'upcoming' (before any
+      // bracket/schedule is generated). participants/{uid} subdocs are
+      // NOT cascade-deleted (Firestore never cascades, and the rule below
+      // only lets each participant delete their own doc) — orphaned
+      // participant docs under a deleted tournament are inert dead data,
+      // never reachable via a collectionGroup query anywhere in the app.
+      allow delete: if isSignedIn() &&
+        resource.data.createdBy == request.auth.uid &&
+        resource.data.status == 'upcoming';
+
+      match /participants/{participantUid} {
+        allow read: if isSignedIn();
+        allow create: if isOwner(participantUid);
+        allow update, delete: if isOwner(participantUid);
+      }
+
+      match /matches/{matchId} {
+        allow read: if isSignedIn();
+        // Bracket generation (new matches for pairs not including the
+        // caller) is done client-side by whoever triggers startTournament
+        // or completes the round-closing match — inherent to having no
+        // Cloud Function. Restrict creation/full rewrite to the
+        // tournament's own participants, and updates to the two players
+        // of that specific match touching only the result fields.
+        allow create: if isSignedIn() &&
+          request.auth.uid in get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.participantUids;
+        allow update: if isSignedIn() &&
+          (request.auth.uid in [resource.data.player1Uid, resource.data.player2Uid] ||
+           request.auth.uid == get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.createdBy) &&
+          onlyChanged(['gameId', 'status', 'winnerUid', 'completedAt']);
+        allow delete: if false;
+      }
+
+      match /bracket/{docId} {
+        allow read: if isSignedIn();
+        allow write: if false; // unimplemented path, nothing should write it
+      }
+    }
+
+    // ---------------- sponsorships/{sponsorUserId}_{sponsoredUserId} ----------------
+    match /sponsorships/{sponsorshipId} {
+      // resource == null lets sponsorship_service's transaction check whether
+      // a sponsorship already exists (get on a missing doc); it returns
+      // not-found and reveals nothing.
+      allow read: if isSignedIn() &&
+        (resource == null ||
+         isEither(resource.data.sponsorUserId, resource.data.sponsoredUserId));
+      allow create: if isSignedIn() &&
+        request.resource.data.sponsorUserId == request.auth.uid &&
+        sponsorshipId == request.resource.data.sponsorUserId + '_' + request.resource.data.sponsoredUserId;
+      allow update: if isSignedIn() &&
+        request.auth.uid in [resource.data.sponsorUserId, resource.data.sponsoredUserId] &&
+        unchanged('sponsorUserId') && unchanged('sponsoredUserId');
+      allow delete: if false;
+    }
+
+    // ---------------- spectator_sessions/{sessionId} ----------------
+    match /spectator_sessions/{sessionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.hostUid == request.auth.uid;
+      allow update: if isSignedIn() && (
+        // hostUid, or (for pvp_game sessions only) coHostUid — a PvpGame has
+        // two players who can each move, so board-sync writes must be
+        // allowed from either, not just whoever's client created the
+        // session. coHostUid is always present (possibly null) on every
+        // session doc since SpectatorSession.toFirestore() always writes it.
+        (request.auth.uid in [resource.data.hostUid, resource.data.coHostUid] &&
+         onlyChanged(['stones', 'isBlackTurn', 'lastMoveRow', 'lastMoveCol', 'moveIndex',
+                      'endedAt', 'isLive', 'updatedAt'])) ||
+        // Any signed-in user may join/leave: add/remove only their own uid,
+        // and move spectatorCount by exactly ±1 to match.
+        (onlyChanged(['spectatorUids', 'spectatorCount', 'updatedAt']) &&
+         request.resource.data.spectatorUids.toSet().difference(resource.data.spectatorUids.toSet())
+           .union(resource.data.spectatorUids.toSet().difference(request.resource.data.spectatorUids.toSet()))
+           == [request.auth.uid].toSet() &&
+         (request.resource.data.spectatorCount == resource.data.spectatorCount + 1 ||
+          request.resource.data.spectatorCount == resource.data.spectatorCount - 1))
+      );
+      allow delete: if false;
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+        // Like/unlike: add or remove only your own uid from likes.
+        allow update: if isSignedIn() && onlyChanged(['likes']) &&
+          request.resource.data.likes.toSet().difference(resource.data.likes.toSet())
+            .union(resource.data.likes.toSet().difference(request.resource.data.likes.toSet()))
+            == [request.auth.uid].toSet();
+        allow delete: if false;
+      }
+    }
+
+    match /spectator_notifications/{uid}/messages/{msgId} {
+      allow read, delete: if isOwner(uid);
+      allow update: if isOwner(uid) && onlyChanged(['isRead', 'readAt']);
+      // Written cross-user by a host notifying friends of a live session.
+      allow create: if isSignedIn();
+    }
+
+    match /notifications/{uid}/messages/{msgId} {
+      allow read, delete: if isOwner(uid);
+      allow update: if isOwner(uid) && onlyChanged(['isRead', 'readAt']);
+      allow create: if isSignedIn();
+    }
+
+    match /notifications/{uid}/fcmTokens/{token} {
+      allow read, write: if isOwner(uid);
+    }
+
+    match /notifications/{uid}/notificationPreferences/{docId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // ---------------- leaderboards (three parallel systems) ----------------
+    match /leaderboards/{period}/{type}/{uid} {
+      allow read: if isSignedIn();
+      // PvP game results update the Elo rating of BOTH players
+      // (pvp_game_provider.dart's _updateEloRatings), so this can't be
+      // restricted to isOwner(uid) — like the rest of this app's
+      // self-reported game outcomes/ratings (documented at the top of
+      // this file), rating/gamesPlayed/wins updates are client-trusted
+      // with no server-side verification until a real Cloud Functions
+      // backend exists. updateLeaderboard/resetLeaderboard (arbitrary-uid
+      // batch writes, full-collection deletes) remain unreachable from
+      // any client caller regardless.
+      allow write: if isSignedIn();
+    }
+
+    match /leaderboard_global/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid);
+    }
+
+    match /leaderboard_monthly/{monthKey}/entries/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid);
+    }
+
+    match /puzzleRushLeaderboard/{entryId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.uid == request.auth.uid &&
+        unchanged('uid');
+      allow delete: if false;
+    }
+
+    // ---------------- game-mode collections ----------------
+    match /puzzleRushSessions/{sessionId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.uid == request.auth.uid && unchanged('uid');
+      allow delete: if false;
+    }
+
+    match /blitzGames/{gameId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.uid == request.auth.uid && unchanged('uid');
+      allow delete: if false;
+    }
+
+    match /correspondenceGames/{gameId} {
+      allow read: if isEither(resource.data.uid, resource.data.opponentUid);
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if isEither(resource.data.uid, resource.data.opponentUid) &&
+        unchanged('uid') && unchanged('opponentUid');
+      allow delete: if false;
+    }
+
+    match /teamGames/{gameId} {
+      allow read: if isSignedIn() &&
+        (request.auth.uid in resource.data.team1Players || request.auth.uid in resource.data.team2Players);
+      allow create: if isSignedIn() &&
+        (request.auth.uid in request.resource.data.team1Players ||
+         request.auth.uid in request.resource.data.team2Players);
+      allow update: if isSignedIn() &&
+        (request.auth.uid in resource.data.team1Players || request.auth.uid in resource.data.team2Players) &&
+        unchanged('team1Players') && unchanged('team2Players');
+      allow delete: if false;
+    }
+
+    match /game_sessions/{sessionId} {
+      allow read: if isEither(resource.data.blackPlayerId, resource.data.whitePlayerId);
+      allow create: if isEither(request.resource.data.blackPlayerId, request.resource.data.whitePlayerId);
+      allow update: if isEither(resource.data.blackPlayerId, resource.data.whitePlayerId) &&
+        unchanged('blackPlayerId') && unchanged('whitePlayerId');
+      allow delete: if false;
+    }
+
+    match /games/{gameId} {
+      allow read: if isEither(resource.data.blackPlayerId, resource.data.whitePlayerId);
+      allow create: if isEither(request.resource.data.blackPlayerId, request.resource.data.whitePlayerId);
+      allow update: if isEither(resource.data.blackPlayerId, resource.data.whitePlayerId) &&
+        unchanged('blackPlayerId') && unchanged('whitePlayerId');
+      allow delete: if false;
+
+      match /events/{eventId} {
+        allow read: if isParticipant([
+          get(/databases/$(database)/documents/games/$(gameId)).data.blackPlayerId,
+          get(/databases/$(database)/documents/games/$(gameId)).data.whitePlayerId
+        ]);
+        allow create: if isSignedIn();
+        allow update, delete: if false;
+      }
+
+      match /uploads/{uploadId} {
+        allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        // onlyChanged(['status']) alone would reject
+        // YouTubeShareService.deleteYouTubeVideo's update, which also sets
+        // deletedAt alongside status.
+        allow update: if isSignedIn() && resource.data.userId == request.auth.uid &&
+          onlyChanged(['status', 'deletedAt']);
+        allow delete: if false;
+      }
+    }
+
+    // Collection-group read for youtube_share_service's getRecentUploads.
+    match /{path=**}/uploads/{uploadId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ---------------- invitations, two parallel collections ----------------
+    match /gameInvitations/{invitationId} {
+      allow read: if isEither(resource.data.fromUid, resource.data.toUid);
+      allow create: if isSignedIn() && request.resource.data.fromUid == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (request.auth.uid == resource.data.toUid && onlyChanged(['status'])) ||
+        (request.auth.uid == resource.data.fromUid && onlyChanged(['status']))
+      );
+      // Covers both cancelling a sent invitation and
+      // GameInvitationService.cleanupExpiredInvitations, which is scoped
+      // to the calling user's own invitations precisely because deletion
+      // here is participant-only (no admin/server context exists to run a
+      // global sweep).
+      allow delete: if isEither(resource.data.fromUid, resource.data.toUid);
+    }
+
+    match /game_invitations/{invitationId} {
+      allow read: if isEither(resource.data.fromUserId, resource.data.toUserId);
+      allow create: if isSignedIn() && request.resource.data.fromUserId == request.auth.uid;
+      allow update: if isSignedIn() &&
+        request.auth.uid in [resource.data.fromUserId, resource.data.toUserId] &&
+        onlyChanged(['status', 'respondedAt']);
+      allow delete: if isEither(resource.data.fromUserId, resource.data.toUserId);
+    }
+
+    // ---------------- chat_messages/{messageId} ----------------
+    match /chat_messages/{messageId} {
+      // No participant list on the message itself; scope to signed-in
+      // users rather than the game's players since either could spectate.
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.fromUserId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ---------------- message_threads/{threadId} ----------------
+    // Private 1:1 DMs between friends (distinct from the open, per-game
+    // chat_messages above). threadId is always the two participants' uids
+    // sorted and joined, so participantUids is exactly 2 fixed uids that
+    // never change for the life of the thread.
+    match /message_threads/{threadId} {
+      allow read: if isParticipant(resource.data.participantUids);
+      allow create: if isSignedIn() &&
+        request.auth.uid in request.resource.data.participantUids &&
+        request.resource.data.participantUids.size() == 2;
+      // Sending a later message or marking the thread read both go
+      // through this same merge-set; only a participant can write, and
+      // the two participants themselves can never change.
+      allow update: if isParticipant(resource.data.participantUids) &&
+        request.resource.data.participantUids == resource.data.participantUids;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        function threadParticipants() {
+          return get(/databases/$(database)/documents/message_threads/$(threadId)).data.participantUids;
+        }
+
+        allow read: if isParticipant(threadParticipants());
+        allow create: if isSignedIn() &&
+          request.auth.uid == request.resource.data.fromUid &&
+          isParticipant(threadParticipants());
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------------- analytics aggregate ----------------
+    match /user_analytics/{userId}/social/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ---------------- streams/{streamId} (Twitch) ----------------
+    match /streams/{streamId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && unchanged('userId');
+      allow delete: if false;
+    }
+
+    // ---------------- En / connection features ----------------
+    match /en_scores/{uid}/connections/{friendUid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    match /position_echoes/{echoId} {
+      // Position-matching is inherently cross-user (finding others at the
+      // same board position), so read is open to any signed-in user.
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /fateful_moves/{moveId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.uid == request.auth.uid &&
+        onlyChanged(['sharedWithFriends']);
+      allow delete: if false;
+    }
+
+    match /active_play_sessions/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid);
+    }
+
+    match /playstyle_profiles/{uid} {
+      // Friend compatibility compares two users' profiles client-side.
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid);
+    }
+  }
+}

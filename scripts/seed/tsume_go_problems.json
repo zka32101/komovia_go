@@ -1,0 +1,47 @@
+{
+  "puzzle_diff1_001": {
+    "difficulty": 1,
+    "sgfData": "(;GM[1]SZ[9];W[b,a];B[c,a];W[a,b];W[b,b];B[c,b];B[a,c];B[b,c])",
+    "solutionSgf": "(;GM[1]SZ[9];B[a,a];B[c,a];B[c,b];B[a,c];B[b,c])",
+    "explanation": "白の3子はすでに呼吸点が1つしかありません。黒がその一点（隅）に打つことで、白を丸ごと取ることができます。",
+    "source": "オリジナル作成（著作権フリー）",
+    "version": 1,
+    "expectedMoves": 1
+  },
+  "puzzle_diff2_001": {
+    "difficulty": 2,
+    "sgfData": "(;GM[1]SZ[9];B[e,d];B[f,d];B[d,e];W[e,e];W[f,e];B[g,e];B[f,f])",
+    "solutionSgf": "(;GM[1]SZ[9];B[e,d];B[f,d];B[d,e];B[g,e];B[e,f];B[f,f])",
+    "explanation": "白の2子は黒に囲まれ、呼吸点は1つだけ残っています。その一点に置くと、白2子を捕獲できます。",
+    "source": "オリジナル作成（著作権フリー）",
+    "version": 1,
+    "expectedMoves": 1
+  },
+  "puzzle_diff3_001": {
+    "difficulty": 3,
+    "sgfData": "(;GM[1]SZ[9];B[c,b];B[d,b];W[c,c];W[d,c];B[e,c];B[c,d];W[d,d];B[e,d];B[d,e])",
+    "solutionSgf": "(;GM[1]SZ[9];B[c,b];B[d,b];B[b,c];B[e,c];B[c,d];B[e,d];B[d,e])",
+    "explanation": "白の3子はL字型に連結しており、呼吸点は左側の一点のみです。正しい一点を見つけて白を仕留めましょう。",
+    "source": "オリジナル作成（著作権フリー）",
+    "version": 1,
+    "expectedMoves": 1
+  },
+  "puzzle_diff4_001": {
+    "difficulty": 4,
+    "sgfData": "(;GM[1]SZ[9];B[e,d];B[f,d];B[d,e];W[e,e];W[f,e];B[g,e];B[d,f];W[e,f];W[f,f];B[g,f];B[e,g])",
+    "solutionSgf": "(;GM[1]SZ[9];B[e,d];B[f,d];B[d,e];B[g,e];B[d,f];B[g,f];B[e,g];B[f,g])",
+    "explanation": "白の2×2のブロックは大きく見えますが、呼吸点はすでに1つだけです。急所を見極めて4子まとめて取りましょう。",
+    "source": "オリジナル作成（著作権フリー）",
+    "version": 1,
+    "expectedMoves": 1
+  },
+  "puzzle_diff5_001": {
+    "difficulty": 5,
+    "sgfData": "(;GM[1]SZ[9];B[c,a];W[d,a];W[e,a];B[f,a];B[c,b];W[d,b];W[e,b];B[f,b];B[d,c];W[e,c];B[f,c])",
+    "solutionSgf": "(;GM[1]SZ[9];B[c,a];B[f,a];B[c,b];B[f,b];B[d,c];B[f,c];B[e,d])",
+    "explanation": "隅にできた白の大きな塊は一見安全に見えますが、実は呼吸点はたった1つ。正確に読み切って5子を仕留めてください。",
+    "source": "オリジナル作成（著作権フリー）",
+    "version": 1,
+    "expectedMoves": 1
+  }
+}

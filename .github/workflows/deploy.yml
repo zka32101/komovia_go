@@ -1,0 +1,175 @@
+name: Automated Build & Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'apk'
+        type: choice
+        options:
+          - apk
+          - aab
+          - ios
+          - all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build Flutter App
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.x'
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run analysis
+        run: flutter analyze
+
+      - name: Update build version
+        run: |
+          BUILD_NUMBER=${{ github.run_number }}
+          VERSION=$(grep "version:" pubspec.yaml | head -1 | awk '{print $2}')
+          BASE_VERSION=${VERSION%+*}
+          sed -i "s/version: .*/version: $BASE_VERSION+$BUILD_NUMBER/" pubspec.yaml
+
+      - name: Build APK
+        if: ${{ github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'all' }}
+        run: flutter build apk --release
+
+      - name: Build AAB
+        if: ${{ github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'all' }}
+        run: flutter build appbundle --release
+
+      - name: Build iOS
+        if: ${{ github.event.inputs.build_type == 'ios' || github.event.inputs.build_type == 'all' }}
+        run: |
+          flutter build ios --release
+          cd build/ios/Release-iphoneos
+          mkdir -p Payload
+          mv Runner.app Payload/
+          zip -r app.ipa Payload/Runner.app
+          cd ../../..
+
+      - name: Upload APK artifact
+        if: ${{ github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'all' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: komovia_go-apk-${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Upload AAB artifact
+        if: ${{ github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'all' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: komovia_go-aab-${{ github.run_number }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Upload iOS artifact
+        if: ${{ github.event.inputs.build_type == 'ios' || github.event.inputs.build_type == 'all' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: komovia_go-ios-${{ github.run_number }}
+          path: build/ios/Release-iphoneos/app.ipa
+          retention-days: 30
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        if: ${{ github.event.inputs.build_type != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: build-${{ github.run_number }}
+          release_name: Build #${{ github.run_number }}
+          body: |
+            Automated build from Phase 134 implementation
+
+            Build artifacts:
+            - APK: `komovia_go-apk-${{ github.run_number }}`
+            - AAB: `komovia_go-aab-${{ github.run_number }}`
+            - iOS: `komovia_go-ios-${{ github.run_number }}`
+
+            Date: ${{ github.event.head_commit.timestamp }}
+          draft: false
+          prerelease: true
+
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.x'
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run unit tests
+        run: flutter test --coverage
+
+      - name: Run widget tests
+        run: flutter test test/ --coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-komovia_go
+
+  quality_gate:
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    name: Quality Gate
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Verify artifacts
+        run: |
+          echo "Build completed successfully"
+          ls -lh komovia_go-*
+
+      - name: Post to Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "GoEn Build #${{ github.run_number }} - ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*GoEn Build Pipeline*\nBuild: #${{ github.run_number }}\nStatus: ${{ job.status }}\nBranch: ${{ github.ref }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

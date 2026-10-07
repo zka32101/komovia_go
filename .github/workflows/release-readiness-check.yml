@@ -1,0 +1,13 @@
+name: Release Readiness Check
+
+# リリース前チェックを一括実行する。実体は shared_core の再利用可能ワークフロー。
+# 実行方法: Actionsタブ → "Release Readiness Check" → Run workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    uses: zka32101/shared_core/.github/workflows/release-readiness-check.yml@main
+    with:
+      flutter_version: '3.16.x'
