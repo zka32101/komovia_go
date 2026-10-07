@@ -197,15 +197,7 @@ class NotificationScreen extends ConsumerWidget {
     final preference = await ref.read(notificationPreferenceProvider(uid).future);
     if (!context.mounted) return;
 
-    final current = preference ??
-        NotificationPreference(
-          uid: uid,
-          friendRequests: true,
-          tournamentUpdates: true,
-          achievements: true,
-          gameInvitations: true,
-          allNotifications: true,
-        );
+    final current = preference ?? const NotificationPreference();
 
     await showDialog(
       context: context,
@@ -213,7 +205,7 @@ class NotificationScreen extends ConsumerWidget {
         preference: current,
         onSave: (updated) async {
           try {
-            await ref.read(saveNotificationPreferenceProvider)(updated);
+            await ref.read(saveNotificationPreferenceProvider)(uid, updated);
             ref.invalidate(notificationPreferenceProvider(uid));
           } catch (e) {
             _logger.e('Error saving notification preference: $e');
@@ -278,7 +270,6 @@ class _NotificationPreferenceDialogState extends State<_NotificationPreferenceDi
         TextButton(
           onPressed: () async {
             await widget.onSave(NotificationPreference(
-              uid: widget.preference.uid,
               friendRequests: _friendRequests,
               tournamentUpdates: _tournamentUpdates,
               achievements: _achievements,

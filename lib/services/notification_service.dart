@@ -1,8 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
-import 'package:komovia_go/models/notification.dart';
+import 'package:komovia_go/models/notification.dart'
+    show AppNotificationFirestore, notificationFromFirestore;
 
 final _logger = Logger();
+
+/// komovia_core's `NotificationPreference` has no `uid` field of its own
+/// (it's a pure settings value) - the owning uid comes from the Firestore
+/// path (`notifications/{uid}/notificationPreferences/settings`, whose
+/// doc id is always the literal string 'settings', never a real uid) and
+/// is carried alongside the preference by this service's callers instead.
+extension _NotificationPreferenceFirestore on NotificationPreference {
+  Map<String, dynamic> toFirestore() => toJson();
+}
+
+NotificationPreference _preferenceFromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc) {
+  return NotificationPreference.fromJson(doc.data() ?? const {});
+}
 
 /// 通知サービス (FCM + Firestore統合)
 class NotificationService {
@@ -85,46 +101,20 @@ class NotificationService {
 
       final snapshot = await query.get();
       final notifications = snapshot.docs
-          .map((doc) => AppNotification.fromFirestore(
+          .map((doc) => notificationFromFirestore(
               doc as DocumentSnapshot<Map<String, dynamic>>))
           .toList();
 
       final preference = await getNotificationPreference(uid);
       final visible = preference == null
           ? notifications
-          : notifications.where((n) => _isCategoryEnabled(preference, n.type)).toList();
+          : notifications.where((n) => preference.allows(n.type)).toList();
 
       _logger.i('✅ Notifications fetched: ${visible.length}');
       return visible;
     } catch (e) {
       _logger.e('Error fetching notifications: $e');
       rethrow;
-    }
-  }
-
-  /// Maps a notification's `type` to the preference toggle that governs it.
-  /// `game_invitation`/`pvp_challenge`/`correspondence_game`/`team_game`
-  /// are all "you've been invited into a game" variants, so they share the
-  /// `gameInvitations` toggle. `friend_request`/`tournament_match`/
-  /// `achievement` have dedicated toggles too, even though nothing in this
-  /// build sends those types yet - an unrecognized type defaults to shown,
-  /// so a future type is never silently hidden by this mapping alone.
-  bool _isCategoryEnabled(NotificationPreference preference, String type) {
-    if (!preference.allNotifications) return false;
-    switch (type) {
-      case 'game_invitation':
-      case 'pvp_challenge':
-      case 'correspondence_game':
-      case 'team_game':
-        return preference.gameInvitations;
-      case 'friend_request':
-        return preference.friendRequests;
-      case 'tournament_match':
-        return preference.tournamentUpdates;
-      case 'achievement':
-        return preference.achievements;
-      default:
-        return true;
     }
   }
 
@@ -196,8 +186,8 @@ class NotificationService {
         return null;
       }
 
-      return NotificationPreference.fromFirestore(
-          doc as DocumentSnapshot<Map<String, dynamic>>, uid);
+      return _preferenceFromFirestore(
+          doc as DocumentSnapshot<Map<String, dynamic>>);
     } catch (e) {
       _logger.e('Error fetching preference: $e');
       rethrow;
@@ -206,13 +196,15 @@ class NotificationService {
 
   /// 通知設定を保存
   Future<void> saveNotificationPreference(
-      NotificationPreference preference) async {
+    String uid,
+    NotificationPreference preference,
+  ) async {
     try {
       _logger.i('Saving notification preference');
 
       await _firestore
           .collection(notificationsCollection)
-          .doc(preference.uid)
+          .doc(uid)
           .collection(preferencesCollection)
           .doc('settings')
           .set(preference.toFirestore());

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod/riverpod.dart';
 import '../models/extended_game_models.dart';
+import 'package:komovia_core/komovia_core.dart';
 import '../models/pvp_game.dart';
 import '../services/friend_service.dart';
 import '../services/game_invitation_service.dart';
@@ -30,7 +31,7 @@ final gameInvitationServiceProvider = Provider<GameInvitationService>((ref) {
 // ==================== Friend System Providers ====================
 
 /// Get current user's accepted friends
-final acceptedFriendsProvider = FutureProvider.family<List<Friend>, String>(
+final acceptedFriendsProvider = FutureProvider.family<List<Friendship>, String>(
   (ref, uid) async {
     final service = ref.watch(friendServiceProvider);
     return service.getFriends(uid: uid, status: 'accepted');
@@ -45,7 +46,7 @@ final acceptedFriendsProvider = FutureProvider.family<List<Friend>, String>(
 /// another fresh instance, forever - an actual busy-rebuild loop, not
 /// just a style nit. A stable family provider fixes that, same pattern
 /// as pendingFriendRequestsProvider below.
-final blockedFriendsProvider = FutureProvider.family<List<Friend>, String>(
+final blockedFriendsProvider = FutureProvider.family<List<Friendship>, String>(
   (ref, uid) async {
     final service = ref.watch(friendServiceProvider);
     return service.getBlockedUsers(uid: uid);
@@ -54,7 +55,7 @@ final blockedFriendsProvider = FutureProvider.family<List<Friend>, String>(
 
 /// Get current user's pending friend requests
 final pendingFriendRequestsProvider =
-    FutureProvider.family<List<Friend>, String>(
+    FutureProvider.family<List<Friendship>, String>(
   (ref, uid) async {
     final service = ref.watch(friendServiceProvider);
     return service.getPendingRequests(uid: uid);
@@ -62,7 +63,7 @@ final pendingFriendRequestsProvider =
 );
 
 /// Stream friend list (real-time)
-final friendsStreamProvider = StreamProvider.family<List<Friend>, String>(
+final friendsStreamProvider = StreamProvider.family<List<Friendship>, String>(
   (ref, uid) {
     final service = ref.watch(friendServiceProvider);
     return service.streamFriends(uid: uid, status: 'accepted');

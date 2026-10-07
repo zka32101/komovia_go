@@ -1,11 +1,62 @@
 import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
-import 'package:komovia_go/models/tournament.dart';
+import 'firestore_time.dart';
 import 'notification_service.dart';
 
 final _logger = Logger();
+
+/// `Tournament`/`TournamentMatch` have no storage dependency (see
+/// komovia_core's doc comments) - converting to/from Firestore's
+/// `DocumentSnapshot`/`Timestamp` is this service's own responsibility.
+Tournament _tournamentFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  final data = doc.data() ?? const {};
+  return Tournament.fromJson({
+    ...data,
+    'id': doc.id,
+    'startDate': isoFromTimestamp(data['startDate']),
+    'endDate': isoFromTimestamp(data['endDate']),
+    'createdAt': isoFromTimestamp(data['createdAt']),
+  });
+}
+
+TournamentMatch _tournamentMatchFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  final data = doc.data() ?? const {};
+  return TournamentMatch.fromJson({
+    ...data,
+    'id': doc.id,
+    'scheduledAt': isoFromTimestamp(data['scheduledAt']),
+    'completedAt': data['completedAt'] != null ? isoFromTimestamp(data['completedAt']) : null,
+  });
+}
+
+extension _TournamentFirestore on Tournament {
+  Map<String, dynamic> toFirestore() {
+    final json = toJson()
+      ..remove('id')
+      ..remove('startDate')
+      ..remove('endDate')
+      ..remove('createdAt');
+    json['startDate'] = Timestamp.fromDate(startDate);
+    json['endDate'] = Timestamp.fromDate(endDate);
+    json['createdAt'] = Timestamp.fromDate(createdAt);
+    return json;
+  }
+}
+
+extension _TournamentMatchFirestore on TournamentMatch {
+  Map<String, dynamic> toFirestore() {
+    final json = toJson()
+      ..remove('id')
+      ..remove('scheduledAt')
+      ..remove('completedAt');
+    json['scheduledAt'] = Timestamp.fromDate(scheduledAt);
+    json['completedAt'] = completedAt != null ? Timestamp.fromDate(completedAt!) : null;
+    return json;
+  }
+}
 
 /// トーナメント管理サービス
 class TournamentService {
@@ -61,7 +112,7 @@ class TournamentService {
     try {
       final doc = await _firestore.collection(tournamentsCollection).doc(tournamentId).get();
       if (!doc.exists) return null;
-      return Tournament.fromFirestore(doc);
+      return _tournamentFromFirestore(doc);
     } catch (e) {
       _logger.e('Error fetching tournament: $e');
       rethrow;
@@ -124,7 +175,7 @@ class TournamentService {
         throw Exception('Tournament not found');
       }
 
-      final tournament = Tournament.fromFirestore(
+      final tournament = _tournamentFromFirestore(
           tournamentDoc as DocumentSnapshot<Map<String, dynamic>>);
 
       if (tournament.isFull) {
@@ -170,7 +221,7 @@ class TournamentService {
       final tournamentDoc = await tournamentRef.get();
       if (!tournamentDoc.exists) throw Exception('Tournament not found');
 
-      final tournament = Tournament.fromFirestore(
+      final tournament = _tournamentFromFirestore(
           tournamentDoc as DocumentSnapshot<Map<String, dynamic>>);
       if (tournament.participantUids.length < 2) {
         throw Exception('Not enough participants to start');
@@ -482,7 +533,7 @@ class TournamentService {
     final newMatches = await _firestore.runTransaction<List<TournamentMatch>>((transaction) async {
       final allMatches = <TournamentMatch>[];
       for (final ref in matchRefs) {
-        allMatches.add(TournamentMatch.fromFirestore(await transaction.get(ref)));
+        allMatches.add(_tournamentMatchFromFirestore(await transaction.get(ref)));
       }
 
       final roundMatches = allMatches.where((m) => m.round == round).toList();
@@ -491,7 +542,7 @@ class TournamentService {
       }
 
       final tournamentDoc = await transaction.get(tournamentRef);
-      final tournament = Tournament.fromFirestore(tournamentDoc);
+      final tournament = _tournamentFromFirestore(tournamentDoc);
       if (tournament.lastAdvancedRound >= round) {
         _logger.i('Swiss round $round already advanced for $tournamentId, skipping');
         return const []; // 既に別の呼び出しがこのラウンドを処理済み
@@ -615,8 +666,7 @@ class TournamentService {
 
       final snapshot = await query.get();
       final matches = snapshot.docs
-          .map((doc) => TournamentMatch.fromFirestore(
-              doc as DocumentSnapshot<Map<String, dynamic>>))
+          .map((doc) => _tournamentMatchFromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
           .toList();
 
       _logger.i('✅ Matches fetched: ${matches.length}');
@@ -685,7 +735,7 @@ class TournamentService {
     await _firestore.runTransaction<void>((transaction) async {
       final matches = <TournamentMatch>[];
       for (final ref in matchRefs) {
-        matches.add(TournamentMatch.fromFirestore(await transaction.get(ref)));
+        matches.add(_tournamentMatchFromFirestore(await transaction.get(ref)));
       }
 
       if (matches.any((m) => !m.isCompleted)) {
@@ -693,7 +743,7 @@ class TournamentService {
       }
 
       final tournamentDoc = await transaction.get(tournamentRef);
-      final tournament = Tournament.fromFirestore(tournamentDoc);
+      final tournament = _tournamentFromFirestore(tournamentDoc);
       if (tournament.status == 'completed') {
         return; // 既に別の呼び出しが確定済み
       }
@@ -791,7 +841,7 @@ class TournamentService {
       final roundMatches = <TournamentMatch>[];
       for (final ref in matchRefs) {
         final doc = await transaction.get(ref);
-        roundMatches.add(TournamentMatch.fromFirestore(doc));
+        roundMatches.add(_tournamentMatchFromFirestore(doc));
       }
 
       if (roundMatches.any((m) => !m.isCompleted)) {
@@ -799,7 +849,7 @@ class TournamentService {
       }
 
       final tournamentDoc = await transaction.get(tournamentRef);
-      final tournament = Tournament.fromFirestore(tournamentDoc);
+      final tournament = _tournamentFromFirestore(tournamentDoc);
       if (tournament.lastAdvancedRound >= round) {
         _logger.i('Round $round already advanced for $tournamentId, skipping');
         return const []; // 既に別の呼び出しがこのラウンドを処理済み
@@ -887,7 +937,7 @@ class TournamentService {
       final doc = await tournamentRef.get();
       if (!doc.exists) throw Exception('Tournament not found');
 
-      final tournament = Tournament.fromFirestore(doc);
+      final tournament = _tournamentFromFirestore(doc);
       if (tournament.createdBy != uid) {
         throw Exception('Only the organizer can cancel this tournament');
       }
@@ -919,7 +969,7 @@ class TournamentService {
       final doc = await tournamentRef.get();
       if (!doc.exists) return;
 
-      final tournament = Tournament.fromFirestore(doc);
+      final tournament = _tournamentFromFirestore(doc);
       if (tournament.createdBy != uid) {
         throw Exception('Only the organizer can delete this tournament');
       }
@@ -953,7 +1003,7 @@ class TournamentService {
       final doc = await tournamentRef.get();
       if (!doc.exists) throw Exception('Tournament not found');
 
-      final tournament = Tournament.fromFirestore(doc);
+      final tournament = _tournamentFromFirestore(doc);
       if (tournament.createdBy != uid) {
         throw Exception('Only the organizer can edit this tournament');
       }
@@ -994,8 +1044,7 @@ class TournamentService {
           .get();
 
       final tournaments = snapshot.docs
-          .map((doc) => Tournament.fromFirestore(
-              doc as DocumentSnapshot<Map<String, dynamic>>))
+          .map((doc) => _tournamentFromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
           .toList();
 
       _logger.i('✅ Active tournaments fetched: ${tournaments.length}');
@@ -1017,8 +1066,7 @@ class TournamentService {
           .get();
 
       final tournaments = snapshot.docs
-          .map((doc) => Tournament.fromFirestore(
-              doc as DocumentSnapshot<Map<String, dynamic>>))
+          .map((doc) => _tournamentFromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
           .toList();
 
       _logger.i('✅ User tournaments fetched: ${tournaments.length}');

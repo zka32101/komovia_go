@@ -1,91 +1,48 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart';
+import '../services/firestore_time.dart';
 
-/// アプリ内通知
-class AppNotification {
-  final String id;
-  final String uid;
-  final String title;
-  final String body;
-  final Map<String, dynamic>? data;
-  final String type; // 'friend_request', 'tournament_match', 'achievement', etc.
-  final bool isRead;
-  final DateTime createdAt;
-  final DateTime? readAt;
+// `AppNotification`/`NotificationPreference` used to be declared here with
+// their own Firestore-coupled shape, but that shape has been ported to
+// `package:komovia_core` - re-exported below unchanged so every existing
+// `import 'package:komovia_go/models/notification.dart';` keeps working.
+//
+// komovia_core's `NotificationPreference` has no `uid` field (it's a pure
+// per-category settings value with no identity of its own) - callers that
+// used to read `preference.uid` now carry the uid alongside it instead
+// (see `NotificationService.saveNotificationPreference`'s signature).
+export 'package:komovia_core/komovia_core.dart'
+    show AppNotification, NotificationPreference;
 
-  AppNotification({
-    required this.id,
-    required this.uid,
-    required this.title,
-    required this.body,
-    this.data,
-    required this.type,
-    required this.isRead,
-    required this.createdAt,
-    this.readAt,
-  });
-
-  factory AppNotification.fromFirestore(
-      DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data()!;
-    return AppNotification(
-      id: doc.id,
-      uid: data['uid'] ?? '',
-      title: data['title'] ?? '',
-      body: data['body'] ?? '',
-      data: data['data'] as Map<String, dynamic>?,
-      type: data['type'] ?? 'general',
-      isRead: data['isRead'] ?? false,
-      createdAt: data['createdAt'] is Timestamp
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      readAt: data['readAt'] is Timestamp
-          ? (data['readAt'] as Timestamp).toDate()
-          : null,
-    );
-  }
-
+/// `AppNotification` has no storage dependency (see komovia_core's doc
+/// comments) - converting to/from Firestore's `DocumentSnapshot`/
+/// `Timestamp` is each app's own responsibility. Public (not confined to
+/// notification_service.dart) since correspondence_game_service.dart/
+/// team_game_service.dart also construct and persist one directly.
+extension AppNotificationFirestore on AppNotification {
   Map<String, dynamic> toFirestore() {
-    return {
-      'uid': uid,
-      'title': title,
-      'body': body,
-      'data': data,
-      'type': type,
-      'isRead': isRead,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'readAt': readAt != null ? Timestamp.fromDate(readAt!) : null,
-    };
+    final json = toJson()..remove('id');
+    json['createdAt'] = Timestamp.fromDate(createdAt);
+    json['readAt'] = readAt != null ? Timestamp.fromDate(readAt!) : null;
+    return json;
   }
+}
 
-  AppNotification copyWith({
-    String? id,
-    String? uid,
-    String? title,
-    String? body,
-    Map<String, dynamic>? data,
-    String? type,
-    bool? isRead,
-    DateTime? createdAt,
-    DateTime? readAt,
-  }) {
-    return AppNotification(
-      id: id ?? this.id,
-      uid: uid ?? this.uid,
-      title: title ?? this.title,
-      body: body ?? this.body,
-      data: data ?? this.data,
-      type: type ?? this.type,
-      isRead: isRead ?? this.isRead,
-      createdAt: createdAt ?? this.createdAt,
-      readAt: readAt ?? this.readAt,
-    );
-  }
-
-  @override
-  String toString() => 'AppNotification(id: $id, type: $type)';
+AppNotification notificationFromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc) {
+  final data = doc.data() ?? const {};
+  return AppNotification.fromJson({
+    ...data,
+    'id': doc.id,
+    'createdAt': isoFromTimestamp(data['createdAt']),
+    'readAt': isoFromTimestamp(data['readAt']),
+  });
 }
 
 /// FCM トークンの登録
+///
+/// App-specific (push-notification plumbing, not a game-agnostic concept)
+/// - kept here rather than ported to komovia_core.
 class FcmToken {
   final String uid;
   final String token;
@@ -111,12 +68,8 @@ class FcmToken {
       token: doc.id,
       deviceName: data['deviceName'],
       platform: data['platform'],
-      registeredAt: data['registeredAt'] is Timestamp
-          ? (data['registeredAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      lastUsedAt: data['lastUsedAt'] is Timestamp
-          ? (data['lastUsedAt'] as Timestamp).toDate()
-          : null,
+      registeredAt: dateTimeFromTimestamp(data['registeredAt'], DateTime.now()),
+      lastUsedAt: dateTimeFromTimestampOrNull(data['lastUsedAt']),
     );
   }
 
@@ -133,55 +86,4 @@ class FcmToken {
 
   @override
   String toString() => 'FcmToken(uid: $uid, platform: $platform)';
-}
-
-/// 通知設定
-class NotificationPreference {
-  final String uid;
-  final bool friendRequests;
-  final bool tournamentUpdates;
-  final bool achievements;
-  final bool gameInvitations;
-  final bool allNotifications;
-
-  NotificationPreference({
-    required this.uid,
-    required this.friendRequests,
-    required this.tournamentUpdates,
-    required this.achievements,
-    required this.gameInvitations,
-    required this.allNotifications,
-  });
-
-  /// [uid] is passed in by the caller rather than read from [doc.id] -
-  /// every preference doc's own id is the constant string 'settings'
-  /// (nested under notifications/{uid}/notificationPreferences/settings),
-  /// not the owning user's uid, so reading uid from doc.id always produced
-  /// the literal string 'settings' instead of a real uid.
-  factory NotificationPreference.fromFirestore(
-      DocumentSnapshot<Map<String, dynamic>> doc, String uid) {
-    final data = doc.data()!;
-    return NotificationPreference(
-      uid: uid,
-      friendRequests: data['friendRequests'] ?? true,
-      tournamentUpdates: data['tournamentUpdates'] ?? true,
-      achievements: data['achievements'] ?? true,
-      gameInvitations: data['gameInvitations'] ?? true,
-      allNotifications: data['allNotifications'] ?? true,
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'friendRequests': friendRequests,
-      'tournamentUpdates': tournamentUpdates,
-      'achievements': achievements,
-      'gameInvitations': gameInvitations,
-      'allNotifications': allNotifications,
-    };
-  }
-
-  @override
-  String toString() =>
-      'NotificationPreference(uid: $uid, all: $allNotifications)';
 }

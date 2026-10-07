@@ -1,29 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komovia_go/models/extended_game_models.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_go/views/widgets/friend_list_widget.dart';
 
 void main() {
   group('FriendListWidget Tests', () {
-    late List<Friend> friends;
+    late List<Friendship> friends;
 
     setUp(() {
       friends = [
-        Friend(
-          uid: 'friend-1',
+        Friendship(
+          uid: 'me',
+          friendUid: 'friend-1',
           displayName: 'Friend One',
           status: 'online',
           addedAt: DateTime.now(),
-          notes: 'Great player',
-          avatarUrl: null,
         ),
-        Friend(
-          uid: 'friend-2',
+        Friendship(
+          uid: 'me',
+          friendUid: 'friend-2',
           displayName: 'Friend Two',
           status: 'offline',
           addedAt: DateTime.now(),
-          notes: null,
-          avatarUrl: null,
         ),
       ];
     });
@@ -39,7 +37,7 @@ void main() {
         ),
       );
 
-      // Verify friends are displayed (Friend has no rating field, so
+      // Verify friends are displayed (Friendship has no rating field, so
       // there's nothing rating-related to check here)
       expect(find.text('Friend One'), findsOneWidget);
       expect(find.text('Friend Two'), findsOneWidget);
@@ -79,7 +77,7 @@ void main() {
     });
 
     testWidgets('Calls onTap when friend item is tapped', (WidgetTester tester) async {
-      Friend? tappedFriend;
+      Friendship? tappedFriend;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -102,7 +100,7 @@ void main() {
     });
 
     testWidgets('Calls onMessage when message button is pressed', (WidgetTester tester) async {
-      Friend? messagedFriend;
+      Friendship? messagedFriend;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -150,24 +148,6 @@ void main() {
       expect(refreshed, isTrue);
     });
 
-    testWidgets('Displays friend notes when available', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FriendListWidget(
-              friends: friends,
-            ),
-          ),
-        ),
-      );
-
-      // Friend One has notes
-      expect(find.text('Great player'), findsOneWidget);
-
-      // Friend Two has no notes (but note field should not be shown)
-      expect(find.text('Friend Two'), findsOneWidget);
-    });
-
     testWidgets('Divider separates list items', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -185,16 +165,15 @@ void main() {
   });
 
   group('FriendChipWidget Tests', () {
-    late Friend friend;
+    late Friendship friend;
 
     setUp(() {
-      friend = Friend(
-        uid: 'friend-1',
+      friend = Friendship(
+        uid: 'me',
+        friendUid: 'friend-1',
         displayName: 'Chip Friend',
         status: 'online',
         addedAt: DateTime.now(),
-        notes: null,
-        avatarUrl: null,
       );
     });
 
@@ -209,7 +188,7 @@ void main() {
         ),
       );
 
-      // Verify name is displayed (Friend has no rating field)
+      // Verify name is displayed (Friendship has no rating field)
       expect(find.text('Chip Friend'), findsOneWidget);
     });
 
@@ -232,37 +211,33 @@ void main() {
       await tester.tap(find.byType(GestureDetector));
       expect(tapped, isTrue);
     });
-
   });
 
   group('FriendHorizontalListWidget Tests', () {
-    late List<Friend> friends;
+    late List<Friendship> friends;
 
     setUp(() {
       friends = [
-        Friend(
-          uid: 'friend-1',
+        Friendship(
+          uid: 'me',
+          friendUid: 'friend-1',
           displayName: 'Player One',
           status: 'online',
           addedAt: DateTime.now(),
-          notes: null,
-          avatarUrl: null,
         ),
-        Friend(
-          uid: 'friend-2',
+        Friendship(
+          uid: 'me',
+          friendUid: 'friend-2',
           displayName: 'Player Two',
           status: 'offline',
           addedAt: DateTime.now(),
-          notes: null,
-          avatarUrl: null,
         ),
-        Friend(
-          uid: 'friend-3',
+        Friendship(
+          uid: 'me',
+          friendUid: 'friend-3',
           displayName: 'Player Three',
           status: 'online',
           addedAt: DateTime.now(),
-          notes: null,
-          avatarUrl: null,
         ),
       ];
     });
@@ -299,7 +274,7 @@ void main() {
     });
 
     testWidgets('Calls onFriendSelected when friend is tapped', (WidgetTester tester) async {
-      Friend? selectedFriend;
+      Friendship? selectedFriend;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -340,13 +315,12 @@ void main() {
       // Add more friends to ensure scrolling
       final manyFriends = List.generate(
         10,
-        (i) => Friend(
-          uid: 'friend-$i',
+        (i) => Friendship(
+          uid: 'me',
+          friendUid: 'friend-$i',
           displayName: 'Player $i',
           status: 'online',
           addedAt: DateTime.now(),
-          notes: null,
-          avatarUrl: null,
         ),
       );
 
@@ -365,52 +339,32 @@ void main() {
     });
   });
 
-  group('Friend Data Display Tests', () {
-    late Friend friend;
+  group('Friendship Data Display Tests', () {
+    late Friendship friend;
 
     setUp(() {
-      friend = Friend(
-        uid: 'friend-1',
+      friend = Friendship(
+        uid: 'me',
+        friendUid: 'friend-1',
         displayName: 'Data Test Friend',
         status: 'online',
         addedAt: DateTime.now(),
-        notes: 'Test note',
-        avatarUrl: null,
       );
     });
 
-    testWidgets('Handles friend with missing avatar gracefully', (WidgetTester tester) async {
-      final friendNoAvatar = friend.copyWith(avatarUrl: null);
-
+    testWidgets('Renders with just the required fields (no avatarUrl/notes on '
+        'Friendship, unlike the old extended_game_models.dart Friend)', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: FriendListWidget(
-              friends: [friendNoAvatar],
+              friends: [friend],
             ),
           ),
         ),
       );
 
       expect(find.text('Data Test Friend'), findsOneWidget);
-    });
-
-    testWidgets('Truncates long notes with ellipsis', (WidgetTester tester) async {
-      final friendLongNotes = friend.copyWith(
-        notes: '本当に長い注釈です。このテストはノートが長い場合に椭円で切り詰められるかどうかを確認しています',
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FriendListWidget(
-              friends: [friendLongNotes],
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byType(Text), findsWidgets);
     });
   });
 }

@@ -1,8 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
-import 'package:komovia_go/models/leaderboard.dart';
+import 'firestore_time.dart';
 
 final _logger = Logger();
+
+/// `LeaderboardEntry` has no storage dependency (see komovia_core's doc
+/// comments) - converting to/from Firestore's `Timestamp` is this
+/// service's own responsibility.
+LeaderboardEntry _entryFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  final data = doc.data() ?? const {};
+  return LeaderboardEntry.fromJson({
+    ...data,
+    'uid': doc.id,
+    'lastUpdated': isoFromTimestamp(data['lastUpdated']),
+  });
+}
+
+extension _LeaderboardEntryFirestore on LeaderboardEntry {
+  Map<String, dynamic> toFirestoreFields() {
+    final json = toJson()..remove('uid');
+    json['lastUpdated'] = Timestamp.fromDate(lastUpdated);
+    return json;
+  }
+}
 
 /// Leaderboard データベース操作サービス
 class LeaderboardService {
@@ -46,8 +67,7 @@ class LeaderboardService {
 
       final snapshot = await query.get();
       final entries = snapshot.docs
-          .map((doc) => LeaderboardEntry.fromFirestore(
-              doc as DocumentSnapshot<Map<String, dynamic>>))
+          .map((doc) => _entryFromDoc(doc as DocumentSnapshot<Map<String, dynamic>>))
           .toList();
 
       // Assign rank from the already-sorted query result rather than
@@ -84,8 +104,7 @@ class LeaderboardService {
         return null;
       }
 
-      return LeaderboardEntry.fromFirestore(
-          doc as DocumentSnapshot<Map<String, dynamic>>);
+      return _entryFromDoc(doc as DocumentSnapshot<Map<String, dynamic>>);
     } catch (e) {
       _logger.e('Error fetching user rank: $e');
       rethrow;
@@ -112,7 +131,7 @@ class LeaderboardService {
 
       for (var i = 0; i < entries.length; i++) {
         final entry = entries[i].copyWith(rank: i + 1);
-        batch.set(collectionRef.doc(entry.uid), entry.toFirestore());
+        batch.set(collectionRef.doc(entry.uid), entry.toFirestoreFields());
       }
 
       await batch.commit();
@@ -156,7 +175,7 @@ class LeaderboardService {
           .doc(period.toShortString())
           .collection(type.toShortString())
           .doc(uid)
-          .set(entry.toFirestore(), SetOptions(merge: true));
+          .set(entry.toFirestoreFields(), SetOptions(merge: true));
 
       _logger.i('✅ User score updated');
     } catch (e) {
@@ -196,8 +215,7 @@ class LeaderboardService {
       await _firestore.runTransaction((transaction) async {
         final snapshot = await transaction.get(docRef);
         final current = snapshot.exists
-            ? LeaderboardEntry.fromFirestore(
-                snapshot as DocumentSnapshot<Map<String, dynamic>>)
+            ? _entryFromDoc(snapshot as DocumentSnapshot<Map<String, dynamic>>)
             : LeaderboardEntry(
                 uid: uid,
                 displayName: displayName,
@@ -225,7 +243,7 @@ class LeaderboardService {
           lastUpdated: DateTime.now(),
         );
 
-        transaction.set(docRef, updated.toFirestore());
+        transaction.set(docRef, updated.toFirestoreFields());
       });
 
       _logger.i('✅ User stats incremented: uid=$uid');

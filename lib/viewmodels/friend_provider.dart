@@ -10,23 +10,6 @@ final friendServiceProvider = Provider<FriendService>((ref) {
   return FriendService();
 });
 
-/// ユーザーの友達リストを取得
-final userFriendsProvider = FutureProvider.family<List<Friend>, String>(
-  (ref, uid) async {
-    _logger.i('Fetching friends for user: $uid');
-    final service = ref.watch(friendServiceProvider);
-    try {
-      // Note: FriendService needs to be extended to return List<Friend>
-      // For now, returning empty list as placeholder
-      _logger.i('✅ Friends fetched');
-      return [];
-    } catch (e) {
-      _logger.e('❌ Failed to fetch friends: $e');
-      rethrow;
-    }
-  },
-);
-
 /// 友達申請リストを取得
 final pendingFriendRequestsProvider = FutureProvider.family<List<FriendRequest>, String>(
   (ref, uid) async {

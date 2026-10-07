@@ -39,22 +39,32 @@ export 'game_settings.dart';
 // extended_game_models.dart predates the dedicated game_record.dart and
 // leaderboard.dart models and declares its own GameRecord/LeaderboardEntry
 // with a different (Firestore-incompatible) shape; hide those two so the
-// dedicated models win. Its Friend/GameInvitation are the ones actually
-// wired to FriendService/GameInvitationService, so those stay exported.
+// dedicated models win. Its GameInvitation is still the one actually wired
+// to GameInvitationService; its Friend is superseded by komovia_core's
+// Friendship (see friend.dart's comments) and hidden below.
 export 'extended_game_models.dart'
     hide
         GameRecord,
         LeaderboardEntry,
+        Friend,
         $GameRecordCopyWith,
         $LeaderboardEntryCopyWith,
+        $FriendCopyWith,
         GameRecordPatterns,
-        LeaderboardEntryPatterns;
+        LeaderboardEntryPatterns,
+        FriendPatterns;
+// leaderboard.dart/tournament.dart/notification.dart/direct_message.dart now
+// only re-export komovia_core's LeaderboardEntry/LeaderboardPeriod/
+// LeaderboardType, Tournament/TournamentParticipant/TournamentMatch/
+// TournamentStandingEntry, AppNotification/NotificationPreference, and
+// MessageThread/DirectMessage respectively (see each file's own comments),
+// plus whatever app-local type didn't move to komovia_core
+// (FcmToken for notification.dart).
+// friend.dart now only declares FriendRequest - the real friend-relationship
+// type (used to be extended_game_models.dart's Friend, hidden below) is
+// komovia_core's Friendship, imported directly by callers.
 export 'leaderboard.dart';
-// friend.dart's Friend (uid/friendUid/addedAt/isBlocked) isn't wired to any
-// working service (see friend_provider.dart) and collides with
-// extended_game_models.dart's Friend, which is what FriendService and
-// friends_screen.dart actually use; hide it and keep FriendRequest.
-export 'friend.dart' hide Friend;
+export 'friend.dart';
 export 'tournament.dart';
 export 'notification.dart';
 export 'spectator.dart';

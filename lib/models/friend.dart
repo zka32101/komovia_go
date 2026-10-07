@@ -1,73 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// 友達リスト エントリ
-class Friend {
-  final String uid;
-  final String friendUid;
-  final String displayName;
-  final DateTime addedAt;
-  final DateTime? lastPlayedAt;
-  final bool isBlocked;
-
-  Friend({
-    required this.uid,
-    required this.friendUid,
-    required this.displayName,
-    required this.addedAt,
-    this.lastPlayedAt,
-    required this.isBlocked,
-  });
-
-  factory Friend.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data()!;
-    return Friend(
-      uid: data['uid'] ?? '',
-      friendUid: doc.id,
-      displayName: data['displayName'] ?? 'Friend',
-      addedAt: data['addedAt'] is Timestamp
-          ? (data['addedAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      lastPlayedAt: data['lastPlayedAt'] is Timestamp
-          ? (data['lastPlayedAt'] as Timestamp).toDate()
-          : null,
-      isBlocked: data['isBlocked'] ?? false,
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'uid': uid,
-      'displayName': displayName,
-      'addedAt': Timestamp.fromDate(addedAt),
-      'lastPlayedAt':
-          lastPlayedAt != null ? Timestamp.fromDate(lastPlayedAt!) : null,
-      'isBlocked': isBlocked,
-    };
-  }
-
-  Friend copyWith({
-    String? uid,
-    String? friendUid,
-    String? displayName,
-    DateTime? addedAt,
-    DateTime? lastPlayedAt,
-    bool? isBlocked,
-  }) {
-    return Friend(
-      uid: uid ?? this.uid,
-      friendUid: friendUid ?? this.friendUid,
-      displayName: displayName ?? this.displayName,
-      addedAt: addedAt ?? this.addedAt,
-      lastPlayedAt: lastPlayedAt ?? this.lastPlayedAt,
-      isBlocked: isBlocked ?? this.isBlocked,
-    );
-  }
-
-  @override
-  String toString() => 'Friend(uid: $uid, friendUid: $friendUid)';
-}
+// `Friend` used to be declared here with its own uid/friendUid/addedAt/
+// isBlocked shape, but it was never actually wired to any working service
+// (see the old friend_provider.dart) - the shape FriendService/
+// friends_screen.dart really used was extended_game_models.dart's freezed
+// `Friend` (uid/displayName/status/addedAt/notes/avatarUrl/requestedBy).
+//
+// Both have now been replaced by `package:komovia_core`'s `Friendship`
+// (uid/friendUid/displayName/status/requestedBy/blockedBy/addedAt/
+// lastPlayedAt), a game-agnostic port of the same concept shared across
+// Komovia's game apps - callers import it directly from komovia_core
+// (`import 'package:komovia_core/komovia_core.dart';`) rather than via
+// this file, so it's clear at a glance which type is the shared core one.
+//
+// `notes`/`avatarUrl` existed on the old extended_game_models.dart `Friend`
+// but have no equivalent on `Friendship` - the per-friend notes feature
+// (an editable note shown on the friend list/profile) has been dropped
+// rather than kept as an app-local side channel; see FriendService's own
+// doc comments for details. `isBlocked` is superseded by `status ==
+// 'blocked'`.
 
 /// 友達リクエスト
+///
+/// Firestore-coupled and app-specific (unlike `Friendship`, which has no
+/// storage dependency) - kept here rather than ported to komovia_core.
 class FriendRequest {
   final String id;
   final String fromUid;
@@ -115,6 +71,5 @@ class FriendRequest {
   }
 
   @override
-  String toString() =>
-      'FriendRequest(id: $id, from: $fromUid, to: $toUid)';
+  String toString() => 'FriendRequest(id: $id, from: $fromUid, to: $toUid)';
 }

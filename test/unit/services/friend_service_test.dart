@@ -171,5 +171,32 @@ void main() {
       expect(await service.getFriends(uid: 'me', status: 'accepted'), isEmpty);
       expect(await service.getFriends(uid: 'friend', status: 'accepted'), isEmpty);
     });
+
+    test('addFriend persists notes on the caller\'s own entry only', () async {
+      await service.addFriend(currentUid: 'me', friendUid: 'friend', notes: 'met at a tournament');
+
+      final mine = await firestore.collection('users').doc('me').collection('friends').doc('friend').get();
+      expect(mine.data()?['notes'], 'met at a tournament');
+
+      // Friendship.fromJson has no notes field, but this is an extra raw
+      // field on the Firestore doc itself - not part of the model's JSON
+      // shape - so it round-trips through the service's own read methods
+      // transparently without a cast error.
+      expect(await service.getFriendStatus(currentUid: 'me', friendUid: 'friend'), 'pending');
+
+      // Never written to the other side - it's a private note, not a
+      // shared relationship field.
+      final theirs = await firestore.collection('users').doc('friend').collection('friends').doc('me').get();
+      expect(theirs.data()?['notes'], isNull);
+    });
+
+    test('blockFriend preserves a pre-existing note when upserting the blocked entry', () async {
+      await service.addFriend(currentUid: 'me', friendUid: 'friend', notes: 'old roommate');
+      await service.blockFriend(currentUid: 'me', friendUid: 'friend');
+
+      final mine = await firestore.collection('users').doc('me').collection('friends').doc('friend').get();
+      expect(mine.data()?['notes'], 'old roommate');
+      expect(mine.data()?['status'], 'blocked');
+    });
   });
 }

@@ -1,13 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 import '../models/game_record.dart';
-// `Friend` here is extended_game_models.dart's (uid/displayName/status) —
+// `Friendship` is komovia_core's (uid/friendUid/displayName/status/...) —
 // the shape actually returned by FriendService.getFriends, which is what
 // every real friends feature (friends_screen.dart, social_features_provider.dart)
-// uses. It's exported unambiguously via models/index.dart (see that
-// barrel's comments on the Friend collision), but importing it directly
-// here keeps this file's dependency explicit.
-import '../models/extended_game_models.dart' hide GameRecord;
+// uses.
+import 'package:komovia_core/komovia_core.dart' hide GameRecord;
 import '../models/playstyle.dart';
 
 final _logger = Logger();
@@ -102,7 +100,7 @@ class PlaystyleService {
   /// フレンド一覧の中から、補完し合う/似た棋風の相手を相性順に返す
   Future<List<PlaystyleCompatibility>> getCompatibleFriends({
     required String uid,
-    required List<Friend> friends,
+    required List<Friendship> friends,
   }) async {
     try {
       final myProfile = await getProfile(uid);
@@ -110,7 +108,7 @@ class PlaystyleService {
 
       for (final friend in friends) {
         if (friend.status == 'blocked') continue;
-        final otherProfile = await getProfile(friend.uid);
+        final otherProfile = await getProfile(friend.friendUid);
 
         final aggressivenessDiff = (myProfile.aggressiveness - otherProfile.aggressiveness).abs();
         final territorialityDiff = (myProfile.territoriality - otherProfile.territoriality).abs();
@@ -122,7 +120,7 @@ class PlaystyleService {
 
         results.add(PlaystyleCompatibility(
           uid: uid,
-          otherUid: friend.uid,
+          otherUid: friend.friendUid,
           otherDisplayName: friend.displayName,
           compatibilityScore: compatibilityScore.clamp(0.0, 1.0),
           compatibilityType: compatibilityType,
