@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../models/extended_game_models.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_go/config/theme.dart';
 
 /// Widget for displaying a list of friends
 class FriendListWidget extends StatelessWidget {
-  final List<Friend> friends;
+  final List<Friendship> friends;
   final bool isLoading;
   final VoidCallback? onRefresh;
-  final Function(Friend)? onTap;
-  final Function(Friend)? onMessage;
-  final Function(Friend)? onInvite;
-  final Function(Friend)? onBlock;
+  final Function(Friendship)? onTap;
+  final Function(Friendship)? onMessage;
+  final Function(Friendship)? onInvite;
+  final Function(Friendship)? onBlock;
 
   const FriendListWidget({
     Key? key,
@@ -78,11 +78,11 @@ class FriendListWidget extends StatelessWidget {
 
 /// Individual friend list item widget
 class _FriendListItem extends StatelessWidget {
-  final Friend friend;
-  final Function(Friend)? onTap;
-  final Function(Friend)? onMessage;
-  final Function(Friend)? onInvite;
-  final Function(Friend)? onBlock;
+  final Friendship friend;
+  final Function(Friendship)? onTap;
+  final Function(Friendship)? onMessage;
+  final Function(Friendship)? onInvite;
+  final Function(Friendship)? onBlock;
 
   const _FriendListItem({
     Key? key,
@@ -128,31 +128,13 @@ class _FriendListItem extends StatelessWidget {
 
               // Friend info
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      friend.displayName,
-                      style: const TextStyle(
-                        color: AppColors.washi,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    if (friend.notes != null && friend.notes!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          friend.notes!,
-                          style: TextStyle(
-                            color: AppColors.washiDim,
-                            fontSize: 11,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                  ],
+                child: Text(
+                  friend.displayName,
+                  style: const TextStyle(
+                    color: AppColors.washi,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
 
@@ -230,7 +212,7 @@ class _FriendListItem extends StatelessWidget {
 
 /// Compact friend chip for display in other contexts
 class FriendChipWidget extends StatelessWidget {
-  final Friend friend;
+  final Friendship friend;
   final VoidCallback? onTap;
 
   const FriendChipWidget({
@@ -303,8 +285,8 @@ class FriendChipWidget extends StatelessWidget {
 
 /// Horizontal scrollable friends list for quick selection
 class FriendHorizontalListWidget extends StatelessWidget {
-  final List<Friend> friends;
-  final Function(Friend)? onFriendSelected;
+  final List<Friendship> friends;
+  final Function(Friendship)? onFriendSelected;
 
   const FriendHorizontalListWidget({
     Key? key,

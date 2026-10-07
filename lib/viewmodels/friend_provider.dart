@@ -1,6 +1,7 @@
 import 'package:riverpod/riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/models/friend.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_go/services/friend_service.dart';
 
 final _logger = Logger();
@@ -11,12 +12,12 @@ final friendServiceProvider = Provider<FriendService>((ref) {
 });
 
 /// ユーザーの友達リストを取得
-final userFriendsProvider = FutureProvider.family<List<Friend>, String>(
+final userFriendsProvider = FutureProvider.family<List<Friendship>, String>(
   (ref, uid) async {
     _logger.i('Fetching friends for user: $uid');
     final service = ref.watch(friendServiceProvider);
     try {
-      // Note: FriendService needs to be extended to return List<Friend>
+      // Note: FriendService needs to be extended to return List<Friendship>
       // For now, returning empty list as placeholder
       _logger.i('✅ Friends fetched');
       return [];

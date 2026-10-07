@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import '../../models/index.dart';
 import '../../viewmodels/index.dart';
+import 'package:komovia_core/komovia_core.dart';
 import '../widgets/index.dart';
 import 'friend_profile_screen.dart';
 import 'chat_screen.dart';
@@ -108,10 +109,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
             _openChat(context, uid, friend);
           },
           onInvite: (friend) {
-            _showGameInviteDialog(context, l10n, uid, friend.uid, friend.displayName);
+            _showGameInviteDialog(context, l10n, uid, friend.friendUid, friend.displayName);
           },
           onBlock: (friend) {
-            _blockFriend(context, l10n, uid, friend.uid);
+            _blockFriend(context, l10n, uid, friend.friendUid);
           },
         );
       },
@@ -152,7 +153,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     BuildContext context,
     AppLocalizations l10n,
     String uid,
-    Friend request,
+    Friendship request,
   ) {
     // requestedBy is null for relationship docs created before this field
     // existed - treated as incoming (the pre-existing behavior: both
@@ -193,7 +194,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
             if (isIncoming) ...[
               ElevatedButton.icon(
                 onPressed: () =>
-                    _acceptFriendRequest(context, l10n, uid, request.uid),
+                    _acceptFriendRequest(context, l10n, uid, request.friendUid),
                 icon: const Icon(Icons.check),
                 label: Text(l10n.acceptButton),
                 style: ElevatedButton.styleFrom(
@@ -203,7 +204,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
               const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: () =>
-                    _rejectFriendRequest(context, l10n, uid, request.uid),
+                    _rejectFriendRequest(context, l10n, uid, request.friendUid),
                 icon: const Icon(Icons.close),
                 label: Text(l10n.declineButton),
                 style: OutlinedButton.styleFrom(
@@ -213,7 +214,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
             ] else
               OutlinedButton.icon(
                 onPressed: () =>
-                    _rejectFriendRequest(context, l10n, uid, request.uid),
+                    _rejectFriendRequest(context, l10n, uid, request.friendUid),
                 icon: const Icon(Icons.close),
                 label: Text(l10n.cancelButton),
                 style: OutlinedButton.styleFrom(
@@ -524,7 +525,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     BuildContext context,
     AppLocalizations l10n,
     String uid,
-    Friend friend,
+    Friendship friend,
     String action,
   ) {
     switch (action) {
@@ -532,13 +533,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         _openChat(context, uid, friend);
         break;
       case 'invite':
-        _showGameInviteDialog(context, l10n, uid, friend.uid, friend.displayName);
+        _showGameInviteDialog(context, l10n, uid, friend.friendUid, friend.displayName);
         break;
       case 'profile':
         _openFriendProfile(context, uid, friend);
         break;
       case 'block':
-        _blockFriend(context, l10n, uid, friend.uid);
+        _blockFriend(context, l10n, uid, friend.friendUid);
         break;
     }
   }
@@ -710,7 +711,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     );
   }
 
-  void _openFriendProfile(BuildContext context, String uid, Friend friend) {
+  void _openFriendProfile(BuildContext context, String uid, Friendship friend) {
     final l10n = AppLocalizations.of(context)!;
     Navigator.push(
       context,
@@ -718,13 +719,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         builder: (_) => FriendProfileScreen(
           currentUid: uid,
           friend: friend,
-          onInvite: () => _showGameInviteDialog(context, l10n, uid, friend.uid, friend.displayName),
+          onInvite: () => _showGameInviteDialog(context, l10n, uid, friend.friendUid, friend.displayName),
         ),
       ),
     );
   }
 
-  void _openChat(BuildContext context, String uid, Friend friend) {
+  void _openChat(BuildContext context, String uid, Friendship friend) {
     final l10n = AppLocalizations.of(context)!;
     final currentUser = ref.read(currentUserProvider);
     final currentDisplayName = currentUser?.displayName ?? l10n.homeDefaultPlayerName;
@@ -735,7 +736,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         builder: (_) => ChatScreen(
           currentUid: uid,
           currentDisplayName: currentDisplayName,
-          friendUid: friend.uid,
+          friendUid: friend.friendUid,
           friendDisplayName: friend.displayName,
         ),
       ),

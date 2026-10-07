@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/models/index.dart';
 import 'package:komovia_go/viewmodels/index.dart';
@@ -10,11 +11,12 @@ import 'package:komovia_go/l10n/app_localizations.dart';
 final _logger = Logger();
 
 /// フレンドの読み取り専用プロフィール画面。フレンド一覧からの遷移のみを
-/// 想定しているため、Friendオブジェクトをそのまま受け取る（名前付きルート
-/// は使わない — 通知やディープリンクからこの画面へ直接遷移する経路が無い）。
+/// 想定しているため、Friendshipオブジェクトをそのまま受け取る（名前付き
+/// ルートは使わない — 通知やディープリンクからこの画面へ直接遷移する経路
+/// が無い）。
 class FriendProfileScreen extends ConsumerStatefulWidget {
   final String currentUid;
-  final Friend friend;
+  final Friendship friend;
   final VoidCallback? onInvite;
 
   const FriendProfileScreen({
@@ -48,13 +50,9 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
         children: [
           _buildHeader(l10n, friend),
           const SizedBox(height: 24),
-          _buildRankCard(l10n, friend.uid),
+          _buildRankCard(l10n, friend.friendUid),
           const SizedBox(height: 16),
           _buildEnScoreCard(l10n, friend),
-          if (friend.notes != null && friend.notes!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _buildNotesCard(l10n, friend.notes!),
-          ],
           if (widget.onInvite != null) ...[
             const SizedBox(height: 24),
             SizedBox(
@@ -75,18 +73,13 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
     );
   }
 
-  Widget _buildHeader(AppLocalizations l10n, Friend friend) {
+  Widget _buildHeader(AppLocalizations l10n, Friendship friend) {
     return Column(
       children: [
-        CircleAvatar(
+        const CircleAvatar(
           radius: 40,
           backgroundColor: AppColors.kin,
-          backgroundImage: friend.avatarUrl != null
-              ? NetworkImage(friend.avatarUrl!)
-              : null,
-          child: friend.avatarUrl == null
-              ? const Icon(Icons.person, color: AppColors.washi, size: 40)
-              : null,
+          child: Icon(Icons.person, color: AppColors.washi, size: 40),
         ),
         const SizedBox(height: 12),
         Text(
@@ -156,9 +149,9 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
     );
   }
 
-  Widget _buildEnScoreCard(AppLocalizations l10n, Friend friend) {
+  Widget _buildEnScoreCard(AppLocalizations l10n, Friendship friend) {
     final connectionAsync = ref.watch(
-      enConnectionProvider((uid: widget.currentUid, friendUid: friend.uid)),
+      enConnectionProvider((uid: widget.currentUid, friendUid: friend.friendUid)),
     );
 
     return Card(
@@ -243,33 +236,16 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
     );
   }
 
-  Widget _buildNotesCard(AppLocalizations l10n, String notes) {
-    return Card(
-      color: AppColors.sumiSurface,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.notesLabel, style: TextStyle(color: AppColors.washiDim, fontSize: 12)),
-            const SizedBox(height: 4),
-            Text(notes, style: const TextStyle(color: AppColors.washi)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _calculateEnScore(AppLocalizations l10n, Friend friend) async {
+  Future<void> _calculateEnScore(AppLocalizations l10n, Friendship friend) async {
     setState(() => _isCalculatingEnScore = true);
     try {
       await ref.read(calculateEnScoreProvider)(
         widget.currentUid,
-        friend.uid,
+        friend.friendUid,
         friend.displayName,
         friend.addedAt,
       );
-      ref.invalidate(enConnectionProvider((uid: widget.currentUid, friendUid: friend.uid)));
+      ref.invalidate(enConnectionProvider((uid: widget.currentUid, friendUid: friend.friendUid)));
     } catch (e) {
       _logger.e('Failed to calculate en score: $e');
       if (mounted) {

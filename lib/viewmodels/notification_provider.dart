@@ -167,15 +167,17 @@ final registerFcmTokenProvider = Provider<
   };
 });
 
-/// 通知設定を保存
+/// 通知設定を保存。komovia_core's NotificationPreference has no `uid` of
+/// its own (see notification_service.dart's doc comments), so the owner
+/// is passed alongside it here instead of being read off the model.
 final saveNotificationPreferenceProvider = Provider<
-    Future<void> Function(NotificationPreference)>((ref) {
+    Future<void> Function(String uid, NotificationPreference)>((ref) {
   final service = ref.read(notificationServiceProvider);
 
-  return (preference) async {
+  return (uid, preference) async {
     _logger.i('Saving preference');
     try {
-      await service.saveNotificationPreference(preference);
+      await service.saveNotificationPreference(uid, preference);
       _logger.i('✅ Preference saved');
     } catch (e) {
       _logger.e('❌ Failed to save: $e');

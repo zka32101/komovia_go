@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_go/models/index.dart';
 import 'package:komovia_go/services/index.dart';
 import 'package:komovia_go/viewmodels/index.dart';
@@ -28,7 +29,7 @@ class _FakeLeaderboardService extends LeaderboardService {
       entry;
 }
 
-Widget _buildApp(ProviderContainer container, Friend friend, {VoidCallback? onInvite}) {
+Widget _buildApp(ProviderContainer container, Friendship friend, {VoidCallback? onInvite}) {
   return UncontrolledProviderScope(
     container: container,
     child: MaterialApp(
@@ -62,8 +63,9 @@ void main() {
       );
     }
 
-    final friend = Friend(
-      uid: 'friend-1',
+    final friend = Friendship(
+      uid: 'me',
+      friendUid: 'friend-1',
       displayName: 'Taro',
       status: 'accepted',
       addedAt: DateTime.now().subtract(const Duration(days: 40)),
@@ -147,20 +149,5 @@ void main() {
       expect(invited, true);
     });
 
-    testWidgets('shows notes when present', (tester) async {
-      final noted = Friend(
-        uid: 'friend-2',
-        displayName: 'Hanako',
-        status: 'accepted',
-        addedAt: DateTime.now(),
-        notes: '大学時代の囲碁部の先輩',
-      );
-
-      await tester.pumpWidget(_buildApp(buildContainer(), noted));
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.text('大学時代の囲碁部の先輩'), findsOneWidget);
-    });
   });
 }

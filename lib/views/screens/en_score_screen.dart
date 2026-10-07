@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/models/index.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_go/viewmodels/index.dart';
 import 'package:komovia_go/config/theme.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
@@ -158,10 +159,10 @@ class _EnScoreScreenState extends ConsumerState<EnScoreScreen> {
           ),
         );
       }
-      for (final Friend friend in friends) {
+      for (final Friendship friend in friends) {
         await ref.read(calculateEnScoreProvider)(
           uid,
-          friend.uid,
+          friend.friendUid,
           friend.displayName,
           friend.addedAt,
         );

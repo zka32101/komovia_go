@@ -1,8 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
-import '../models/extended_game_models.dart';
+import '../models/extended_game_models.dart' show UserProfile;
 
 final _logger = Logger();
+
+/// `Friendship` has no storage dependency (see its own doc comments in
+/// komovia_core) - converting to/from Firestore's `DocumentSnapshot`/
+/// `Timestamp` shape is this service's own responsibility, the same way
+/// `Game.encode/decode` keeps komovia_core's `Position` free of any one
+/// notation.
+///
+/// A relationship doc's own id is always the *other* party's uid (see
+/// `_friendDoc`), so [ownerUid] (read from the path, not the doc) becomes
+/// `Friendship.uid` and the doc id becomes `Friendship.friendUid`.
+Friendship _friendshipFromDoc(
+  String ownerUid,
+  DocumentSnapshot<Map<String, dynamic>> doc,
+) {
+  final data = doc.data() ?? const {};
+  return Friendship.fromJson({
+    ...data,
+    'uid': ownerUid,
+    'friendUid': doc.id,
+  });
+}
 
 /// Service for managing friend relationships
 class FriendService {
@@ -22,7 +44,7 @@ class FriendService {
   }
 
   /// Looks up a user's display name to denormalize onto a friend-relationship
-  /// doc - Friend.fromJson requires displayName, but the relationship
+  /// doc - Friendship.fromJson requires displayName, but the relationship
   /// document itself only ever stores a uid, so this has to be fetched from
   /// the user's own profile at write time.
   Future<String> _lookupDisplayName(String uid) async {
@@ -57,7 +79,7 @@ class FriendService {
 
       _logger.i('Adding friend: $friendUid to user: $currentUid');
 
-      // Friend.fromJson parses addedAt via DateTime.parse(json['addedAt']
+      // Friendship.fromJson parses addedAt via DateTime.parse(json['addedAt']
       // as String) - a raw DateTime would round-trip through Firestore as
       // a Timestamp instead and fail that cast on every later read.
       final now = DateTime.now().toIso8601String();
@@ -79,7 +101,6 @@ class FriendService {
         'displayName': friendDisplayName,
         'status': 'pending',
         'addedAt': now,
-        'notes': notes ?? '',
         'requestedBy': requestedBy,
       });
       batch.set(_friendDoc(friendUid, currentUid), {
@@ -87,7 +108,6 @@ class FriendService {
         'displayName': currentDisplayName,
         'status': 'pending',
         'addedAt': now,
-        'notes': '',
         'requestedBy': requestedBy,
       });
 
@@ -196,7 +216,6 @@ class FriendService {
             existing?['displayName'] as String? ?? await _lookupDisplayName(friendUid),
         'status': 'blocked',
         'addedAt': existing?['addedAt'] ?? DateTime.now().toIso8601String(),
-        'notes': existing?['notes'] ?? '',
         'blockedBy': currentUid,
       });
 
@@ -274,7 +293,7 @@ class FriendService {
   }
 
   /// Get friends list
-  Future<List<Friend>> getFriends({
+  Future<List<Friendship>> getFriends({
     required String uid,
     String status = 'accepted',
   }) async {
@@ -288,11 +307,7 @@ class FriendService {
           .where('status', isEqualTo: status)
           .get();
 
-      final friends = querySnapshot.docs
-          .map((doc) => Friend.fromJson({...doc.data(), 'uid': doc.id}))
-          .toList();
-
-      return friends;
+      return querySnapshot.docs.map((doc) => _friendshipFromDoc(uid, doc)).toList();
     } catch (e) {
       _logger.e('Failed to get friends: $e');
       return [];
@@ -300,7 +315,7 @@ class FriendService {
   }
 
   /// Get pending friend requests
-  Future<List<Friend>> getPendingRequests({required String uid}) async {
+  Future<List<Friendship>> getPendingRequests({required String uid}) async {
     try {
       _logger.i('Getting pending friend requests for: $uid');
 
@@ -312,7 +327,7 @@ class FriendService {
   }
 
   /// Get blocked users
-  Future<List<Friend>> getBlockedUsers({required String uid}) async {
+  Future<List<Friendship>> getBlockedUsers({required String uid}) async {
     try {
       _logger.i('Getting blocked users for: $uid');
 
@@ -348,31 +363,8 @@ class FriendService {
     }
   }
 
-  /// Update friend notes
-  Future<bool> updateFriendNotes({
-    required String currentUid,
-    required String friendUid,
-    required String notes,
-  }) async {
-    try {
-      _logger.i('Updating friend notes for: $friendUid');
-
-      await _firestore
-          .collection('users')
-          .doc(currentUid)
-          .collection('friends')
-          .doc(friendUid)
-          .update({'notes': notes});
-
-      return true;
-    } catch (e) {
-      _logger.e('Failed to update friend notes: $e');
-      return false;
-    }
-  }
-
   /// Stream friends list (real-time)
-  Stream<List<Friend>> streamFriends({
+  Stream<List<Friendship>> streamFriends({
     required String uid,
     String status = 'accepted',
   }) {
@@ -383,9 +375,7 @@ class FriendService {
         .where('status', isEqualTo: status)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => Friend.fromJson({...doc.data(), 'uid': doc.id}))
-          .toList();
+      return snapshot.docs.map((doc) => _friendshipFromDoc(uid, doc)).toList();
     });
   }
 

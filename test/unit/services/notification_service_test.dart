@@ -46,50 +46,52 @@ void main() {
       expect(await service.getNotificationPreference('uid1'), isNull);
     });
 
-    test('saveNotificationPreference then getNotificationPreference round-trips with '
-        'the correct uid - not the literal doc id "settings"', () async {
-      await service.saveNotificationPreference(NotificationPreference(
-        uid: 'uid1',
-        friendRequests: true,
-        tournamentUpdates: false,
-        achievements: true,
-        gameInvitations: false,
-        allNotifications: true,
-      ));
+    test('saveNotificationPreference then getNotificationPreference round-trips', () async {
+      await service.saveNotificationPreference(
+        'uid1',
+        const NotificationPreference(
+          friendRequests: true,
+          tournamentUpdates: false,
+          achievements: true,
+          gameInvitations: false,
+          allNotifications: true,
+        ),
+      );
 
       final loaded = await service.getNotificationPreference('uid1');
       expect(loaded, isNotNull);
-      // The bug this regression test guards against: fromFirestore used to
-      // read uid from doc.id, which is always the literal string 'settings'
-      // (notifications/{uid}/notificationPreferences/settings) - not the
-      // real owner. A wrong uid here means a second save targets a bogus
-      // path (notifications/settings/... instead of notifications/uid1/...).
-      expect(loaded!.uid, 'uid1');
-      expect(loaded.tournamentUpdates, isFalse);
+      expect(loaded!.tournamentUpdates, isFalse);
       expect(loaded.gameInvitations, isFalse);
     });
 
-    test('re-saving a loaded preference still writes under the real uid\'s path', () async {
-      await service.saveNotificationPreference(NotificationPreference(
-        uid: 'uid1',
-        friendRequests: true,
-        tournamentUpdates: true,
-        achievements: true,
-        gameInvitations: true,
-        allNotifications: true,
-      ));
+    test('re-saving a loaded preference still writes under the real uid\'s path - '
+        'komovia_core\'s NotificationPreference carries no uid of its own, so the '
+        'owner is always passed explicitly by the caller (see notification_provider.dart)',
+        () async {
+      await service.saveNotificationPreference(
+        'uid1',
+        const NotificationPreference(
+          friendRequests: true,
+          tournamentUpdates: true,
+          achievements: true,
+          gameInvitations: true,
+          allNotifications: true,
+        ),
+      );
 
       // Simulates reopening the settings dialog (loads the saved
-      // preference, including whatever uid it carries) and saving again.
+      // preference) and saving again under the same explicit uid.
       final reloaded = await service.getNotificationPreference('uid1');
-      await service.saveNotificationPreference(NotificationPreference(
-        uid: reloaded!.uid,
-        friendRequests: reloaded.friendRequests,
-        tournamentUpdates: false,
-        achievements: reloaded.achievements,
-        gameInvitations: reloaded.gameInvitations,
-        allNotifications: reloaded.allNotifications,
-      ));
+      await service.saveNotificationPreference(
+        'uid1',
+        NotificationPreference(
+          friendRequests: reloaded!.friendRequests,
+          tournamentUpdates: false,
+          achievements: reloaded.achievements,
+          gameInvitations: reloaded.gameInvitations,
+          allNotifications: reloaded.allNotifications,
+        ),
+      );
 
       final bogusPathDoc = await firestore
           .collection('notifications')
@@ -116,14 +118,16 @@ void main() {
         body: '...',
         type: 'pvp_challenge',
       );
-      await service.saveNotificationPreference(NotificationPreference(
-        uid: 'uid1',
-        friendRequests: true,
-        tournamentUpdates: true,
-        achievements: true,
-        gameInvitations: false,
-        allNotifications: true,
-      ));
+      await service.saveNotificationPreference(
+        'uid1',
+        const NotificationPreference(
+          friendRequests: true,
+          tournamentUpdates: true,
+          achievements: true,
+          gameInvitations: false,
+          allNotifications: true,
+        ),
+      );
 
       final notifications = await service.getUserNotifications('uid1');
       expect(notifications, isEmpty);
@@ -137,14 +141,16 @@ void main() {
         body: '...',
         type: 'game_invitation',
       );
-      await service.saveNotificationPreference(NotificationPreference(
-        uid: 'uid1',
-        friendRequests: true,
-        tournamentUpdates: true,
-        achievements: true,
-        gameInvitations: true,
-        allNotifications: false,
-      ));
+      await service.saveNotificationPreference(
+        'uid1',
+        const NotificationPreference(
+          friendRequests: true,
+          tournamentUpdates: true,
+          achievements: true,
+          gameInvitations: true,
+          allNotifications: false,
+        ),
+      );
 
       expect(await service.getUserNotifications('uid1'), isEmpty);
     });
@@ -156,14 +162,16 @@ void main() {
         body: '...',
         type: 'something_new',
       );
-      await service.saveNotificationPreference(NotificationPreference(
-        uid: 'uid1',
-        friendRequests: false,
-        tournamentUpdates: false,
-        achievements: false,
-        gameInvitations: false,
-        allNotifications: true,
-      ));
+      await service.saveNotificationPreference(
+        'uid1',
+        const NotificationPreference(
+          friendRequests: false,
+          tournamentUpdates: false,
+          achievements: false,
+          gameInvitations: false,
+          allNotifications: true,
+        ),
+      );
 
       final notifications = await service.getUserNotifications('uid1');
       expect(notifications, hasLength(1));
@@ -188,14 +196,16 @@ void main() {
         body: '...',
         type: 'game_invitation',
       );
-      await service.saveNotificationPreference(NotificationPreference(
-        uid: 'uid1',
-        friendRequests: true,
-        tournamentUpdates: true,
-        achievements: true,
-        gameInvitations: false,
-        allNotifications: true,
-      ));
+      await service.saveNotificationPreference(
+        'uid1',
+        const NotificationPreference(
+          friendRequests: true,
+          tournamentUpdates: true,
+          achievements: true,
+          gameInvitations: false,
+          allNotifications: true,
+        ),
+      );
 
       final unread = await service.getUserNotifications('uid1', unreadOnly: true);
       expect(unread, isEmpty);

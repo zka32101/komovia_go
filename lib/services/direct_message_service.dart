@@ -1,8 +1,33 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
-import '../models/direct_message.dart';
 
 final _logger = Logger();
+
+/// `MessageThread`/`DirectMessage` have no storage dependency (see
+/// komovia_core's doc comments) - converting to/from Firestore's
+/// `DocumentSnapshot`/`Timestamp` is this service's own responsibility.
+MessageThread _threadFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  final data = doc.data() ?? const {};
+  return MessageThread.fromJson({
+    ...data,
+    'id': doc.id,
+    'lastMessageAt': data['lastMessageAt'] is Timestamp
+        ? (data['lastMessageAt'] as Timestamp).toDate().toIso8601String()
+        : data['lastMessageAt'],
+  });
+}
+
+DirectMessage _messageFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  final data = doc.data() ?? const {};
+  return DirectMessage.fromJson({
+    ...data,
+    'id': doc.id,
+    'sentAt': data['sentAt'] is Timestamp
+        ? (data['sentAt'] as Timestamp).toDate().toIso8601String()
+        : data['sentAt'],
+  });
+}
 
 /// フレンド間の1対1メッセージング。
 class DirectMessageService {
@@ -79,7 +104,9 @@ class DirectMessageService {
         .where('participantUids', arrayContains: uid)
         .orderBy('lastMessageAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map(MessageThread.fromFirestore).toList());
+        .map((snapshot) => snapshot.docs
+            .map((doc) => _threadFromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+            .toList());
   }
 
   Stream<List<DirectMessage>> watchMessages(String threadId) {
@@ -88,7 +115,9 @@ class DirectMessageService {
         .collection('messages')
         .orderBy('sentAt')
         .snapshots()
-        .map((snapshot) => snapshot.docs.map(DirectMessage.fromFirestore).toList());
+        .map((snapshot) => snapshot.docs
+            .map((doc) => _messageFromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+            .toList());
   }
 
   /// [uid]がこのスレッドを開いた際に未読数をリセットする。ChatScreenは
