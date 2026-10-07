@@ -1,0 +1,353 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "gameRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "playedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userTsumeGoLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "isCorrect", "order": "ASCENDING" },
+        { "fieldPath": "solvedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "observationLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "watchedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "pvp_games",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "blackUid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "pvp_games",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "whiteUid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "matchmaking_queue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "boardSize", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "match_results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "player1Uid", "order": "ASCENDING" },
+        { "fieldPath": "player2Uid", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "match_results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "player1Uid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "match_results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "player2Uid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sponsorships",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sponsoredUserId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "startDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sponsorships",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sponsorUserId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "startDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "spectator_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "endedAt", "order": "ASCENDING" },
+        { "fieldPath": "isLive", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "spectator_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "hostUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tournaments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "startDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tournaments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isAutoWeekly", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "matches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "round", "order": "ASCENDING" },
+        { "fieldPath": "scheduledAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "gameInvitations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "toUid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "expiresAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "gameInvitations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fromUid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "expiresAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "game_invitations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "toUserId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "chat_messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gameId", "order": "ASCENDING" },
+        { "fieldPath": "sentAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "chat_messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gameId", "order": "ASCENDING" },
+        { "fieldPath": "sentAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "correspondenceGames",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "lastMoveAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "correspondenceGames",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "lastMoveAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "correspondenceGames",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "opponentUid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "currentPlayerColor", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blitzGames",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "endedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blitzGames",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "teamGames",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "team1Players", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "startedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "teamGames",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "team2Players", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "startedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "puzzleRushSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "puzzleRushLeaderboard",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "difficulty", "order": "ASCENDING" },
+        { "fieldPath": "score", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "puzzleRushLeaderboard",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "difficulty", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "position_echoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "reachedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "position_echoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "positionHash", "order": "ASCENDING" },
+        { "fieldPath": "reachedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fateful_moves",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "detectedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "game_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "endedAt", "order": "ASCENDING" },
+        { "fieldPath": "blackPlayerId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "game_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "endedAt", "order": "ASCENDING" },
+        { "fieldPath": "whitePlayerId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "gamePresets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gameMode", "order": "ASCENDING" },
+        { "fieldPath": "usageCount", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isRead", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "streams",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "isLive", "order": "ASCENDING" },
+        { "fieldPath": "platform", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "streams",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "platform", "order": "ASCENDING" },
+        { "fieldPath": "isLive", "order": "ASCENDING" },
+        { "fieldPath": "startedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "uploads",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "message_threads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "participantUids", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "lastMessageAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,56 @@
+{
+  "traditional_standard": {
+    "name": "標準対局",
+    "description": "AIと自由なペースで打つ、基本の対局です。",
+    "timeLimit": 0,
+    "difficulty": "easy",
+    "type": "traditional",
+    "maxPlayers": 1,
+    "isActive": true
+  },
+  "handicap_stones": {
+    "name": "置碁",
+    "description": "置き石を使って、棋力差のある相手とも対等に打てます。",
+    "timeLimit": 0,
+    "difficulty": "easy",
+    "type": "handicap",
+    "maxPlayers": 1,
+    "isActive": true
+  },
+  "blitz_5min": {
+    "name": "ブリッツ(5分)",
+    "description": "持ち時間5分の高速対局。素早い判断力を鍛えます。",
+    "timeLimit": 300,
+    "difficulty": "medium",
+    "type": "blitz",
+    "maxPlayers": 1,
+    "isActive": true
+  },
+  "correspondence_letter": {
+    "name": "通信対局",
+    "description": "一手ごとにじっくり考える、手紙のようなターン制対局です。",
+    "timeLimit": 0,
+    "difficulty": "medium",
+    "type": "correspondence",
+    "maxPlayers": 2,
+    "isActive": true
+  },
+  "team_2v2": {
+    "name": "チーム戦(2対2)",
+    "description": "二人一組で協力して戦うチーム対局です。",
+    "timeLimit": 0,
+    "difficulty": "hard",
+    "type": "team",
+    "maxPlayers": 4,
+    "isActive": false
+  },
+  "puzzle_rush": {
+    "name": "詰碁タイムアタック",
+    "description": "制限時間内にできるだけ多くの詰碁を解きます。",
+    "timeLimit": 180,
+    "difficulty": "hard",
+    "type": "puzzleRush",
+    "maxPlayers": 1,
+    "isActive": true
+  }
+}

@@ -1,0 +1,267 @@
+name: Android Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: 3.47.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build Android APK & AAB
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Clean Flutter cache
+        run: |
+          flutter clean
+          rm -rf .android
+          rm -rf build/
+          rm -rf ~/gradle_cache || true
+          rm -rf ~/.gradle || true
+
+      - name: Get dependencies
+        run: |
+          set -o pipefail
+          flutter pub get 2>&1 | tee pub_get.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ pub get failed"
+            exit 1
+          fi
+
+      - name: Generate code (build_runner)
+        run: |
+          set -o pipefail
+          flutter pub run build_runner build --delete-conflicting-outputs 2>&1 | tee build_runner.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "⚠️ build_runner failed (non-fatal, may continue)"
+          fi
+        continue-on-error: true
+
+      - name: Analyze code
+        run: |
+          set -o pipefail
+          flutter analyze 2>&1 | tee analyze.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "⚠️ Analysis found issues (non-fatal)"
+          fi
+        continue-on-error: true
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          flutter test 2>&1 | tee test.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ Tests failed"
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Clean Gradle cache
+        run: |
+          cd android
+          rm -rf .gradle || true
+          ./gradlew clean 2>&1 | tail -20
+          ./gradlew --stop || true
+          cd ..
+
+      - name: Test Gradle setup
+        run: |
+          cd android
+          echo "Testing Gradle..."
+          ./gradlew --version
+          ./gradlew help 2>&1 | head -20
+          cd ..
+
+      - name: Build APK (debug)
+        env:
+          GRADLE_OPTS: '-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+UseG1GC'
+        run: |
+          set -o pipefail
+          echo "Starting APK debug build..."
+          echo "Disk space before build:"
+          df -h
+
+          echo "Memory info before build:"
+          free -h
+
+          echo "GRADLE_OPTS: $GRADLE_OPTS"
+
+          # Build APK debug
+          flutter build apk --debug --verbose 2>&1 | tee build_apk_debug.log
+          BUILD_EXIT_CODE=${PIPESTATUS[0]}
+          echo "Build exit code: $BUILD_EXIT_CODE"
+
+          echo "Disk space after build:"
+          df -h
+
+          echo "Memory info after build:"
+          free -h
+
+          echo "Checking for build outputs:"
+          ls -la build/app/outputs/ 2>/dev/null || echo "build/app/outputs/ does not exist"
+          find build -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "❌ APK debug build failed with exit code $BUILD_EXIT_CODE"
+            echo "Last 200 lines of build log:"
+            tail -200 build_apk_debug.log
+            exit 1
+          fi
+          if [ ! -f build/app/outputs/flutter-apk/app-debug.apk ]; then
+            echo "❌ APK file not found after successful build"
+            echo "Contents of build directory:"
+            find build -type f -name "*.apk" 2>/dev/null | head -20
+            exit 1
+          fi
+          ls -lh build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Prepare release signing (generate a CI keystore if secrets not available)
+        run: |
+          # For CI environment without a real release keystore: generate a
+          # throwaway self-signed one with keytool (bundled with the JDK),
+          # so the release build always has something valid to sign with --
+          # relying on $HOME/.android/debug.keystore existing was fragile
+          # (its creation is an AGP-internal side effect of assembleDebug,
+          # not guaranteed to happen or land at that path).
+          # For production: configure GitHub Secrets:
+          #   - ANDROID_KEYSTORE_BASE64 (base64-encoded keystore)
+          #   - ANDROID_KEYSTORE_PASSWORD
+          #   - ANDROID_KEY_ALIAS
+          #   - ANDROID_KEY_PASSWORD
+
+          mkdir -p android/app
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "⚠️  No release keystore secret configured; generating a CI-only signing keystore"
+            keytool -genkeypair -v \
+              -keystore android/app/komovia_go-release.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=CI, OU=GoEn, O=GoEn, L=Unknown, S=Unknown, C=US"
+            echo "✅ Generated CI signing keystore"
+          else
+            echo "📝 Decoding release keystore from GitHub Secrets..."
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/komovia_go-release.keystore
+            chmod 600 android/app/komovia_go-release.keystore
+            echo "✅ Release keystore loaded from secrets"
+          fi
+          ls -l android/app/komovia_go-release.keystore
+
+      - name: Build APK (release)
+        env:
+          ANDROID_KEYSTORE_PATH: komovia_go-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: android
+          ANDROID_KEY_ALIAS: androiddebugkey
+          ANDROID_KEY_PASSWORD: android
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee build_apk_release.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ APK release build failed"
+            cat build_apk_release.log | tail -50
+            exit 1
+          fi
+          if [ ! -f build/app/outputs/flutter-apk/app-release.apk ]; then
+            echo "❌ Release APK file not found after build"
+            exit 1
+          fi
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Build AAB (release)
+        env:
+          ANDROID_KEYSTORE_PATH: komovia_go-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: android
+          ANDROID_KEY_ALIAS: androiddebugkey
+          ANDROID_KEY_PASSWORD: android
+        run: |
+          set -o pipefail
+          flutter build appbundle --release 2>&1 | tee build_aab_release.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ AAB release build failed"
+            cat build_aab_release.log | tail -50
+            exit 1
+          fi
+          if [ ! -f build/app/outputs/bundle/release/app-release.aab ]; then
+            echo "❌ Release AAB file not found after build"
+            exit 1
+          fi
+          ls -lh build/app/outputs/bundle/release/app-release.aab
+
+      - name: Upload APK artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-artifacts
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
+
+      - name: Upload AAB artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aab-artifact
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 7
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            pub_get.log
+            build_runner.log
+            analyze.log
+            test.log
+            build_apk_debug.log
+            build_apk_release.log
+            build_aab_release.log
+          retention-days: 7
+
+      - name: Report build status
+        if: always()
+        run: |
+          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          if [ -f build/app/outputs/flutter-apk/app-debug.apk ]; then
+            echo "| Debug APK | ✅ Built |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Debug APK | ❌ Missing |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
+            echo "| Release APK | ✅ Built |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Release APK | ❌ Missing |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f build/app/outputs/bundle/release/app-release.aab ]; then
+            echo "| Release AAB | ✅ Built |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Release AAB | ❌ Missing |" >> $GITHUB_STEP_SUMMARY
+          fi
