@@ -102,6 +102,13 @@ class FriendService {
         'status': 'pending',
         'addedAt': now,
         'requestedBy': requestedBy,
+        // Not part of Friendship.toJson/fromJson (komovia_core's model has
+        // no notes field - the per-friend-note UI was dropped in the
+        // komovia_core migration), but kept on the document itself so a
+        // future re-implementation of that UI has the data to read back.
+        // Only stored on the caller's own entry - it's a private note
+        // about the friend, not something the friend's own side should see.
+        if (notes != null) 'notes': notes,
       });
       batch.set(_friendDoc(friendUid, currentUid), {
         'uid': currentUid,
@@ -217,6 +224,10 @@ class FriendService {
         'status': 'blocked',
         'addedAt': existing?['addedAt'] ?? DateTime.now().toIso8601String(),
         'blockedBy': currentUid,
+        // Preserve a pre-existing private note (see addFriend's comment on
+        // why this is a plain upsert, not a merge - a full `set()` would
+        // otherwise drop it).
+        if (existing?['notes'] != null) 'notes': existing!['notes'],
       });
 
       final otherRef = _friendDoc(friendUid, currentUid);
