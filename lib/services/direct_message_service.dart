@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
+import 'firestore_time.dart';
 
 final _logger = Logger();
 
@@ -12,9 +13,7 @@ MessageThread _threadFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
   return MessageThread.fromJson({
     ...data,
     'id': doc.id,
-    'lastMessageAt': data['lastMessageAt'] is Timestamp
-        ? (data['lastMessageAt'] as Timestamp).toDate().toIso8601String()
-        : data['lastMessageAt'],
+    'lastMessageAt': isoFromTimestamp(data['lastMessageAt']),
   });
 }
 
@@ -23,9 +22,7 @@ DirectMessage _messageFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) 
   return DirectMessage.fromJson({
     ...data,
     'id': doc.id,
-    'sentAt': data['sentAt'] is Timestamp
-        ? (data['sentAt'] as Timestamp).toDate().toIso8601String()
-        : data['sentAt'],
+    'sentAt': isoFromTimestamp(data['sentAt']),
   });
 }
 

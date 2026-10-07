@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
+import 'firestore_time.dart';
 
 final _logger = Logger();
 
@@ -12,9 +13,7 @@ LeaderboardEntry _entryFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
   return LeaderboardEntry.fromJson({
     ...data,
     'uid': doc.id,
-    'lastUpdated': data['lastUpdated'] is Timestamp
-        ? (data['lastUpdated'] as Timestamp).toDate().toIso8601String()
-        : data['lastUpdated'],
+    'lastUpdated': isoFromTimestamp(data['lastUpdated']),
   });
 }
 

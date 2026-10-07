@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:komovia_core/komovia_core.dart';
+import '../services/firestore_time.dart';
 
 // `AppNotification`/`NotificationPreference` used to be declared here with
 // their own Firestore-coupled shape, but that shape has been ported to
@@ -33,12 +34,8 @@ AppNotification notificationFromFirestore(
   return AppNotification.fromJson({
     ...data,
     'id': doc.id,
-    'createdAt': data['createdAt'] is Timestamp
-        ? (data['createdAt'] as Timestamp).toDate().toIso8601String()
-        : data['createdAt'],
-    'readAt': data['readAt'] is Timestamp
-        ? (data['readAt'] as Timestamp).toDate().toIso8601String()
-        : data['readAt'],
+    'createdAt': isoFromTimestamp(data['createdAt']),
+    'readAt': isoFromTimestamp(data['readAt']),
   });
 }
 
@@ -71,12 +68,8 @@ class FcmToken {
       token: doc.id,
       deviceName: data['deviceName'],
       platform: data['platform'],
-      registeredAt: data['registeredAt'] is Timestamp
-          ? (data['registeredAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      lastUsedAt: data['lastUsedAt'] is Timestamp
-          ? (data['lastUsedAt'] as Timestamp).toDate()
-          : null,
+      registeredAt: dateTimeFromTimestamp(data['registeredAt'], DateTime.now()),
+      lastUsedAt: dateTimeFromTimestampOrNull(data['lastUsedAt']),
     );
   }
 

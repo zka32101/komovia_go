@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
+import 'firestore_time.dart';
 import 'notification_service.dart';
 
 final _logger = Logger();
@@ -15,9 +16,9 @@ Tournament _tournamentFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) 
   return Tournament.fromJson({
     ...data,
     'id': doc.id,
-    'startDate': _isoFromTimestamp(data['startDate']),
-    'endDate': _isoFromTimestamp(data['endDate']),
-    'createdAt': _isoFromTimestamp(data['createdAt']),
+    'startDate': isoFromTimestamp(data['startDate']),
+    'endDate': isoFromTimestamp(data['endDate']),
+    'createdAt': isoFromTimestamp(data['createdAt']),
   });
 }
 
@@ -26,14 +27,9 @@ TournamentMatch _tournamentMatchFromFirestore(DocumentSnapshot<Map<String, dynam
   return TournamentMatch.fromJson({
     ...data,
     'id': doc.id,
-    'scheduledAt': _isoFromTimestamp(data['scheduledAt']),
-    'completedAt': data['completedAt'] != null ? _isoFromTimestamp(data['completedAt']) : null,
+    'scheduledAt': isoFromTimestamp(data['scheduledAt']),
+    'completedAt': data['completedAt'] != null ? isoFromTimestamp(data['completedAt']) : null,
   });
-}
-
-String? _isoFromTimestamp(Object? value) {
-  if (value is Timestamp) return value.toDate().toIso8601String();
-  return value as String?;
 }
 
 extension _TournamentFirestore on Tournament {

@@ -28,7 +28,11 @@ export 'leaderboard_provider.dart';
 // rejectFriendRequestProvider are unwired stubs (see friend_provider.dart)
 // that collide with social_features_provider.dart's working versions of the
 // same names, which is what friends_screen.dart actually calls; hide the
-// stubs and keep userFriendsProvider (unique to this file).
+// stubs (pendingFriendRequestsProvider's sibling, the equally-dead
+// userFriendsProvider, was removed outright rather than hidden, since
+// nothing called it and social_features_provider.dart's
+// acceptedFriendsProvider/friendsStreamProvider already cover the same
+// job for real).
 export 'friend_provider.dart'
     hide
         friendServiceProvider,
