@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:logger/logger.dart';
@@ -171,20 +172,31 @@ class SocialShareService {
 
   // Content generation methods
 
+  // The three _generate*ShareContent methods below all build their `text`
+  // through komovia_core's buildShareCaption so every Komovia app's SNS
+  // caption shares the same shape (headline -> stat lines -> app name +
+  // hashtags), instead of each one hand-rolling its own string template.
+  // `hashtags` keeps its own shorter value for callers (e.g. clipboard
+  // copy) that want just the tags without the rest of the caption.
+
   ShareContent _generateGameShareContent(GameShareData gameData) {
     final resultEmoji = gameData.result == 'win' ? '🎉' : '💪';
     final boardSizeEmoji = _getBoardSizeEmoji(gameData.boardSize);
 
-    final text = '''
-$resultEmoji 今碁で${gameData.result == 'win' ? '勝利' : '挑戦'}しました！
-
-$boardSizeEmoji ${gameData.boardSize}路盤
-🤖 AI レベル: ${gameData.aiLevel}
-⚫ 黒: ${gameData.blackScore}目
-⚪ 白: ${gameData.whiteScore}目
-
-#碁 #Go #碁縁 #AI碁 #オンライン碁
-'''.trim();
+    final text = buildShareCaption(
+      ShareableMoment(
+        appName: '碁縁',
+        headline:
+            '$resultEmoji 今碁で${gameData.result == 'win' ? '勝利' : '挑戦'}しました！',
+        statLines: [
+          '$boardSizeEmoji ${gameData.boardSize}路盤',
+          '🤖 AI レベル: ${gameData.aiLevel}',
+          '⚫ 黒: ${gameData.blackScore}目',
+          '⚪ 白: ${gameData.whiteScore}目',
+        ],
+        hashtag: '#碁 #Go #碁縁 #AI碁 #オンライン碁',
+      ),
+    );
 
     return ShareContent(
       text: text,
@@ -197,16 +209,20 @@ $boardSizeEmoji ${gameData.boardSize}路盤
     final difficultyEmoji = _getDifficultyEmoji(puzzleData.difficulty);
     final achievementEmoji = puzzleData.isSolved ? '✨' : '💭';
 
-    final text = '''
-$achievementEmoji 詰碁に${puzzleData.isSolved ? '成功' : 'チャレンジ'}しました！
-
-$difficultyEmoji 難易度: ${_getDifficultyLabel(puzzleData.difficulty)}
-🎯 試行回数: ${puzzleData.attemptCount}回
-⏱️ 解答時間: ${_formatDuration(puzzleData.solvingTime)}
-🔥 連続成功: ${puzzleData.currentStreak}問
-
-#詰碁 #碁 #碁縁 #AI解説
-'''.trim();
+    final text = buildShareCaption(
+      ShareableMoment(
+        appName: '碁縁',
+        headline:
+            '$achievementEmoji 詰碁に${puzzleData.isSolved ? '成功' : 'チャレンジ'}しました！',
+        statLines: [
+          '$difficultyEmoji 難易度: ${_getDifficultyLabel(puzzleData.difficulty)}',
+          '🎯 試行回数: ${puzzleData.attemptCount}回',
+          '⏱️ 解答時間: ${_formatDuration(puzzleData.solvingTime)}',
+          '🔥 連続成功: ${puzzleData.currentStreak}問',
+        ],
+        hashtag: '#詰碁 #碁 #碁縁 #AI解説',
+      ),
+    );
 
     return ShareContent(
       text: text,
@@ -220,18 +236,21 @@ $difficultyEmoji 難易度: ${_getDifficultyLabel(puzzleData.difficulty)}
         ? (profileData.winCount / profileData.totalGamesPlayed * 100).toStringAsFixed(1)
         : '0.0';
 
-    final text = '''
-🎓 碁縁でのプログレス報告
-
-👤 ${profileData.displayName}
-🎮 対局数: ${profileData.totalGamesPlayed}
-🏆 勝利数: ${profileData.winCount} (勝率: $winRate%)
-💯 詰碁: ${profileData.totalPuzzlesSolved}問
-🔥 連続成功: ${profileData.currentPuzzleStreak}問
-
-AI解説で碁を上達しよう！
-#碁 #碁縁 #Go学習
-'''.trim();
+    final text = buildShareCaption(
+      ShareableMoment(
+        appName: '碁縁',
+        headline: '🎓 碁縁でのプログレス報告',
+        statLines: [
+          '👤 ${profileData.displayName}',
+          '🎮 対局数: ${profileData.totalGamesPlayed}',
+          '🏆 勝利数: ${profileData.winCount} (勝率: $winRate%)',
+          '💯 詰碁: ${profileData.totalPuzzlesSolved}問',
+          '🔥 連続成功: ${profileData.currentPuzzleStreak}問',
+          'AI解説で碁を上達しよう！',
+        ],
+        hashtag: '#碁 #碁縁 #Go学習',
+      ),
+    );
 
     return ShareContent(
       text: text,
