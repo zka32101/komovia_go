@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
+import 'package:komovia_core/komovia_core.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/models/index.dart';
 import 'package:komovia_go/services/index.dart';
+import 'package:komovia_go/utils/entitlement_adapter.dart';
 
 final _logger = Logger();
 
@@ -38,11 +40,26 @@ final isUserLoggedInProvider = Provider<bool>((ref) {
   return user != null;
 });
 
-/// Boolean flag: is user's account subscription active?
-/// Determines paywall display
-final isSubscriptionActiveProvider = Provider<bool>((ref) {
+/// This [User]'s subscription status as a komovia_core [Entitlement],
+/// game-agnostic and shared with komovia_shogi/komovia_chess's own
+/// read paths.
+final userEntitlementProvider = Provider<Entitlement>((ref) {
   final user = ref.watch(currentUserProvider);
-  return user?.subscriptionActive ?? false;
+  return user?.toEntitlement() ?? const Entitlement.none();
+});
+
+/// Boolean flag: is user's account subscription active?
+/// Determines paywall display.
+///
+/// Previously trusted `user.subscriptionActive` as a stored flag forever,
+/// never re-checked against `subscriptionEndDate` - nothing client-side
+/// ever flips it back to false once a monthly/annual subscription's
+/// expiry date passes (there's no Cloud Function that does this
+/// server-side either), so an expired subscriber stayed gated-open
+/// indefinitely. Now derives from [Entitlement.isCurrentlyActive], which
+/// re-checks `expiresAt` against the real current time on every read.
+final isSubscriptionActiveProvider = Provider<bool>((ref) {
+  return ref.watch(userEntitlementProvider).isCurrentlyActive();
 });
 
 // ================== AUTH ACTIONS ==================
