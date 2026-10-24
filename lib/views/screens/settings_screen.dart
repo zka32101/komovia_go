@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:komovia_core/komovia_core.dart';
 import '../../viewmodels/danger_hints_provider.dart';
 import 'package:komovia_go/models/index.dart';
 import 'package:komovia_go/viewmodels/index.dart';
@@ -9,6 +11,7 @@ import 'package:komovia_go/views/widgets/index.dart';
 import 'package:komovia_go/views/widgets/ad_banner.dart';
 import 'package:komovia_go/config/theme.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
+import 'package:komovia_go/utils/komovia_cross_promo_roster.dart';
 
 final _logger = Logger();
 
@@ -151,6 +154,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildConnectionsSettings(context, l10n),
             ),
 
+            // Cross-promotion for the other Komovia series apps
+            _buildSection(
+              context,
+              l10n.sectionCrossPromo,
+              _buildCrossPromoSettings(context, l10n),
+            ),
+
             // App info section
             _buildSection(
               context,
@@ -188,6 +198,89 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ],
     );
+  }
+
+  /// One tappable row per sibling Komovia app (shogi/chess), built from
+  /// the shared [PromotedApp] model (komovia_core) — mirrors
+  /// komovia_chess's `komovia_cross_promo_roster.dart`/settings-screen
+  /// pattern. The store URL is intentionally just an honest placeholder
+  /// for now (see komovia_cross_promo_roster.dart) - tapping a
+  /// not-yet-published sibling shows a "not published yet" message
+  /// instead of opening a broken link.
+  Widget _buildCrossPromoSettings(BuildContext context, AppLocalizations l10n) {
+    final others = otherKomoviaApps(komoviaRoster, kKomoviaGoAppId);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final app in others)
+          InkWell(
+            onTap: () => _openCrossPromoStore(context, l10n, app),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Icon(_iconForCrossPromoCategory(app.category),
+                      color: AppColors.washiDim),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(app.name,
+                            style: Theme.of(context).textTheme.bodyMedium),
+                        Text(app.tagline,
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: AppColors.washiDim,
+                                )),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.open_in_new, size: 16),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  IconData _iconForCrossPromoCategory(String category) {
+    switch (category) {
+      case 'shogi':
+        return Icons.sports_esports;
+      case 'chess':
+        return Icons.sports_esports_outlined;
+      case 'go':
+        return Icons.circle_outlined;
+      default:
+        return Icons.apps;
+    }
+  }
+
+  Future<void> _openCrossPromoStore(
+    BuildContext context,
+    AppLocalizations l10n,
+    PromotedApp app,
+  ) async {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final storeUrl = app.storeUrlFor(isIOS: isIOS);
+
+    if (storeUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.crossPromoNotPublishedMessage(app.name))),
+      );
+      return;
+    }
+
+    final uri = Uri.parse(storeUrl);
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.crossPromoStoreOpenFailedMessage(app.name)),
+        ),
+      );
+    }
   }
 
   Widget _buildSection(BuildContext context, String title, Widget child) {
