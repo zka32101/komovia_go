@@ -13,6 +13,15 @@
   "sectionConnections": "Connections & Sharing",
   "sectionAbout": "About",
   "sectionLanguage": "Language",
+  "sectionCrossPromo": "Other Komovia games",
+  "crossPromoNotPublishedMessage": "{appName} is not published yet",
+  "@crossPromoNotPublishedMessage": {
+    "placeholders": { "appName": { "type": "String" } }
+  },
+  "crossPromoStoreOpenFailedMessage": "Could not open the store page for {appName}",
+  "@crossPromoStoreOpenFailedMessage": {
+    "placeholders": { "appName": { "type": "String" } }
+  },
 
   "displayNameLabel": "Display Name",
   "displayNameHint": "Enter your name",

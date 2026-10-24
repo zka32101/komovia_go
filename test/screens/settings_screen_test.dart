@@ -493,5 +493,37 @@ void main() {
       expect(find.text('ビルド'), findsWidgets);
       expect(find.text('2026.09.01'), findsWidgets);
     });
+
+    testWidgets('shows cross-promo section with sibling apps',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const SettingsScreen(),
+          container: container,
+        ),
+      );
+
+      expect(find.text('他のKomoviaシリーズ'), findsWidgets);
+      expect(find.text('Komoviaチェス'), findsWidgets);
+      expect(find.text('Komovia将棋'), findsWidgets);
+      // This app's own entry must not list itself.
+      expect(find.text('Komovia囲碁'), findsNothing);
+    });
+
+    testWidgets(
+        'tapping a not-yet-published sibling shows a coming-soon message',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const SettingsScreen(),
+          container: container,
+        ),
+      );
+
+      await tester.tap(find.text('Komoviaチェス'));
+      await tester.pump();
+
+      expect(find.text('Komoviaチェスはまだ公開されていません'), findsOneWidget);
+    });
   });
 }
