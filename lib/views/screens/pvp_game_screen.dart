@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -33,6 +35,25 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
   int? _lastCapturedWhite;
   int _captureEventId = 0;
   int? _captureFlashCount;
+
+  // 時計はクライアント側でのライブ表示専用（Firestore側には手が打たれた
+  // 時点のバンク値のみ保存されている）。1秒ごとに再描画して残り時間を
+  // 更新する — ドキュメント自体は更新しない。
+  Timer? _clockTicker;
+
+  @override
+  void initState() {
+    super.initState();
+    _clockTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _clockTicker?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +129,9 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
           ),
           const SizedBox(height: 20),
           if (game.isActive && myColor != 0) _buildControls(context, l10n, game),
-          if (game.canClaimAbandonmentForfeit(
+          if (game.isActive && game.canClaimTimeoutForfeit(widget.uid, DateTime.now()))
+            _buildTimeoutClaimCard(context, l10n, game)
+          else if (game.canClaimAbandonmentForfeit(
             widget.uid,
             threshold: PvpGameService.abandonmentThreshold,
           ))
@@ -119,17 +142,37 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
   }
 
   Widget _buildPlayersHeader(AppLocalizations l10n, PvpGame game, bool isMyTurn) {
+    final now = DateTime.now();
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildPlayerBadge(l10n, game.blackDisplayName, isBlack: true, isTurn: game.isActive && game.isBlackTurn),
+        _buildPlayerBadge(
+          l10n,
+          game.blackDisplayName,
+          isBlack: true,
+          isTurn: game.isActive && game.isBlackTurn,
+          remainingMs: game.remainingMs(true, now),
+        ),
         Text(l10n.vsLabel, style: TextStyle(color: AppColors.washiDim)),
-        _buildPlayerBadge(l10n, game.whiteDisplayName, isBlack: false, isTurn: game.isActive && !game.isBlackTurn),
+        _buildPlayerBadge(
+          l10n,
+          game.whiteDisplayName,
+          isBlack: false,
+          isTurn: game.isActive && !game.isBlackTurn,
+          remainingMs: game.remainingMs(false, now),
+        ),
       ],
     );
   }
 
-  Widget _buildPlayerBadge(AppLocalizations l10n, String name, {required bool isBlack, required bool isTurn}) {
+  Widget _buildPlayerBadge(
+    AppLocalizations l10n,
+    String name, {
+    required bool isBlack,
+    required bool isTurn,
+    required int remainingMs,
+  }) {
+    final isLow = remainingMs < 30000;
     return Column(
       children: [
         Container(
@@ -143,9 +186,52 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
         ),
         const SizedBox(height: 6),
         Text(name, style: const TextStyle(color: AppColors.washi, fontSize: 13)),
+        Text(
+          _formatClock(remainingMs),
+          style: TextStyle(
+            color: isLow ? AppColors.shuLight : AppColors.washiDim,
+            fontSize: 12,
+            fontWeight: isTurn ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
         if (isTurn) Text(l10n.turnIndicatorLabel, style: TextStyle(color: AppColors.kin, fontSize: 11)),
       ],
     );
+  }
+
+  String _formatClock(int ms) {
+    final totalSeconds = (ms / 1000).ceil().clamp(0, 999999);
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildTimeoutClaimCard(BuildContext context, AppLocalizations l10n, PvpGame game) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        children: [
+          Text(
+            l10n.opponentTimeExpiredMessage,
+            style: const TextStyle(color: AppColors.shuLight),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(foregroundColor: AppColors.shuLight),
+            onPressed: () => _confirmClaimTimeout(context, game),
+            child: Text(l10n.claimTimeoutButton),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmClaimTimeout(BuildContext context, PvpGame game) async {
+    try {
+      await ref.read(claimTimeoutForfeitProvider)(widget.gameId, widget.uid);
+    } catch (e) {
+      _logger.e('Error claiming timeout forfeit: $e');
+    }
   }
 
   Widget _buildBoard(BuildContext context, PvpGame game, bool isMyTurn) {
@@ -474,6 +560,7 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
   String _resultDescription(AppLocalizations l10n, PvpGame game) {
     if (game.result == 'resignation') return l10n.resignationResultLabel;
     if (game.result == 'forfeit') return l10n.forfeitResultLabel;
+    if (game.result == 'timeout') return l10n.timeoutResultLabel;
     if (game.blackScore != null && game.whiteScore != null) {
       return l10n.scoreResultLabel(
         game.blackScore!.toStringAsFixed(1),

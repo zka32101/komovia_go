@@ -245,5 +245,176 @@ void main() {
 
       expect(id1, id2);
     });
+
+    group('clock', () {
+      test('createGame initializes both banks to mainTimeSeconds', () async {
+        final game = await service.createGame(
+          boardSize: 9,
+          blackUid: 'black',
+          blackDisplayName: 'Black',
+          whiteUid: 'white',
+          whiteDisplayName: 'White',
+          mainTimeSeconds: 120,
+          incrementSeconds: 5,
+        );
+        expect(game.blackTimeMs, 120000);
+        expect(game.whiteTimeMs, 120000);
+        expect(game.turnStartedAt, isNotNull);
+      });
+
+      test('applyMove deducts elapsed time from the mover and adds the increment', () async {
+        final game = await service.createGame(
+          boardSize: 9,
+          blackUid: 'black',
+          blackDisplayName: 'Black',
+          whiteUid: 'white',
+          whiteDisplayName: 'White',
+          mainTimeSeconds: 60,
+          incrementSeconds: 10,
+        );
+
+        // Simulate 15 real seconds having elapsed on black's turn.
+        await firestore.collection('pvp_games').doc(game.id).update({
+          'turnStartedAt': Timestamp.fromDate(
+            DateTime.now().subtract(const Duration(seconds: 15)),
+          ),
+        });
+
+        final applied = await service.applyMove(gameId: game.id, uid: 'black', row: 2, col: 2);
+        expect(applied, true);
+
+        final after = await service.getGame(game.id);
+        // 60s bank - ~15s elapsed + 10s increment ≈ 55s, well under the
+        // original 60s bank and comfortably above a bare "no deduction".
+        expect(after!.blackTimeMs, lessThan(60000));
+        expect(after.blackTimeMs, greaterThan(40000));
+        // White never moved, so their bank is untouched.
+        expect(after.whiteTimeMs, 60000);
+      });
+
+      test('applyMove rejects a move once the mover\'s time has already run out', () async {
+        final game = await service.createGame(
+          boardSize: 9,
+          blackUid: 'black',
+          blackDisplayName: 'Black',
+          whiteUid: 'white',
+          whiteDisplayName: 'White',
+          mainTimeSeconds: 10,
+        );
+        await firestore.collection('pvp_games').doc(game.id).update({
+          'turnStartedAt': Timestamp.fromDate(
+            DateTime.now().subtract(const Duration(seconds: 30)),
+          ),
+        });
+
+        final applied = await service.applyMove(gameId: game.id, uid: 'black', row: 2, col: 2);
+        expect(applied, false);
+      });
+
+      test('pass deducts elapsed time and adds the increment, like applyMove', () async {
+        final game = await service.createGame(
+          boardSize: 9,
+          blackUid: 'black',
+          blackDisplayName: 'Black',
+          whiteUid: 'white',
+          whiteDisplayName: 'White',
+          mainTimeSeconds: 60,
+          incrementSeconds: 10,
+        );
+        await firestore.collection('pvp_games').doc(game.id).update({
+          'turnStartedAt': Timestamp.fromDate(
+            DateTime.now().subtract(const Duration(seconds: 15)),
+          ),
+        });
+
+        final accepted = await service.pass(gameId: game.id, uid: 'black');
+        expect(accepted, true);
+
+        final after = await service.getGame(game.id);
+        expect(after!.blackTimeMs, lessThan(60000));
+        expect(after.blackTimeMs, greaterThan(40000));
+      });
+
+      test('pass rejects once the mover\'s time has already run out', () async {
+        final game = await service.createGame(
+          boardSize: 9,
+          blackUid: 'black',
+          blackDisplayName: 'Black',
+          whiteUid: 'white',
+          whiteDisplayName: 'White',
+          mainTimeSeconds: 10,
+        );
+        await firestore.collection('pvp_games').doc(game.id).update({
+          'turnStartedAt': Timestamp.fromDate(
+            DateTime.now().subtract(const Duration(seconds: 30)),
+          ),
+        });
+
+        final accepted = await service.pass(gameId: game.id, uid: 'black');
+        expect(accepted, false);
+      });
+
+      test('claimTimeoutForfeit ends the game as a timeout win once the mover is out of time', () async {
+        final game = await service.createGame(
+          boardSize: 9,
+          blackUid: 'black',
+          blackDisplayName: 'Black',
+          whiteUid: 'white',
+          whiteDisplayName: 'White',
+          mainTimeSeconds: 10,
+        );
+        await firestore.collection('pvp_games').doc(game.id).update({
+          'turnStartedAt': Timestamp.fromDate(
+            DateTime.now().subtract(const Duration(seconds: 30)),
+          ),
+        });
+
+        await service.claimTimeoutForfeit(gameId: game.id, claimantUid: 'white');
+
+        final after = await service.getGame(game.id);
+        expect(after!.isFinished, true);
+        expect(after.winnerUid, 'white');
+        expect(after.result, 'timeout');
+      });
+
+      test('claimTimeoutForfeit is a no-op while the mover still has time left', () async {
+        final game = await service.createGame(
+          boardSize: 9,
+          blackUid: 'black',
+          blackDisplayName: 'Black',
+          whiteUid: 'white',
+          whiteDisplayName: 'White',
+          mainTimeSeconds: 600,
+        );
+
+        await service.claimTimeoutForfeit(gameId: game.id, claimantUid: 'white');
+
+        final after = await service.getGame(game.id);
+        expect(after!.isActive, true);
+      });
+
+      test('claimTimeoutForfeit never overwrites a game already finished by resignation', () async {
+        final game = await service.createGame(
+          boardSize: 9,
+          blackUid: 'black',
+          blackDisplayName: 'Black',
+          whiteUid: 'white',
+          whiteDisplayName: 'White',
+          mainTimeSeconds: 10,
+        );
+        await firestore.collection('pvp_games').doc(game.id).update({
+          'turnStartedAt': Timestamp.fromDate(
+            DateTime.now().subtract(const Duration(seconds: 30)),
+          ),
+        });
+        await service.resign(gameId: game.id, uid: 'white');
+
+        await service.claimTimeoutForfeit(gameId: game.id, claimantUid: 'white');
+
+        final after = await service.getGame(game.id);
+        expect(after!.result, 'resignation');
+        expect(after.winnerUid, 'black');
+      });
+    });
   });
 }

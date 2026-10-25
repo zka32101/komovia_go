@@ -363,6 +363,23 @@ final claimAbandonmentForfeitProvider = Provider((ref) {
   };
 });
 
+/// 相手の持ち時間がライブで0になっていることを理由に、時間切れ勝ちとして
+/// 終局させる（PvpGameService.claimTimeoutForfeit参照）。
+/// claimAbandonmentForfeitProviderと同じ役割分担。
+final claimTimeoutForfeitProvider = Provider((ref) {
+  return (String gameId, String claimantUid) async {
+    final service = ref.watch(pvpGameServiceProvider);
+    try {
+      await service.claimTimeoutForfeit(gameId: gameId, claimantUid: claimantUid);
+      _logger.i('Claimed timeout forfeit: $gameId by=$claimantUid');
+      await _onGameFinished(ref, service, gameId);
+    } catch (e) {
+      _logger.e('Error claiming timeout forfeit: $e');
+      rethrow;
+    }
+  };
+});
+
 /// 対局が終局していれば、Eloレーティングの反映とトーナメント結果報告
 /// （紐づいていれば）を行う。それぞれ独立してbest-effortで処理し、
 /// 片方の失敗が他方をブロックしたり対局そのものの完了を妨げたりしない。
