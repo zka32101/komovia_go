@@ -868,6 +868,8 @@
   "newGameButton": "New Game",
   "illegalMoveMessage": "That move is illegal (occupied, suicide, or ko)",
   "passedMessage": "You passed. The game will end if the AI passes too.",
+  "undoMoveTooltip": "Undo move",
+  "undoneMessage": "Move undone",
   "resignConfirmTitle": "Resign the game?",
   "resignConfirmContent": "You are about to resign this game. Are you sure?",
   "confirmResignButton": "Resign",

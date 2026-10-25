@@ -46,6 +46,16 @@ final gameBoardStateProvider = StateProvider<BoardState>((ref) {
   );
 });
 
+/// The board exactly as it was at the start of the current game (after any
+/// handicap stones were placed, before either side has moved) - kept
+/// purely so [undoLastMoveProvider] can replay [moveHistoryProvider] from
+/// a known-correct starting position rather than needing its own separate
+/// "rewind" logic duplicating [applyMoveProvider]'s capture/ko handling.
+/// Set once in [startNewGameProvider]; never mutated afterward.
+final initialBoardStateProvider = StateProvider<BoardState>((ref) {
+  return BoardState.empty();
+});
+
 /// Current AI opponent difficulty (1-10)
 final aiLevelProvider = StateProvider<int>((ref) {
   return 5; // Default to intermediate level
@@ -121,13 +131,15 @@ final startNewGameProvider =
     for (final point in handicapPoints(boardSize, handicapStones)) {
       stones[point.row][point.col] = 1; // black
     }
-    ref.read(gameBoardStateProvider.notifier).state = BoardState(
+    final initial = BoardState(
       boardSize: boardSize,
       stones: stones,
       capturedBlack: 0,
       capturedWhite: 0,
       isBlackTurn: handicapStones < 2,
     );
+    ref.read(gameBoardStateProvider.notifier).state = initial;
+    ref.read(initialBoardStateProvider.notifier).state = initial;
     ref.invalidate(movesCountProvider);
     ref.invalidate(moveHistoryProvider);
     ref.invalidate(gameResultProvider);
@@ -395,6 +407,97 @@ final applyPassProvider = Provider<bool Function()>((ref) {
 
     _logger.i('Pass: player=$player consecutivePasses=$passes');
     return passes >= 2;
+  };
+});
+
+/// Whether [undoLastMoveProvider] has anything to undo right now: at least
+/// one move/pass has been played, and the game hasn't already ended (an
+/// ended game is judged via a separate scoring flow - undoing a finished
+/// game's last move would need to also un-finish it, which no caller
+/// needs today).
+final canUndoProvider = Provider<bool>((ref) {
+  final history = ref.watch(moveHistoryProvider);
+  final isActive = ref.watch(isGameActiveProvider);
+  return isActive && history.isNotEmpty;
+});
+
+/// "待った" (undo): rewinds the game to just before the human player's own
+/// last move, so they can retry it - not merely the single last ply, since
+/// undoing only the AI's reply would leave the player facing a position
+/// they can't act on differently. If it's currently White's (the AI's)
+/// turn, only the player's own move needs removing (the AI hasn't
+/// responded yet); if it's Black's (the player's) turn, the AI has
+/// already replied, so both its move and the one before it are removed.
+///
+/// Implemented by trimming [moveHistoryProvider] and replaying everything
+/// that remains from [initialBoardStateProvider] via the same [GoRules.
+/// applyMove] [applyMoveProvider] itself uses, rather than maintaining a
+/// separate undo-stack of board snapshots - this way undo can never drift
+/// from the engine's own capture/ko logic.
+final undoLastMoveProvider = Provider<void Function()>((ref) {
+  return () {
+    final history = ref.read(moveHistoryProvider);
+    if (history.isEmpty) return;
+
+    final isPlayerToMove = ref.read(gameBoardStateProvider).isBlackTurn;
+    final removeCount = isPlayerToMove ? 2 : 1;
+    final trimmed = history.sublist(
+      0,
+      (history.length - removeCount).clamp(0, history.length),
+    );
+
+    var board = ref.read(initialBoardStateProvider);
+    var consecutivePasses = 0;
+
+    for (final move in trimmed) {
+      if (move.row == -1 && move.col == -1) {
+        // Pass: just flips the turn and clears ko, same as applyPassProvider.
+        board = board.copyWith(isBlackTurn: !board.isBlackTurn, koRow: null, koCol: null);
+        consecutivePasses++;
+        continue;
+      }
+
+      consecutivePasses = 0;
+      final player = move.player == 'black' ? 1 : 2;
+      final result = GoRules.applyMove(
+        stones: board.stones,
+        boardSize: board.boardSize,
+        row: move.row,
+        col: move.col,
+        player: player,
+        koRow: board.koRow,
+        koCol: board.koCol,
+      );
+      // trimmed is a prefix of a move sequence this exact engine already
+      // accepted once (via applyMoveProvider) - replaying it should never
+      // produce an illegal move. If it somehow does, stop replaying rather
+      // than crash on a null result; the board is left at the last
+      // successfully-replayed position.
+      if (result == null) {
+        _logger.e('Undo replay hit an illegal move at [${move.row},${move.col}] - stopping early');
+        break;
+      }
+
+      board = board.copyWith(
+        stones: result.stones,
+        capturedBlack: player == 2 ? board.capturedBlack + result.capturedCount : null,
+        capturedWhite: player == 1 ? board.capturedWhite + result.capturedCount : null,
+        isBlackTurn: !board.isBlackTurn,
+        lastMoveRow: move.row,
+        lastMoveCol: move.col,
+        koRow: result.koRow,
+        koCol: result.koCol,
+      );
+    }
+
+    ref.read(gameBoardStateProvider.notifier).state = board;
+    ref.read(moveHistoryProvider.notifier).state = trimmed;
+    ref.read(movesCountProvider.notifier).state =
+        trimmed.where((m) => !(m.row == -1 && m.col == -1)).length;
+    ref.read(consecutivePassesProvider.notifier).state = consecutivePasses;
+    ref.read(lastPlayerPassedProvider.notifier).state = consecutivePasses > 0;
+
+    _logger.i('↩️ Undo: removed $removeCount move(s), ${trimmed.length} remain');
   };
 });
 
