@@ -1090,6 +1090,9 @@
   "claimForfeitConfirmTitle": "Claim a win by forfeit?",
   "claimForfeitConfirmContent": "Your opponent hasn't made a move in this game for over 48 hours. Claiming will end this game as a win for you.",
   "forfeitResultLabel": "Won — opponent forfeited",
+  "opponentTimeExpiredMessage": "Your opponent's time has run out",
+  "claimTimeoutButton": "Claim win by timeout",
+  "timeoutResultLabel": "Won — opponent ran out of time",
 
   "rematchButton": "Rematch",
   "rematchFailedMessage": "Could not start the rematch",

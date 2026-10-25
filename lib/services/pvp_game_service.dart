@@ -24,6 +24,8 @@ class PvpGameService {
     required String whiteUid,
     required String whiteDisplayName,
     String? matchId,
+    int mainTimeSeconds = 600,
+    int incrementSeconds = 10,
   }) async {
     try {
       final docRef = _games.doc();
@@ -42,6 +44,9 @@ class PvpGameService {
         consecutivePasses: 0,
         status: 'active',
         matchId: matchId,
+        mainTimeSeconds: mainTimeSeconds,
+        incrementSeconds: incrementSeconds,
+        turnStartedAt: DateTime.now(),
         createdAt: DateTime.now(),
       );
       await docRef.set(game.toFirestore());
@@ -65,6 +70,8 @@ class PvpGameService {
     required String blackDisplayName,
     required String whiteUid,
     required String whiteDisplayName,
+    int mainTimeSeconds = 600,
+    int incrementSeconds = 10,
   }) async {
     try {
       return await _firestore.runTransaction<String>((transaction) async {
@@ -97,6 +104,9 @@ class PvpGameService {
           status: 'active',
           tournamentId: tournamentId,
           tournamentMatchId: matchId,
+          mainTimeSeconds: mainTimeSeconds,
+          incrementSeconds: incrementSeconds,
+          turnStartedAt: DateTime.now(),
           createdAt: DateTime.now(),
         );
         transaction.set(gameRef, game.toFirestore());
@@ -209,6 +219,12 @@ class PvpGameService {
           return false;
         }
 
+        final now = DateTime.now();
+        if (game.remainingMs(game.isBlackTurn, now) <= 0) {
+          _logger.w('Move arrived after time expired: game=$gameId uid=$uid');
+          return false;
+        }
+
         final player = game.isBlackTurn ? 1 : 2;
         final result = GoRules.applyMove(
           stones: game.stones,
@@ -225,6 +241,9 @@ class PvpGameService {
           return false;
         }
 
+        final newBankMs =
+            game.remainingMs(game.isBlackTurn, now) + game.incrementSeconds * 1000;
+
         transaction.update(docRef, {
           'stones': result.stones.map((r) => r.join()).toList(),
           'capturedBlack': player == 2 ? game.capturedBlack + result.capturedCount : game.capturedBlack,
@@ -236,6 +255,8 @@ class PvpGameService {
           'lastMoveCol': col,
           'movesCount': game.movesCount + 1,
           'consecutivePasses': 0,
+          if (game.isBlackTurn) 'blackTimeMs': newBankMs else 'whiteTimeMs': newBankMs,
+          'turnStartedAt': Timestamp.fromDate(now),
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
@@ -263,14 +284,24 @@ class PvpGameService {
         final game = PvpGame.fromFirestore(snapshot);
         if (!game.isActive || !game.isTurnOf(uid)) return false;
 
+        final now = DateTime.now();
+        if (game.remainingMs(game.isBlackTurn, now) <= 0) {
+          _logger.w('Pass arrived after time expired: game=$gameId uid=$uid');
+          return false;
+        }
+
         final consecutivePasses = game.consecutivePasses + 1;
         final gameEnded = consecutivePasses >= 2;
+        final newBankMs =
+            game.remainingMs(game.isBlackTurn, now) + game.incrementSeconds * 1000;
 
         final update = <String, dynamic>{
           'isBlackTurn': !game.isBlackTurn,
           'koRow': null,
           'koCol': null,
           'consecutivePasses': consecutivePasses,
+          if (game.isBlackTurn) 'blackTimeMs': newBankMs else 'whiteTimeMs': newBankMs,
+          'turnStartedAt': Timestamp.fromDate(now),
           'updatedAt': FieldValue.serverTimestamp(),
         };
 
@@ -384,6 +415,43 @@ class PvpGameService {
       });
     } catch (e) {
       _logger.e('Error claiming abandonment forfeit: $e');
+      rethrow;
+    }
+  }
+
+  /// 相手の持ち時間がライブで0になっていることを理由に、時間切れ勝ちを
+  /// 申請する。claimAbandonmentForfeitと同じ「クライアント側から申告する」
+  /// 設計（Firestoreにはサーバー側で動く時計が無いため）。トランザクション
+  /// 内でゲームの現在状態に対して再度 canClaimTimeoutForfeit を確認する
+  /// ことで、resign()/pass()/applyMove()と同時に呼ばれても後勝ちで結果が
+  /// 上書きされないようにする。
+  Future<void> claimTimeoutForfeit({
+    required String gameId,
+    required String claimantUid,
+  }) async {
+    try {
+      await _firestore.runTransaction<void>((transaction) async {
+        final docRef = _games.doc(gameId);
+        final snapshot = await transaction.get(docRef);
+        if (!snapshot.exists) return;
+
+        final game = PvpGame.fromFirestore(snapshot);
+        final now = DateTime.now();
+        if (!game.canClaimTimeoutForfeit(claimantUid, now)) {
+          _logger.w('Timeout forfeit claim rejected: game=$gameId by=$claimantUid');
+          return;
+        }
+
+        transaction.update(docRef, {
+          'status': 'finished',
+          'winnerUid': claimantUid,
+          'result': 'timeout',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        _logger.i('PvP game forfeited by timeout: game=$gameId winner=$claimantUid');
+      });
+    } catch (e) {
+      _logger.e('Error claiming timeout forfeit: $e');
       rethrow;
     }
   }
