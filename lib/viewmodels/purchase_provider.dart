@@ -133,6 +133,43 @@ final purchaseRecoveryProvider = Provider<void>((ref) {
   ref.onDispose(subscription.cancel);
 });
 
+/// Triggers [PurchaseService.restorePurchases] and waits briefly to see
+/// whether [purchaseRecoveryProvider]'s app-root listener actually granted
+/// an entitlement as a result (it does the real Firestore write; this just
+/// observes the outcome for the paywall's "restore" button). Returns
+/// whether a subscription is now active, so the caller can show an honest
+/// "restored" vs "nothing to restore" message instead of a generic one.
+final restorePurchasesProvider = Provider<Future<bool> Function()>((ref) {
+  final purchaseService = ref.watch(purchaseServiceProvider);
+  final authService = ref.watch(authServiceProvider);
+
+  return () async {
+    _logger.i('Restore purchases requested');
+
+    final available = await purchaseService.isAvailable();
+    if (!available) {
+      throw PurchaseUnavailableException('この端末では購入機能を利用できません。');
+    }
+
+    await purchaseService.restorePurchases();
+
+    // purchaseRecoveryProvider's listener (mounted at the app root, see
+    // its own doc comment) handles the resulting `restored` events and
+    // persists the entitlement to Firestore - give it a moment to do so
+    // before checking whether anything actually came back.
+    await Future<void>.delayed(const Duration(seconds: 2));
+
+    final uid = authService.currentUser?.uid;
+    if (uid == null) return false;
+    final user = await FirestoreService().getUser(uid);
+    final now = DateTime.now();
+    return user != null &&
+        user.subscriptionActive &&
+        user.subscriptionEndDate != null &&
+        user.subscriptionEndDate!.isAfter(now);
+  };
+});
+
 /// Buys the given subscription plan through the platform store, persists
 /// the resulting subscription status to Firestore on success, and
 /// refreshes AuthService's cache + currentUserProvider so the paywall gate

@@ -165,6 +165,13 @@
   "monthlyPlanDescription": "Perfect for trying premium features",
   "annualPlanDescription": "Save 17% with annual billing",
   "cancelAnytimeNote": "Cancel anytime. No hidden fees.",
+  "restorePurchasesButton": "Restore Purchases",
+  "restorePurchasesSuccessMessage": "Your purchase has been restored",
+  "restorePurchasesNoneFoundMessage": "No previous purchases were found to restore",
+  "restorePurchasesFailedMessage": "Failed to restore purchases: {error}",
+  "@restorePurchasesFailedMessage": {
+    "placeholders": { "error": { "type": "String" } }
+  },
   "continueWithPlanButton": "Continue with {plan}",
   "@continueWithPlanButton": {
     "placeholders": { "plan": { "type": "String" } }
