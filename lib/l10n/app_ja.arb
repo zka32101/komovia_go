@@ -868,6 +868,8 @@
   "newGameButton": "新しい対局",
   "illegalMoveMessage": "その手は禁じ手です（着手禁止点・自殺手・劫のいずれか）",
   "passedMessage": "パスしました。AIも連続でパスすると終局します。",
+  "undoMoveTooltip": "待った",
+  "undoneMessage": "一手戻しました",
   "resignConfirmTitle": "投了しますか？",
   "resignConfirmContent": "この対局を投了します。よろしいですか？",
   "confirmResignButton": "投了する",

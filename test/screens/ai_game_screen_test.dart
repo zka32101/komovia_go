@@ -257,6 +257,18 @@ void main() {
       // This depends on provider state management
     });
 
+    testWidgets('undo button disabled with no moves played', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const AIGameScreen(),
+          container: container,
+        ),
+      );
+
+      final undoButton = find.widgetWithIcon(IconButton, Icons.undo);
+      expect(tester.widget<IconButton>(undoButton).onPressed, isNull);
+    });
+
     testWidgets('has correct app bar configuration',
         (WidgetTester tester) async {
       await tester.pumpWidget(

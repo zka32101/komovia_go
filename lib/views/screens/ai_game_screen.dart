@@ -147,6 +147,13 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
         centerTitle: true,
         backgroundColor: AppColors.primaryDark,
         elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: l10n.undoMoveTooltip,
+            icon: const Icon(Icons.undo),
+            onPressed: ref.watch(canUndoProvider) ? () => _handleUndo(context, ref) : null,
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -606,6 +613,22 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
         ref.invalidate(aiMoveProvider);
       }
     });
+  }
+
+  /// "待った": rewinds to just before the player's own last move (see
+  /// undoLastMoveProvider's own doc comment for exactly how much it
+  /// removes). Cancels any pending AI-move request first, since undo can
+  /// land back on the player's own turn and a stale queued AI response
+  /// must not land on top of it.
+  void _handleUndo(BuildContext context, WidgetRef ref) {
+    _aiMoveRequestTimer?.cancel();
+    ref.invalidate(aiMoveProvider);
+    ref.read(undoLastMoveProvider)();
+
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.undoneMessage), duration: const Duration(seconds: 2)),
+    );
   }
 
   /// Two consecutive passes: let the player confirm dead stones (the native
