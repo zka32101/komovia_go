@@ -165,6 +165,13 @@
   "monthlyPlanDescription": "プレミアム機能をお試しいただくのに最適",
   "annualPlanDescription": "年払いで17%お得",
   "cancelAnytimeNote": "いつでも解約可能。隠れた費用はありません。",
+  "restorePurchasesButton": "購入を復元",
+  "restorePurchasesSuccessMessage": "購入を復元しました",
+  "restorePurchasesNoneFoundMessage": "復元できる購入履歴が見つかりませんでした",
+  "restorePurchasesFailedMessage": "購入の復元に失敗しました: {error}",
+  "@restorePurchasesFailedMessage": {
+    "placeholders": { "error": { "type": "String" } }
+  },
   "continueWithPlanButton": "{plan}で続ける",
   "@continueWithPlanButton": {
     "placeholders": { "plan": { "type": "String" } }

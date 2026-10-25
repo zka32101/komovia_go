@@ -532,5 +532,20 @@ void main() {
       // Close button should work
       expect(find.byIcon(Icons.close), findsWidgets);
     });
+
+    testWidgets('shows a restore-purchases button below the CTA', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const PaywallScreen(),
+          container: container,
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('購入を復元'), findsOneWidget);
+    });
   });
 }

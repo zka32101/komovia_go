@@ -57,6 +57,18 @@ class PurchaseService {
     return _iap.buyNonConsumable(purchaseParam: param);
   }
 
+  /// Re-triggers delivery of the user's past non-consumable purchases
+  /// through [purchaseStream] (as `PurchaseStatus.restored` events) - the
+  /// store never does this on its own. iOS requires a visible, explicit
+  /// "Restore Purchases" action reachable from the paywall (App Store
+  /// Review Guideline 3.1.1); this app previously had no code path that
+  /// ever called this at all; [purchaseRecoveryProvider] (in
+  /// purchase_provider.dart) was already listening for the resulting
+  /// `restored` events and would grant the entitlement once they arrived,
+  /// but nothing ever made them arrive in the first place unless the
+  /// store happened to redeliver an unacknowledged transaction on its own.
+  Future<void> restorePurchases() => _iap.restorePurchases();
+
   /// Acknowledges the transaction to the platform store. Required after a
   /// successful purchase, or the store will treat it as unfulfilled and
   /// eventually refund it.

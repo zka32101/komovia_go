@@ -308,6 +308,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               ),
             ),
           ),
+
+          const SizedBox(height: 8),
+
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => _handleRestorePurchases(context, l10n),
+              child: Text(l10n.restorePurchasesButton),
+            ),
+          ),
         ],
       ),
     );
@@ -605,6 +615,51 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             content: Text(l10n.purchaseFailedMessage('$e')),
             duration: const Duration(seconds: 3),
           ),
+        );
+      }
+    }
+  }
+
+  void _handleRestorePurchases(BuildContext context, AppLocalizations l10n) async {
+    _logger.i('Restore purchases requested');
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation(AppColors.kin),
+        ),
+      ),
+    );
+
+    try {
+      final restored = await ref.read(restorePurchasesProvider)();
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close loading
+
+      if (restored) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.restorePurchasesSuccessMessage)),
+        );
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.restorePurchasesNoneFoundMessage)),
+        );
+      }
+    } on PurchaseUnavailableException catch (e) {
+      _logger.w('Restore unavailable: $e');
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } catch (e) {
+      _logger.e('Restore purchases failed: $e');
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.restorePurchasesFailedMessage('$e'))),
         );
       }
     }
