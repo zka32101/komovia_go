@@ -4,9 +4,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:goen/services/dart_go_engine.dart';
-import 'package:goen/services/go_rules.dart';
-import 'package:goen/services/go_scoring.dart';
+import 'package:komovia_go/services/dart_go_engine.dart';
+import 'package:komovia_go/services/go_rules.dart';
+import 'package:komovia_go/services/go_scoring.dart';
 
 const size = 9;
 // (black level, white level, difficulty label shown to the user)
