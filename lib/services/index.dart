@@ -40,4 +40,5 @@ export 'fateful_move_service.dart';
 export 'concurrent_session_service.dart';
 export 'en_score_service.dart';
 export 'pvp_game_service.dart';
+export 'active_ai_game_service.dart';
 export 'purchase_service.dart';

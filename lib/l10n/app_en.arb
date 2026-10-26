@@ -98,6 +98,11 @@
   "homeGameModesSubtitle": "Choose your game style",
   "homePlayAiGameTitle": "Play AI Game",
   "homePlayAiGameSubtitle": "Challenge the Go engine",
+  "homeResumeGameTitle": "Continue game",
+  "homeResumeGameSubtitle": "Resume your unfinished game (move {movesCount})",
+  "@homeResumeGameSubtitle": {
+    "placeholders": { "movesCount": { "type": "int" } }
+  },
   "homeTodaysPuzzleTitle": "Today's Puzzle",
   "homeTodaysPuzzleSubtitle": "Solve the daily tsume-go",
   "homeWatchLearnTitle": "Watch & Learn",

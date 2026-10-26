@@ -98,6 +98,11 @@
   "homeGameModesSubtitle": "対局スタイルを選ぶ",
   "homePlayAiGameTitle": "AI対局",
   "homePlayAiGameSubtitle": "碁エンジンに挑戦する",
+  "homeResumeGameTitle": "続きから対局する",
+  "homeResumeGameSubtitle": "中断した対局（{movesCount}手目）を再開",
+  "@homeResumeGameSubtitle": {
+    "placeholders": { "movesCount": { "type": "int" } }
+  },
   "homeTodaysPuzzleTitle": "今日の詰碁",
   "homeTodaysPuzzleSubtitle": "毎日の詰碁を解く",
   "homeWatchLearnTitle": "観戦・学習",
