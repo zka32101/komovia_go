@@ -520,6 +520,7 @@ void main() {
         ),
       );
 
+      await tester.ensureVisible(find.text('Komoviaチェス'));
       await tester.tap(find.text('Komoviaチェス'));
       await tester.pump();
 

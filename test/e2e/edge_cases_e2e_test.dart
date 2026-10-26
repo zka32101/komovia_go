@@ -292,16 +292,20 @@ void main() {
       // Try to make same move twice
       final board = find.byType(GestureDetector).first;
 
-      // First move
+      // First move. Not pumpAndSettle: the AI's post-move "thinking"
+      // indicator runs a repeating AnimationController, which never
+      // converges and would time this out (same pattern already fixed
+      // for other screens' AI-thinking indicators elsewhere in this
+      // suite).
       if (board.evaluate().isNotEmpty) {
         await tester.tap(board);
-        await tester.pumpAndSettle();
+        await tester.pump();
       }
 
       // Try same move again (should be prevented by state)
       if (board.evaluate().isNotEmpty) {
         await tester.tap(board);
-        await tester.pumpAndSettle();
+        await tester.pump();
       }
 
       expect(find.byType(Scaffold), findsWidgets);
