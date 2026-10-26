@@ -14,6 +14,13 @@ class GameRecord {
   final double? blackScore; // Score for black player (Chinese rules)
   final double? whiteScore; // Score for white player (Chinese rules)
 
+  /// 成長トラッキング機能用: この対局の結果を反映した後のaiRating、
+  /// およびその対局で増減した量（符号付き）。両方ともこの対局が
+  /// 保存された時点で確定し、以後変わらない - 「過去の対局時点での
+  /// 自分の実力の推移」をそのままグラフ化できるようにするため。
+  final int? ratingAfter;
+  final int? ratingDelta;
+
   GameRecord({
     required this.id,
     required this.uid,
@@ -26,6 +33,8 @@ class GameRecord {
     this.gameDuration,
     this.blackScore,
     this.whiteScore,
+    this.ratingAfter,
+    this.ratingDelta,
   });
 
   /// Create from Firestore document
@@ -47,6 +56,8 @@ class GameRecord {
           : null,
       blackScore: (data['blackScore'] as num?)?.toDouble(),
       whiteScore: (data['whiteScore'] as num?)?.toDouble(),
+      ratingAfter: data['ratingAfter'] as int?,
+      ratingDelta: data['ratingDelta'] as int?,
     );
   }
 
@@ -63,6 +74,8 @@ class GameRecord {
       'gameDuration': gameDuration?.inSeconds,
       'blackScore': blackScore,
       'whiteScore': whiteScore,
+      'ratingAfter': ratingAfter,
+      'ratingDelta': ratingDelta,
     };
   }
 

@@ -113,6 +113,7 @@ class GoEnApp extends ConsumerWidget {
         '/tsume-go': (_) => const TsumeGoScreen(),
         '/kifu-observation': (_) => const KifuObservationScreen(),
         '/game-history': (_) => const GameHistoryScreen(),
+        '/growth': (_) => const GrowthScreen(),
         '/settings': (_) => const SettingsScreen(),
         '/paywall': (_) => const PaywallScreen(),
         // Phase 68-71: SNS Integration, Social Features, Analytics
