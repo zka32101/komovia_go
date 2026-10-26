@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:riverpod/riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/models/index.dart';
@@ -16,6 +14,7 @@ import 'package:komovia_go/viewmodels/spectator_provider.dart';
 import 'package:komovia_go/viewmodels/friend_activity_provider.dart';
 import 'package:komovia_go/utils/sgf_parser.dart';
 import 'package:komovia_go/utils/handicap_points.dart';
+import 'package:komovia_go/utils/ai_rating.dart';
 
 final _logger = Logger();
 
@@ -736,7 +735,7 @@ final saveGameRecordProvider = Provider<
       _logger.i('✅ Game record saved: $gameId');
 
       _finalizeEnSession(ref, uid, boardState, movesCount);
-      _updateAiGameRating(ref, uid, gameRecord.result, aiLevel);
+      _updateAiGameRating(ref, uid, gameId, gameRecord.result, aiLevel);
       _checkAndRecordAchievements(ref, uid);
 
       return gameId;
@@ -783,31 +782,22 @@ void _finalizeEnSession(Ref ref, String uid, BoardState boardState, int movesCou
   }
 }
 
-/// AI対局の結果をリーダーボード(ratingタイプ)に反映する。
+/// AI対局の結果をリーダーボード(ratingタイプ)に反映し、成長トラッキング
+/// 画面向けにこの対局自体のratingAfter/ratingDeltaも書き戻す。
 ///
 /// LeaderboardType.rating の宣言コメント「ELO Rating (AI games)」が示す
-/// 本来の意図(PvP実装時にはAI対局側の反映は未着手だった)。AIレベル
-/// (1-10)を仮想レーティング(1000+level*100)とみなし、標準Elo式で
-/// プレイヤーのレーティングを更新する — pvp_game_provider.dart の
-/// _updateEloRatings と同じ考え方だが、AI相手は対人戦ほど変動の重みを
-/// 持たせるべきではないためK factorを24に抑えている(PvPはK=32)。
+/// 本来の意図(PvP実装時にはAI対局側の反映は未着手だった)。レーティング
+/// 増減の計算式自体は lib/utils/ai_rating.dart に集約されている
+/// (growth_screen.dart が過去対局からレーティング推移を再現する際も
+/// 同じ式を使うため、ここだけ別ロジックにならないようにするのが目的)。
 /// Best-effort: never blocks the (already successful) game-record save.
-void _updateAiGameRating(Ref ref, String uid, GameResult result, int aiLevel) {
-  final double playerScore;
-  switch (result) {
-    case GameResult.playerWin:
-      playerScore = 1.0;
-      break;
-    case GameResult.aiWin:
-    case GameResult.resignation:
-      playerScore = 0.0;
-      break;
-    case GameResult.draw:
-    case GameResult.unknown:
-      playerScore = 0.5;
-      break;
-  }
-
+void _updateAiGameRating(
+  Ref ref,
+  String uid,
+  String gameId,
+  GameResult result,
+  int aiLevel,
+) {
   () async {
     try {
       final user = ref.read(currentUserProvider);
@@ -819,12 +809,12 @@ void _updateAiGameRating(Ref ref, String uid, GameResult result, int aiLevel) {
         type: LeaderboardType.rating,
       );
       final currentRating = entry?.rating ?? 1200;
-      final aiVirtualRating = 1000 + aiLevel * 100;
-
-      const kFactor = 24;
-      final expected =
-          1.0 / (1.0 + pow(10, (aiVirtualRating - currentRating) / 400));
-      final newRating = (currentRating + kFactor * (playerScore - expected)).round();
+      final delta = computeRatingDelta(
+        currentRating: currentRating,
+        aiLevel: aiLevel,
+        result: result,
+      );
+      final newRating = currentRating + delta;
 
       await ref.read(incrementUserStatsProvider)(
         uid: uid,
@@ -833,8 +823,14 @@ void _updateAiGameRating(Ref ref, String uid, GameResult result, int aiLevel) {
         type: LeaderboardType.rating,
         newRating: newRating,
         gamesPlayedDelta: 1,
-        winsDelta: playerScore == 1.0 ? 1 : 0,
+        winsDelta: result == GameResult.playerWin ? 1 : 0,
       );
+
+      await ref.read(firestoreServiceProvider).updateGameRecordRating(
+            gameId: gameId,
+            ratingAfter: newRating,
+            ratingDelta: delta,
+          );
     } catch (e) {
       _logger.w('AI対局のレーティング反映失敗 (non-fatal): $e');
     }

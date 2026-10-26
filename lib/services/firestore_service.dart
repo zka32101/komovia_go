@@ -83,6 +83,21 @@ class FirestoreService {
     }
   }
 
+  /// 成長トラッキング機能用: 対局保存後、ベストエフォートでAI対局
+  /// レーティングの反映が終わった時点でこのレコードに増減結果を
+  /// 書き戻す（_updateAiGameRatingから呼ばれる。保存自体は失敗しても
+  /// ゲームプレイ本体には影響しないためtry/catchで握りつぶされる）。
+  Future<void> updateGameRecordRating({
+    required String gameId,
+    required int ratingAfter,
+    required int ratingDelta,
+  }) async {
+    await _firestore.collection(gameRecordsCollection).doc(gameId).update({
+      'ratingAfter': ratingAfter,
+      'ratingDelta': ratingDelta,
+    });
+  }
+
   /// Get game record by ID
   Future<GameRecord?> getGameRecord(String gameId) async {
     try {

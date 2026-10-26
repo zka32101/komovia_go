@@ -196,6 +196,17 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
 
+                  // Growth tracking (rating trend, win rate)
+                  _buildActionCard(
+                    context,
+                    title: l10n.homeGrowthTitle,
+                    subtitle: l10n.homeGrowthSubtitle,
+                    icon: Icons.trending_up,
+                    color: AppColors.wakatake,
+                    onTap: () => _navigateToGrowth(context),
+                  ),
+                  const SizedBox(height: 16),
+
                   // Friends (add / requests / list)
                   _buildActionCard(
                     context,
@@ -622,6 +633,11 @@ class HomeScreen extends ConsumerWidget {
   void _navigateToNotifications(BuildContext context) {
     _logger.i('Navigating to Notifications');
     Navigator.of(context).pushNamed('/notifications');
+  }
+
+  void _navigateToGrowth(BuildContext context) {
+    _logger.i('Navigating to Growth');
+    Navigator.of(context).pushNamed('/growth');
   }
 
   void _navigateToHowToPlay(BuildContext context) {
