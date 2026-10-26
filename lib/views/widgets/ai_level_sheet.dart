@@ -38,7 +38,11 @@ class _AiLevelSheet extends ConsumerStatefulWidget {
 }
 
 class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
+  // 短時間対局向けに5路・7路も選べるようにしている(2026-10 追加)。
+  static const List<int> _boardSizes = [5, 7, 9, 13, 19];
+
   late int _selected;
+  late int _selectedBoardSize;
 
   @override
   void initState() {
@@ -47,6 +51,22 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
     final last = ref.read(aiLevelProvider);
     // 購読が切れた後に前回の高レベルが残っていても、無料枠に丸める。
     _selected = isPremium ? last : last.clamp(1, AIOpponentConfig.freeMaxLevel);
+    _selectedBoardSize = ref.read(quickBoardSizeProvider);
+  }
+
+  String _boardSizeLabel(AppLocalizations l10n, int size) {
+    switch (size) {
+      case 5:
+        return l10n.boardSizeOption5;
+      case 7:
+        return l10n.boardSizeOption7;
+      case 13:
+        return l10n.boardSizeOption13;
+      case 19:
+        return l10n.boardSizeOption19;
+      default:
+        return l10n.boardSizeOption9;
+    }
   }
 
   bool _isLocked(int level, bool isPremium) =>
@@ -65,7 +85,7 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.aiLevelSheetTitle,
+              l10n.quickGameSheetTitle,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: AppColors.washi,
                 fontWeight: FontWeight.bold,
@@ -84,6 +104,50 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
               ),
             ],
             const SizedBox(height: 16),
+            Text(
+              l10n.boardSizeSheetLabel,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppColors.washi,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.boardSizeQuickNote,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.washiDim,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final size in _boardSizes)
+                  ChoiceChip(
+                    selected: size == _selectedBoardSize,
+                    showCheckmark: false,
+                    label: Text(_boardSizeLabel(l10n, size)),
+                    labelStyle: TextStyle(
+                      color: size == _selectedBoardSize ? AppColors.sumi : AppColors.washi,
+                      fontWeight: size == _selectedBoardSize ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    selectedColor: AppColors.kin,
+                    backgroundColor: AppColors.sumi,
+                    side: const BorderSide(color: AppColors.kin),
+                    onSelected: (_) => setState(() => _selectedBoardSize = size),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.aiLevelSheetTitle,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppColors.washi,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
             LayoutBuilder(
               builder: (context, constraints) {
                 const gap = 8.0;
@@ -106,7 +170,11 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(_selected),
+                onPressed: () {
+                  ref.read(quickBoardSizeProvider.notifier).state =
+                      _selectedBoardSize;
+                  Navigator.of(context).pop(_selected);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.kin,
                   foregroundColor: AppColors.sumi,

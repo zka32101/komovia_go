@@ -310,6 +310,9 @@ class GameModeSelectorScreen extends ConsumerWidget {
         case GameModeType.traditional:
           showAiLevelSheet(context, ref).then((picked) {
             if (picked && context.mounted) {
+              ref.read(startNewGameProvider)(
+                boardSize: ref.read(quickBoardSizeProvider),
+              );
               Navigator.of(context).pushNamed('/ai-game');
             }
           });

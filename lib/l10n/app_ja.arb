@@ -1073,6 +1073,7 @@
   "filterByDifficultyTitle": "難易度で絞り込む",
   "noGamesMatchFilterMessage": "この難易度に該当する棋譜はありません",
 
+  "quickGameSheetTitle": "対局の設定",
   "aiLevelSheetTitle": "AIの強さを選ぶ",
   "aiLevelSheetFreeNote": "レベル1〜{freeMax}は無料です。レベル{lockedMin}以上はプレミアムで解放されます。",
   "@aiLevelSheetFreeNote": {
@@ -1088,6 +1089,13 @@
     }
   },
   "aiLevelStartButton": "この強さで対局する",
+  "boardSizeSheetLabel": "盤面の大きさ",
+  "boardSizeQuickNote": "5路・7路は数分で終わる短時間対局向けです",
+  "boardSizeOption5": "5路（最短）",
+  "boardSizeOption7": "7路（短時間）",
+  "boardSizeOption9": "9路",
+  "boardSizeOption13": "13路",
+  "boardSizeOption19": "19路（正式）",
   "analysisLockedMessage": "形勢判断の詳細（目差・勝率）はプレミアムで利用できます",
   "analysisLockedAction": "プレミアムを見る",
   "opponentInactiveMessage": "相手が長時間応答していません",
