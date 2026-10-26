@@ -10,4 +10,4 @@ jobs:
   check:
     uses: zka32101/shared_core/.github/workflows/release-readiness-check.yml@main
     with:
-      flutter_version: '3.16.x'
+      flutter_version: '3.47.2'
