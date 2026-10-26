@@ -677,6 +677,9 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
       );
       ref.read(gameResultProvider.notifier).state = result;
 
+      // 中断・再開機能: 終局したので「続きから」の対象から外す。
+      ref.read(clearActiveAiGameProvider)();
+
       final resultLabel = result.winner == 'black'
           ? 'win'
           : result.winner == 'white'
@@ -731,6 +734,8 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
               // startNewGameProvider (via New Game / Play Again) is what
               // actually resets state for the next game.
               ref.read(isGameActiveProvider.notifier).state = false;
+              // 中断・再開機能: 投了も終局なので「続きから」の対象から外す。
+              ref.read(clearActiveAiGameProvider)();
               Navigator.of(context).pushReplacementNamed(
                 '/game-result',
                 arguments: {'result': 'resign'},

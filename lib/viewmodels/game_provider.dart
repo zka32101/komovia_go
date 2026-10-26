@@ -27,6 +27,11 @@ final aiEngineServiceProvider = Provider<FuegoEngineService>((ref) {
   return FuegoEngineService();
 });
 
+/// Singleton instance of ActiveAiGameService (中断・再開用の進行中対局保存)
+final activeAiGameServiceProvider = Provider<ActiveAiGameService>((ref) {
+  return ActiveAiGameService();
+});
+
 /// Singleton instance of FirestoreService
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService();
@@ -152,6 +157,112 @@ final startNewGameProvider =
     _logger.i('🆕 New game started');
 
     _startEnSessionTracking(ref);
+    _persistActiveGame(ref);
+  };
+});
+
+/// 中断・再開機能: 現在の対局状態をFirestoreへbest-effortで保存する。
+/// 失敗してもゲームプレイ自体はブロックしない（縁機能の各フックと同じ
+/// 方針）。未ログインなら保存先（uid）が無いのでそのまま何もしない。
+void _persistActiveGame(Ref ref) {
+  final user = ref.read(currentUserProvider);
+  if (user == null) return;
+
+  final board = ref.read(gameBoardStateProvider);
+  final game = ActiveAiGame(
+    uid: user.uid,
+    boardSize: board.boardSize,
+    stones: board.stones,
+    isBlackTurn: board.isBlackTurn,
+    capturedBlack: board.capturedBlack,
+    capturedWhite: board.capturedWhite,
+    koRow: board.koRow,
+    koCol: board.koCol,
+    aiLevel: ref.read(aiLevelProvider),
+    movesCount: ref.read(movesCountProvider),
+    consecutivePasses: ref.read(consecutivePassesProvider),
+    sgfMoves: generateSgfFromMoves(ref.read(moveHistoryProvider), board.boardSize),
+  );
+
+  () async {
+    try {
+      await ref.read(activeAiGameServiceProvider).save(game);
+    } catch (e) {
+      _logger.w('中断・再開: 進行中対局の保存に失敗（non-fatal): $e');
+    }
+  }();
+}
+
+/// 中断・再開機能: 対局が終局・投了した直後に呼ぶ。保存済みの進行中対局
+/// レコードを消す（終局した対局は「続きから」の対象ではないため）。
+final clearActiveAiGameProvider = Provider<void Function()>((ref) {
+  return () {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    () async {
+      try {
+        await ref.read(activeAiGameServiceProvider).clear(user.uid);
+      } catch (e) {
+        _logger.w('中断・再開: 進行中対局の削除に失敗（non-fatal): $e');
+      }
+    }();
+  };
+});
+
+/// 中断・再開機能: 現在ログイン中のユーザーに進行中対局があるかどうか。
+/// HomeScreenが「続きから」カードを出すかどうかの判定に使う。
+final activeAiGameProvider = FutureProvider.autoDispose<ActiveAiGame?>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return null;
+  try {
+    return await ref.read(activeAiGameServiceProvider).getActive(user.uid);
+  } catch (e) {
+    _logger.w('中断・再開: 進行中対局の取得に失敗（non-fatal): $e');
+    return null;
+  }
+});
+
+/// 中断・再開機能: [activeAiGameProvider]で取得した保存済みスナップショット
+/// から、ゲーム状態プロバイダー群を復元する。[startNewGameProvider]とは
+/// 違い盤面を空にリセットするのではなく、保存されていた盤面・手番・
+/// 手順履歴をそのまま書き戻す。
+final resumeActiveGameProvider = Provider<void Function(ActiveAiGame)>((ref) {
+  return (game) {
+    final initial = BoardState(
+      boardSize: game.boardSize,
+      stones: game.stones,
+      capturedBlack: game.capturedBlack,
+      capturedWhite: game.capturedWhite,
+      isBlackTurn: game.isBlackTurn,
+      koRow: game.koRow,
+      koCol: game.koCol,
+    );
+    ref.read(gameBoardStateProvider.notifier).state = initial;
+    // 注: 元の対局がハンディキャップ付きだった場合、置石そのものは
+    // moveHistoryには含まれないため、このリセットでは「待った」が
+    // ハンディキャップの置石より前まで戻せない（置石数を保存していない
+    // ため）。通常対局（ハンディキャップ無し）では問題にならない。
+    ref.read(initialBoardStateProvider.notifier).state = BoardState.empty().copyWith(
+      boardSize: game.boardSize,
+      stones: List.generate(game.boardSize, (_) => List.filled(game.boardSize, 0)),
+    );
+    ref.read(aiLevelProvider.notifier).state = game.aiLevel;
+    ref.read(movesCountProvider.notifier).state = game.movesCount;
+    ref.read(consecutivePassesProvider.notifier).state = game.consecutivePasses;
+    ref.read(lastPlayerPassedProvider.notifier).state = false;
+    ref.read(moveHistoryProvider.notifier).state = parseSgfMoves(game.sgfMoves)
+        .map((m) => (
+              row: m.isPass ? -1 : m.row,
+              col: m.isPass ? -1 : m.col,
+              player: m.player == 1 ? 'black' : 'white',
+            ))
+        .toList();
+    ref.invalidate(gameResultProvider);
+    ref.invalidate(currentSpectatorSessionIdProvider);
+    ref.invalidate(currentGameSavedIdProvider);
+    ref.invalidate(hasShownGameEndAdProvider);
+    ref.read(isGameActiveProvider.notifier).state = true;
+    _logger.i('🔄 Resumed active game (moves=${game.movesCount})');
   };
 });
 
@@ -321,6 +432,9 @@ final applyMoveProvider = Provider<bool Function(int row, int col)>((ref) {
     // 開いている観戦セッションがあれば毎手同期する。
     _syncSpectatorBoard(ref, row, col);
 
+    // 中断・再開機能: この手を打った状態をFirestoreへ保存する。
+    _persistActiveGame(ref);
+
     return true;
   };
 });
@@ -406,6 +520,11 @@ final applyPassProvider = Provider<bool Function()>((ref) {
     ref.read(consecutivePassesProvider.notifier).state = passes;
 
     _logger.i('Pass: player=$player consecutivePasses=$passes');
+
+    // 中断・再開機能: 終局(2連続パス)でも保存しておく - DeadStoneMarking
+    // 画面に進んでからアプリを閉じても、戻ってきたときに続きから入れる。
+    _persistActiveGame(ref);
+
     return passes >= 2;
   };
 });

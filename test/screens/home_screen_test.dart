@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
+import 'package:komovia_go/models/index.dart';
 import 'package:komovia_go/views/screens/home_screen.dart';
 import 'package:komovia_go/viewmodels/index.dart';
 import 'package:komovia_go/config/theme.dart';
@@ -191,6 +192,53 @@ void main() {
 
       // Verify golden accents (#D4AF37 approximate)
       // This depends on actual widget implementation
+    });
+
+    testWidgets('shows no resume card when there is no active game',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const HomeScreen(),
+          container: container,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('続きから対局する'), findsNothing);
+    });
+
+    testWidgets('shows a resume card with the saved move count when an active game exists',
+        (WidgetTester tester) async {
+      final activeGame = ActiveAiGame(
+        uid: TestData.testUser.uid,
+        boardSize: 9,
+        stones: List.generate(9, (_) => List.filled(9, 0)),
+        isBlackTurn: true,
+        capturedBlack: 0,
+        capturedWhite: 0,
+        aiLevel: 5,
+        movesCount: 4,
+        consecutivePasses: 0,
+        sgfMoves: '(;GM[1]FF[4]SZ[9])',
+      );
+      final resumeContainer = TestUtils.createTestContainer(
+        currentUser: TestData.testUser,
+        extraOverrides: [
+          activeAiGameProvider.overrideWith((ref) async => activeGame),
+        ],
+      );
+      addTearDown(resumeContainer.dispose);
+
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const HomeScreen(),
+          container: resumeContainer,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('続きから対局する'), findsOneWidget);
+      expect(find.textContaining('4'), findsWidgets);
     });
   });
 }

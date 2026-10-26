@@ -200,6 +200,15 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------------- active_ai_games/{uid} (中断・再開用、docId=uid) ----------------
+    // 1人用AI対局の進行中スナップショット - 中断・再開機能専用。本人のみが
+    // 読み書き・削除できる完全に private なデータ。GoRules自体はここでも
+    // クライアント側で動くため再検証はできないが、他人の対局を覗いたり
+    // 書き換えたりできないことだけはルールで保証する。
+    match /active_ai_games/{uid} {
+      allow read, write, delete: if isOwner(uid);
+    }
+
     // ---------------- matchmaking_queue/{uid} ----------------
     match /matchmaking_queue/{queueUid} {
       // The whole queue is scanned client-side to find a candidate.

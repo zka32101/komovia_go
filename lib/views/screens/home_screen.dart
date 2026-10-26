@@ -129,6 +129,29 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
 
+                  // 中断・再開機能: 進行中の対局があれば「続きから」を
+                  // 一番上に出す（無ければ何も表示しない、消えない）。
+                  Builder(
+                    builder: (context) {
+                      final activeGame = ref.watch(activeAiGameProvider).valueOrNull;
+                      if (activeGame == null) return const SizedBox.shrink();
+                      return Column(
+                        children: [
+                          _buildActionCard(
+                            context,
+                            title: l10n.homeResumeGameTitle,
+                            subtitle: l10n.homeResumeGameSubtitle(activeGame.movesCount),
+                            icon: Icons.play_circle_outline,
+                            color: AppColors.kin,
+                            onTap: () => _navigateToResumeGame(context, ref, activeGame),
+                            isPrimary: true,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    },
+                  ),
+
                   // Classic AI Game option
                   _buildActionCard(
                     context,
@@ -549,6 +572,15 @@ class HomeScreen extends ConsumerWidget {
     ref.read(startNewGameProvider)();
     // 障子が開いて対局へ入るような節目の演出にするため、通常の
     // pushNamedではなくカスタムトランジションで直接pushする。
+    Navigator.of(context).push(shojiTransitionRoute(const AIGameScreen()));
+  }
+
+  /// 中断・再開機能: 保存済みの進行中対局をgameBoardStateProvider等へ
+  /// 復元してからAIGameScreenへ入る。startNewGameProviderとは異なり
+  /// AIレベル選択シートは出さない（既にその対局で選んだレベルを使う）。
+  void _navigateToResumeGame(BuildContext context, WidgetRef ref, ActiveAiGame game) {
+    _logger.i('Resuming active game (moves=${game.movesCount})');
+    ref.read(resumeActiveGameProvider)(game);
     Navigator.of(context).push(shojiTransitionRoute(const AIGameScreen()));
   }
 
