@@ -1,11 +1,15 @@
-/// AI対局の結果から、プレイヤーの「AI戦レーティング」(User.aiRating)の
-/// 増減を計算する。Eloレーティングの考え方を単純化したもの:
-/// 自分より強い相手に勝てば大きく増え、弱い相手に負ければ大きく減る。
-/// 格下相手への勝利・格上相手への敗北はほとんど変動しない。
+/// AI対局の結果から、プレイヤーの「AI戦レーティング」の増減を計算する。
+///
+/// 実際の計算式自体は、他のKomoviaアプリ(将棋・リバーシ・チェス)も同じ
+/// 「成長トラッキング」機能で再利用できるよう、komovia_coreの
+/// computeEloDelta/ratingForAiLevel（Eloレーティングの考え方を単純化
+/// したもの）に移した。この碁アプリ用の値(K=24、レベル1-10/基準レベル5/
+/// 150刻み)はこのファイルの関数のデフォルト引数として保持し、呼び出し側
+/// (game_provider.dart/growth_screen.dart)が以前と同じ見た目で使えるよう
+/// にしている。
 library;
 
-import 'dart:math' as math;
-
+import 'package:komovia_core/komovia_core.dart' as core;
 import 'package:komovia_go/models/game_record.dart';
 
 /// AIレベル(1-10)を、formatGoRank()と同じレーティング尺度上の
@@ -13,14 +17,13 @@ import 'package:komovia_go/models/game_record.dart';
 /// レベル1刻みで150変動する - レベル10で約1950（初段手前）、
 /// レベル1で約600（非常に弱い）になる。
 int opponentRatingForAiLevel(int aiLevel) {
-  final clamped = aiLevel.clamp(1, 10);
-  return 1200 + (clamped - 5) * 150;
+  return core.ratingForAiLevel(
+    level: aiLevel,
+    minLevel: 1,
+    maxLevel: 10,
+    baseLevel: 5,
+  );
 }
-
-/// K係数。1局あたりの最大変動幅を決める。対局数が少ないうちから
-/// 着実に数字が動いて「成長の実感」につながるよう、一般的なEloの
-/// K=16〜32よりやや大きめの24を採用。
-const int _kFactor = 24;
 
 /// 現在のレーティング[currentRating]で、レベル[aiLevel]のAIと対局し
 /// [result]という結果だった場合の、レーティング増減量を返す（符号付き）。
@@ -32,10 +35,6 @@ int computeRatingDelta({
   required GameResult result,
 }) {
   if (result == GameResult.unknown) return 0;
-
-  final opponentRating = opponentRatingForAiLevel(aiLevel);
-  final expectedScore =
-      1 / (1 + math.pow(10, (opponentRating - currentRating) / 400));
 
   final double actualScore;
   switch (result) {
@@ -50,5 +49,9 @@ int computeRatingDelta({
       actualScore = 0.5; // unreachable (handled above)
   }
 
-  return (_kFactor * (actualScore - expectedScore)).round();
+  return core.computeEloDelta(
+    currentRating: currentRating,
+    opponentRating: opponentRatingForAiLevel(aiLevel),
+    score: actualScore,
+  );
 }
