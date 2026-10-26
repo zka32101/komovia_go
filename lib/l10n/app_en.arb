@@ -1073,6 +1073,7 @@
   "filterByDifficultyTitle": "Filter by difficulty",
   "noGamesMatchFilterMessage": "No games match this difficulty",
 
+  "quickGameSheetTitle": "Game settings",
   "aiLevelSheetTitle": "Choose AI strength",
   "aiLevelSheetFreeNote": "Levels 1-{freeMax} are free. Level {lockedMin} and above are unlocked with Premium.",
   "@aiLevelSheetFreeNote": {
@@ -1088,6 +1089,13 @@
     }
   },
   "aiLevelStartButton": "Play at this strength",
+  "boardSizeSheetLabel": "Board size",
+  "boardSizeQuickNote": "5x5 and 7x7 are for quick games that finish in a few minutes",
+  "boardSizeOption5": "5x5 (shortest)",
+  "boardSizeOption7": "7x7 (quick)",
+  "boardSizeOption9": "9x9",
+  "boardSizeOption13": "13x13",
+  "boardSizeOption19": "19x19 (standard)",
   "analysisLockedMessage": "Detailed position analysis (score and win rate) is available with Premium",
   "analysisLockedAction": "See Premium",
   "opponentInactiveMessage": "Your opponent hasn't responded in a while",

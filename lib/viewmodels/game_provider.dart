@@ -66,6 +66,14 @@ final aiLevelProvider = StateProvider<int>((ref) {
   return 5; // Default to intermediate level
 });
 
+/// 直近でAIレベル選択シート（ai_level_sheet.dart）で選んだ盤面サイズ。
+/// 「短時間で終わる対局」向けに5路・7路も選べるようにするための設定 -
+/// シートが毎回開くたびに前回の選択を覚えておく。デフォルトは9路
+/// （従来どおりの「ホーム画面からのAI対局」の既定値）。
+final quickBoardSizeProvider = StateProvider<int>((ref) {
+  return 9;
+});
+
 /// Number of moves played in current game
 final movesCountProvider = StateProvider<int>((ref) {
   return 0;

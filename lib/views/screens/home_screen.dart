@@ -569,7 +569,7 @@ class HomeScreen extends ConsumerWidget {
     // gameBoardStateProvider etc. are plain globals that outlive this
     // screen; without resetting them here, a previous game's finished
     // board would still be showing (see startNewGameProvider's doc).
-    ref.read(startNewGameProvider)();
+    ref.read(startNewGameProvider)(boardSize: ref.read(quickBoardSizeProvider));
     // 障子が開いて対局へ入るような節目の演出にするため、通常の
     // pushNamedではなくカスタムトランジションで直接pushする。
     Navigator.of(context).push(shojiTransitionRoute(const AIGameScreen()));
