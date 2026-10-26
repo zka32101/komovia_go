@@ -562,6 +562,11 @@ class HomeScreen extends ConsumerWidget {
 
   Future<void> _navigateToAiGame(BuildContext context, WidgetRef ref) async {
     _logger.i('Navigating to AI Game');
+    // 既に中断中の対局があるなら、新規対局を始めると上書きされてしまう
+    // ことに気づいてもらうため一度確認する。
+    if (!await confirmOverwriteActiveGame(context, ref) || !context.mounted) {
+      return;
+    }
     ref.read(logPaywallTriggeredProvider)(gameNumber: 1);
     // 対局の前にAIの強さを選ばせる（高レベルはプレミアム）。
     final picked = await showAiLevelSheet(context, ref);
