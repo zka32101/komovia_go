@@ -196,6 +196,10 @@ void main() {
       await TestUtils.tap(tester, find.text('AI対局'));
       await tester.pumpAndSettle();
 
+      // Confirm the AI-level picker sheet that now gates game start
+      await TestUtils.tap(tester, find.text('この強さで対局する'));
+      await tester.pumpAndSettle();
+
       // Should show AI game screen
       expect(find.byType(AIGameScreen), findsWidgets);
 
@@ -465,6 +469,10 @@ void main() {
 
       // Tap play
       await TestUtils.tap(tester, find.text('AI対局'));
+      await tester.pumpAndSettle();
+
+      // Confirm the AI-level picker sheet that now gates game start
+      await TestUtils.tap(tester, find.text('この強さで対局する'));
       await tester.pumpAndSettle();
 
       // Should show game
