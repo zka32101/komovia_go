@@ -308,14 +308,19 @@ class GameModeSelectorScreen extends ConsumerWidget {
         case GameModeType.handicap:
           Navigator.of(context).pushNamed('/handicap-settings');
         case GameModeType.traditional:
-          showAiLevelSheet(context, ref).then((picked) {
+          () async {
+            if (!await confirmOverwriteActiveGame(context, ref) ||
+                !context.mounted) {
+              return;
+            }
+            final picked = await showAiLevelSheet(context, ref);
             if (picked && context.mounted) {
               ref.read(startNewGameProvider)(
                 boardSize: ref.read(quickBoardSizeProvider),
               );
               Navigator.of(context).pushNamed('/ai-game');
             }
-          });
+          }();
       }
     });
   }

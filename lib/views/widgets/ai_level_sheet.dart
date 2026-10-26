@@ -5,6 +5,35 @@ import 'package:komovia_go/l10n/app_localizations.dart';
 import 'package:komovia_go/models/ai_opponent_config.dart';
 import 'package:komovia_go/viewmodels/index.dart';
 
+/// 中断中のAI対局があるとき、新規対局を始める前に上書き確認を出す。
+/// 中断中の対局が無ければ確認なしで即trueを返す。
+Future<bool> confirmOverwriteActiveGame(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  final activeGame = ref.read(activeAiGameProvider).valueOrNull;
+  if (activeGame == null) return true;
+  final l10n = AppLocalizations.of(context)!;
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.newGameOverwritesActiveTitle),
+      content: Text(l10n.newGameOverwritesActiveMessage),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(l10n.cancelButton),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(l10n.newGameOverwritesActiveConfirm),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
+}
+
 /// AI対局の開始前に強さを選ばせるボトムシート。
 ///
 /// レベル1〜[AIOpponentConfig.freeMaxLevel]は無料、それ以上は
@@ -69,6 +98,21 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
     }
   }
 
+  String _boardSizeEstimate(AppLocalizations l10n, int size) {
+    switch (size) {
+      case 5:
+        return l10n.boardSizeEstimate5;
+      case 7:
+        return l10n.boardSizeEstimate7;
+      case 13:
+        return l10n.boardSizeEstimate13;
+      case 19:
+        return l10n.boardSizeEstimate19;
+      default:
+        return l10n.boardSizeEstimate9;
+    }
+  }
+
   bool _isLocked(int level, bool isPremium) =>
       !isPremium && level > AIOpponentConfig.freeMaxLevel;
 
@@ -80,7 +124,8 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -124,19 +169,7 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
               runSpacing: 8,
               children: [
                 for (final size in _boardSizes)
-                  ChoiceChip(
-                    selected: size == _selectedBoardSize,
-                    showCheckmark: false,
-                    label: Text(_boardSizeLabel(l10n, size)),
-                    labelStyle: TextStyle(
-                      color: size == _selectedBoardSize ? AppColors.sumi : AppColors.washi,
-                      fontWeight: size == _selectedBoardSize ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    selectedColor: AppColors.kin,
-                    backgroundColor: AppColors.sumi,
-                    side: const BorderSide(color: AppColors.kin),
-                    onSelected: (_) => setState(() => _selectedBoardSize = size),
-                  ),
+                  _boardSizeCard(context, l10n, size),
               ],
             ),
             const SizedBox(height: 16),
@@ -181,6 +214,53 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: Text(l10n.aiLevelStartButton),
+              ),
+            ),
+          ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _boardSizeCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    int size,
+  ) {
+    final selected = size == _selectedBoardSize;
+    return InkWell(
+      onTap: () => setState(() => _selectedBoardSize = size),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 84,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.kin : AppColors.sumi,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.kin, width: selected ? 0 : 1),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _boardSizeLabel(l10n, size),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: selected ? AppColors.sumi : AppColors.washi,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _boardSizeEstimate(l10n, size),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: selected
+                    ? AppColors.sumi.withOpacity(0.7)
+                    : AppColors.washiDim,
+                fontSize: 11,
               ),
             ),
           ],
