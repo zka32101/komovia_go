@@ -1079,9 +1079,9 @@
   "messagesTitle": "Messages",
   "noConversationsYetMessage": "No conversations yet",
   "noMessagesYetMessage": "No messages yet. Say hello!",
-  "messageInputHint": "Type a message...",
-  "sendMessageButton": "Send",
   "messageSendFailedMessage": "Failed to send message",
+  "dmPresetPickerButton": "Choose a message",
+  "dmPresetPickerTitle": "Pick a message to send",
 
   "filterByDifficultyTitle": "Filter by difficulty",
   "noGamesMatchFilterMessage": "No games match this difficulty",

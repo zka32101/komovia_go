@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
 import 'firestore_time.dart';
+import '../utils/dm_presets.dart';
 
 final _logger = Logger();
 
@@ -51,6 +52,15 @@ class DirectMessageService {
   }) async {
     final trimmed = content.trim();
     if (trimmed.isEmpty) return;
+
+    // 相手を煽る・中傷するような自由入力を一切許さない方針のため、DMは
+    // dm_presets.dartのカタログ内の固定フレーズ/絵文字のみ送信できる。
+    // ChatScreenは既にこのカタログからの選択UIのみを提供しているが、
+    // サービス層でも再確認する（UIを経由しない直接呼び出しへの防御）。
+    if (!isAllowedDmContent(trimmed)) {
+      _logger.w('sendMessage refused: content is not an allowed preset/emoji');
+      return;
+    }
 
     // FriendService.blockFriend mirrors a block onto both sides' own
     // `friends` entries, so checking the sender's own (readable) entry

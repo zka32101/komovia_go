@@ -6,6 +6,7 @@ import 'package:komovia_go/viewmodels/index.dart';
 import 'package:komovia_go/services/direct_message_service.dart';
 import 'package:komovia_go/config/theme.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
+import 'package:komovia_go/utils/dm_presets.dart';
 
 final _logger = Logger();
 
@@ -32,7 +33,6 @@ class ChatScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
-  final _textController = TextEditingController();
   final _scrollController = ScrollController();
   late final String _threadId;
 
@@ -46,16 +46,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
-    _textController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _send() async {
-    final content = _textController.text;
-    if (content.trim().isEmpty) return;
-
-    _textController.clear();
+  Future<void> _send(String content) async {
     try {
       await ref.read(sendDirectMessageProvider)(
         fromUid: widget.currentUid,
@@ -74,6 +69,68 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           SnackBar(content: Text(l10n.messageSendFailedMessage)),
         );
       }
+    }
+  }
+
+  /// プリセット文言/絵文字の一覧シートを開く。相手を煽る・中傷するような
+  /// 自由入力を一切許さない方針のため、ChatScreenには自由入力欄を置かず、
+  /// ここで選んだものがそのまま送信される（タップ=送信、プレビュー無し）。
+  Future<void> _openPresetPicker() async {
+    final l10n = AppLocalizations.of(context)!;
+    final isJapanese = Localizations.localeOf(context).languageCode == 'ja';
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.sumiSurface,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.dmPresetPickerTitle,
+                  style: const TextStyle(color: AppColors.washi, fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: dmPresetLabels(japanese: isJapanese)
+                      .map(
+                        (label) => ActionChip(
+                          label: Text(label),
+                          backgroundColor: AppColors.sumiCard,
+                          labelStyle: const TextStyle(color: AppColors.washi),
+                          onPressed: () => Navigator.pop(sheetContext, label),
+                        ),
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: dmAllowedEmoji
+                      .map(
+                        (emoji) => ActionChip(
+                          label: Text(emoji, style: const TextStyle(fontSize: 20)),
+                          backgroundColor: AppColors.sumiCard,
+                          onPressed: () => Navigator.pop(sheetContext, emoji),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected != null) {
+      await _send(selected);
     }
   }
 
@@ -131,35 +188,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildInputRow(AppLocalizations l10n) {
+    // 相手を煽る・中傷するような自由入力を一切許さない方針のため、自由
+    // テキスト入力欄は置かず、決められたフレーズ/絵文字を選ぶボタンのみ。
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: const BoxDecoration(
         color: AppColors.sumiSurface,
         border: Border(top: BorderSide(color: AppColors.sumiLine)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              style: const TextStyle(color: AppColors.washi),
-              decoration: InputDecoration(
-                hintText: l10n.messageInputHint,
-                hintStyle: const TextStyle(color: AppColors.washiDim),
-                border: InputBorder.none,
-              ),
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _send(),
-              minLines: 1,
-              maxLines: 4,
-            ),
+      child: SafeArea(
+        top: false,
+        child: OutlinedButton.icon(
+          onPressed: _openPresetPicker,
+          icon: const Icon(Icons.chat_bubble_outline, color: AppColors.kin),
+          label: Text(
+            l10n.dmPresetPickerButton,
+            style: const TextStyle(color: AppColors.washi),
           ),
-          IconButton(
-            icon: const Icon(Icons.send, color: AppColors.kin),
-            onPressed: _send,
-            tooltip: l10n.sendMessageButton,
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: AppColors.sumiLine),
+            minimumSize: const Size.fromHeight(44),
           ),
-        ],
+        ),
       ),
     );
   }

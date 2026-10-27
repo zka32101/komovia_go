@@ -45,7 +45,7 @@ void main() {
         fromDisplayName: 'Carol',
         toUid: 'test-user-123',
         toDisplayName: 'Test Player',
-        content: 'See you tomorrow',
+        content: 'Nice move!',
       );
 
       await tester.pumpWidget(
@@ -57,7 +57,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Carol'), findsOneWidget);
-      expect(find.text('See you tomorrow'), findsOneWidget);
+      expect(find.text('Nice move!'), findsOneWidget);
       expect(find.text('1'), findsOneWidget);
     });
 
@@ -68,7 +68,7 @@ void main() {
         fromDisplayName: 'Carol',
         toUid: 'test-user-123',
         toDisplayName: 'Test Player',
-        content: 'Hey there',
+        content: "You're strong!",
       );
 
       await tester.pumpWidget(
@@ -95,7 +95,7 @@ void main() {
         fromDisplayName: 'Carol',
         toUid: 'test-user-123',
         toDisplayName: 'Test Player',
-        content: 'Hey there',
+        content: 'Good game!',
       );
       final threadId = DirectMessageService.threadIdFor('test-user-123', 'friend-1');
       await service.markThreadRead(threadId: threadId, uid: 'test-user-123');
