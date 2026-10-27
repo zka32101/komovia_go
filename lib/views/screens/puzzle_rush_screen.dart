@@ -510,10 +510,9 @@ class _PuzzleRushScreenState extends ConsumerState<PuzzleRushScreen> {
 
     try {
       final displayName = ref.read(currentUserProvider)?.displayName;
-      await ref.read(
-        endPuzzleRushProvider(
-          (sessionId: session.id, displayName: displayName),
-        ).future,
+      await ref.read(endPuzzleRushProvider)(
+        sessionId: session.id,
+        displayName: displayName,
       );
 
       _logger.i('Session ended successfully');

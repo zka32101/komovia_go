@@ -44,36 +44,50 @@ final startBlitzGameProvider = FutureProvider.family<BlitzGameRecord,
   );
 });
 
-/// Blitz ゲーム手追加プロバイダー
-final addBlitzMoveProvider = FutureProvider.family<void,
-    ({String gameId, String move, String playerColor})>((ref, params) async {
-  _logger.i('Adding Blitz move: ${params.move}');
+/// Blitz ゲーム手追加プロバイダー。moveは対局ごと・着手ごとに異なる文字列
+/// なので、FutureProvider.familyのキャッシュにすると対局が進むたびに
+/// 際限なく増えてしまう(generateGameAnalysisProviderと同じ理由) -
+/// 呼び出しの都度実行するプレーンなアクションにする。
+final addBlitzMoveProvider = Provider<
+    Future<void> Function({
+      required String gameId,
+      required String move,
+      required String playerColor,
+    })>((ref) {
   final service = ref.watch(blitzGameServiceProvider);
-  return service.addMove(
-    gameId: params.gameId,
-    move: params.move,
-    playerColor: params.playerColor,
-  );
+  return ({required gameId, required move, required playerColor}) async {
+    _logger.i('Adding Blitz move: $move');
+    return service.addMove(gameId: gameId, move: move, playerColor: playerColor);
+  };
 });
 
-/// Blitz ゲーム終了プロバイダー
-final endBlitzGameProvider = FutureProvider.family<BlitzGameRecord,
-    ({
-      String gameId,
-      String result,
-      String winnerColor,
-      String sgfData,
-      int ratingChange
-    })>((ref, params) async {
-  _logger.i('Ending Blitz game: ${params.gameId}');
+/// Blitz ゲーム終了プロバイダー。sgfDataは対局ごとに異なる長い文字列を
+/// 含むため、同様にプレーンなアクションにする。
+final endBlitzGameProvider = Provider<
+    Future<BlitzGameRecord> Function({
+      required String gameId,
+      required String result,
+      required String winnerColor,
+      required String sgfData,
+      required int ratingChange,
+    })>((ref) {
   final service = ref.watch(blitzGameServiceProvider);
-  return service.endBlitzGame(
-    gameId: params.gameId,
-    result: params.result,
-    winnerColor: params.winnerColor,
-    sgfData: params.sgfData,
-    ratingChange: params.ratingChange,
-  );
+  return ({
+    required gameId,
+    required result,
+    required winnerColor,
+    required sgfData,
+    required ratingChange,
+  }) async {
+    _logger.i('Ending Blitz game: $gameId');
+    return service.endBlitzGame(
+      gameId: gameId,
+      result: result,
+      winnerColor: winnerColor,
+      sgfData: sgfData,
+      ratingChange: ratingChange,
+    );
+  };
 });
 
 /// ユーザーの Blitz ゲーム履歴プロバイダー
@@ -107,35 +121,40 @@ final startCorrespondenceGameProvider = FutureProvider.family<
   );
 });
 
-/// Correspondence ゲーム手追加プロバイダー
-final addCorrespondenceMoveProvider = FutureProvider.family<void,
-    ({String gameId, String move, String playerColor})>((ref, params) async {
-  _logger.i('Adding Correspondence move: ${params.move}');
+/// Correspondence ゲーム手追加プロバイダー。addBlitzMoveProviderと同じ理由で
+/// プレーンなアクションにする。
+final addCorrespondenceMoveProvider = Provider<
+    Future<void> Function({
+      required String gameId,
+      required String move,
+      required String playerColor,
+    })>((ref) {
   final service = ref.watch(correspondenceGameServiceProvider);
-  return service.addMoveToGame(
-    gameId: params.gameId,
-    move: params.move,
-    playerColor: params.playerColor,
-  );
+  return ({required gameId, required move, required playerColor}) async {
+    _logger.i('Adding Correspondence move: $move');
+    return service.addMoveToGame(gameId: gameId, move: move, playerColor: playerColor);
+  };
 });
 
-/// Correspondence ゲーム終了プロバイダー
-final endCorrespondenceGameProvider = FutureProvider.family<
-    CorrespondenceGameRecord,
-    ({
-      String gameId,
-      String result,
+/// Correspondence ゲーム終了プロバイダー。endBlitzGameProviderと同じ理由で
+/// プレーンなアクションにする。
+final endCorrespondenceGameProvider = Provider<
+    Future<CorrespondenceGameRecord> Function({
+      required String gameId,
+      required String result,
       String? winnerColor,
-      String sgfData
-    })>((ref, params) async {
-  _logger.i('Ending Correspondence game: ${params.gameId}');
+      required String sgfData,
+    })>((ref) {
   final service = ref.watch(correspondenceGameServiceProvider);
-  return service.endCorrespondenceGame(
-    gameId: params.gameId,
-    result: params.result,
-    winnerColor: params.winnerColor,
-    sgfData: params.sgfData,
-  );
+  return ({required gameId, required result, winnerColor, required sgfData}) async {
+    _logger.i('Ending Correspondence game: $gameId');
+    return service.endCorrespondenceGame(
+      gameId: gameId,
+      result: result,
+      winnerColor: winnerColor,
+      sgfData: sgfData,
+    );
+  };
 });
 
 /// Correspondence ゲーム放棄プロバイダー
@@ -204,28 +223,34 @@ final resumeOrStartTeamGameProvider = FutureProvider.family<TeamGameRecord,
   );
 });
 
-/// Team ゲーム手追加プロバイダー
-final addTeamMoveProvider = FutureProvider.family<void,
-    ({String gameId, String move, String playerColor})>((ref, params) async {
-  _logger.i('Adding Team move: ${params.move}');
+/// Team ゲーム手追加プロバイダー。addBlitzMoveProviderと同じ理由でプレーンな
+/// アクションにする。
+final addTeamMoveProvider = Provider<
+    Future<void> Function({
+      required String gameId,
+      required String move,
+      required String playerColor,
+    })>((ref) {
   final service = ref.watch(teamGameServiceProvider);
-  return service.addMoveToTeamGame(
-    gameId: params.gameId,
-    move: params.move,
-    playerColor: params.playerColor,
-  );
+  return ({required gameId, required move, required playerColor}) async {
+    _logger.i('Adding Team move: $move');
+    return service.addMoveToTeamGame(gameId: gameId, move: move, playerColor: playerColor);
+  };
 });
 
-/// Team ゲーム終了プロバイダー
-final endTeamGameProvider = FutureProvider.family<TeamGameRecord,
-    ({String gameId, String result, String sgfData})>((ref, params) async {
-  _logger.i('Ending Team game: ${params.gameId}');
+/// Team ゲーム終了プロバイダー。endBlitzGameProviderと同じ理由でプレーンな
+/// アクションにする。
+final endTeamGameProvider = Provider<
+    Future<TeamGameRecord> Function({
+      required String gameId,
+      required String result,
+      required String sgfData,
+    })>((ref) {
   final service = ref.watch(teamGameServiceProvider);
-  return service.endTeamGame(
-    gameId: params.gameId,
-    result: params.result,
-    sgfData: params.sgfData,
-  );
+  return ({required gameId, required result, required sgfData}) async {
+    _logger.i('Ending Team game: $gameId');
+    return service.endTeamGame(gameId: gameId, result: result, sgfData: sgfData);
+  };
 });
 
 /// プレイヤーの Team ゲーム一覧プロバイダー
@@ -257,35 +282,47 @@ final startPuzzleRushProvider = FutureProvider.family<PuzzleRushRecord,
   );
 });
 
-/// パズル解答プロバイダー
-final solvePuzzleProvider = FutureProvider.family<void,
-    ({
-      String sessionId,
-      String puzzleId,
-      int puzzleDifficulty,
-      bool isCorrect,
-      int solveTime
-    })>((ref, params) async {
-  _logger.i('Solving puzzle: ${params.puzzleId}');
+/// パズル解答プロバイダー。addBlitzMoveProviderと同じ理由でプレーンな
+/// アクションにする(puzzleIdが解答のたびに異なるため)。
+final solvePuzzleProvider = Provider<
+    Future<void> Function({
+      required String sessionId,
+      required String puzzleId,
+      required int puzzleDifficulty,
+      required bool isCorrect,
+      required int solveTime,
+    })>((ref) {
   final service = ref.watch(puzzleRushServiceProvider);
-  return service.solvePuzzle(
-    sessionId: params.sessionId,
-    puzzleId: params.puzzleId,
-    puzzleDifficulty: params.puzzleDifficulty,
-    isCorrect: params.isCorrect,
-    solveTime: params.solveTime,
-  );
+  return ({
+    required sessionId,
+    required puzzleId,
+    required puzzleDifficulty,
+    required isCorrect,
+    required solveTime,
+  }) async {
+    _logger.i('Solving puzzle: $puzzleId');
+    return service.solvePuzzle(
+      sessionId: sessionId,
+      puzzleId: puzzleId,
+      puzzleDifficulty: puzzleDifficulty,
+      isCorrect: isCorrect,
+      solveTime: solveTime,
+    );
+  };
 });
 
-/// Puzzle Rush セッション終了プロバイダー
-final endPuzzleRushProvider = FutureProvider.family<PuzzleRushRecord,
-    ({String sessionId, String? displayName})>((ref, params) async {
-  _logger.i('Ending Puzzle Rush session: ${params.sessionId}');
+/// Puzzle Rush セッション終了プロバイダー。endBlitzGameProviderと同じ理由で
+/// プレーンなアクションにする。
+final endPuzzleRushProvider = Provider<
+    Future<PuzzleRushRecord> Function({
+      required String sessionId,
+      String? displayName,
+    })>((ref) {
   final service = ref.watch(puzzleRushServiceProvider);
-  return service.endPuzzleRush(
-    sessionId: params.sessionId,
-    displayName: params.displayName,
-  );
+  return ({required sessionId, displayName}) async {
+    _logger.i('Ending Puzzle Rush session: $sessionId');
+    return service.endPuzzleRush(sessionId: sessionId, displayName: displayName);
+  };
 });
 
 /// ユーザーの Puzzle Rush 履歴プロバイダー
