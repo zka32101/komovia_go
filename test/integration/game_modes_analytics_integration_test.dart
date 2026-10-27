@@ -4,6 +4,7 @@ import 'package:komovia_go/models/extended_game_models.dart';
 import 'package:komovia_go/models/game_record.dart' as real_game;
 import 'package:komovia_go/services/game_preset_service.dart';
 import 'package:komovia_go/services/analytics_service.dart';
+import 'package:komovia_go/services/notification_service.dart';
 
 void main() {
   late FakeFirebaseFirestore firestore;
@@ -392,6 +393,56 @@ void main() {
           expect(stats.totalGamesPlayed, greaterThanOrEqualTo(0));
         }
       }
+    });
+  });
+
+  group('Achievement unlock notifications', () {
+    // Mirrors what game_provider.dart's _checkAndRecordAchievements does
+    // after saveGameRecordProvider: AnalyticsService.checkAchievements'
+    // newly-unlocked achievements each get sent as a real notification
+    // (type 'achievement') via NotificationService, so they appear in the
+    // notification bell/history, not only as an ephemeral snackbar on
+    // GameResultScreen.
+    test('a newly unlocked achievement is sent as a persisted notification', () async {
+      final notifFirestore = FakeFirebaseFirestore();
+      final notifAnalyticsService = AnalyticsService(firestore: notifFirestore);
+      final notificationService = NotificationService(firestore: notifFirestore);
+      const uid = 'achievement-notif-user';
+
+      await notifFirestore.collection('gameRecords').doc('g1').set(
+        real_game.GameRecord(
+          id: 'g1',
+          uid: uid,
+          boardSize: 9,
+          sgfData: '',
+          result: real_game.GameResult.playerWin,
+          aiLevel: 1,
+          playedAt: DateTime.now(),
+          gameDuration: const Duration(seconds: 60),
+        ).toFirestore(),
+      );
+
+      final newlyUnlocked = await notifAnalyticsService.checkAchievements(userId: uid);
+      expect(newlyUnlocked, isNotEmpty);
+      expect(newlyUnlocked.any((a) => a.id == 'first_win'), isTrue);
+
+      for (final achievement in newlyUnlocked) {
+        await notificationService.sendNotification(
+          uid: uid,
+          title: '実績解除: ${achievement.name}',
+          body: achievement.description,
+          type: 'achievement',
+          data: {'achievementId': achievement.id},
+        );
+      }
+
+      final notifications = await notificationService.getUserNotifications(uid);
+      expect(notifications.length, newlyUnlocked.length);
+      expect(notifications.every((n) => n.type == 'achievement'), isTrue);
+      expect(
+        notifications.any((n) => n.data?['achievementId'] == 'first_win'),
+        isTrue,
+      );
     });
   });
 }
