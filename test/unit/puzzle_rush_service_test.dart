@@ -56,6 +56,97 @@ void main() {
       expect(updated.score, 20); // 10 points * difficultyMultiplier(2)
     });
 
+    test(
+        'solvePuzzle never lowers maxCombo even after a miss resets the '
+        'current streak (regression: maxCombo used to be overwritten by '
+        'the current streak length, so 3連続→1回ミス→1連続正解で3→1に下がっていた)',
+        () async {
+      final session =
+          await service.startPuzzleRush(uid: 'u1', difficulty: 'normal');
+
+      // 3連続正解でmaxCombo=3になる。
+      for (var i = 0; i < 3; i++) {
+        await service.solvePuzzle(
+          sessionId: session.id,
+          puzzleId: 'p$i',
+          puzzleDifficulty: 1,
+          isCorrect: true,
+          solveTime: 5,
+        );
+      }
+      var doc = await firestore
+          .collection('puzzleRushSessions')
+          .doc(session.id)
+          .get();
+      expect(PuzzleRushRecord.fromJson(doc.data()!).maxCombo, 3);
+
+      // 1回ミスして連続が途切れる。maxComboは3のまま保たれるべき。
+      await service.solvePuzzle(
+        sessionId: session.id,
+        puzzleId: 'miss',
+        puzzleDifficulty: 1,
+        isCorrect: false,
+        solveTime: 5,
+      );
+      doc = await firestore
+          .collection('puzzleRushSessions')
+          .doc(session.id)
+          .get();
+      expect(PuzzleRushRecord.fromJson(doc.data()!).maxCombo, 3);
+
+      // さらに1連続正解しても、現在の連続数(1)がmaxCombo(3)を上書きしてはいけない。
+      await service.solvePuzzle(
+        sessionId: session.id,
+        puzzleId: 'after-miss',
+        puzzleDifficulty: 1,
+        isCorrect: true,
+        solveTime: 5,
+      );
+      doc = await firestore
+          .collection('puzzleRushSessions')
+          .doc(session.id)
+          .get();
+      expect(PuzzleRushRecord.fromJson(doc.data()!).maxCombo, 3);
+    });
+
+    test(
+        'solvePuzzle raises maxCombo when a later streak exceeds the '
+        'previous best', () async {
+      final session =
+          await service.startPuzzleRush(uid: 'u1', difficulty: 'normal');
+
+      await service.solvePuzzle(
+        sessionId: session.id,
+        puzzleId: 'p1',
+        puzzleDifficulty: 1,
+        isCorrect: true,
+        solveTime: 5,
+      );
+      await service.solvePuzzle(
+        sessionId: session.id,
+        puzzleId: 'miss',
+        puzzleDifficulty: 1,
+        isCorrect: false,
+        solveTime: 5,
+      );
+      // この後4連続正解すればmaxComboは1から4に更新されるべき。
+      for (var i = 0; i < 4; i++) {
+        await service.solvePuzzle(
+          sessionId: session.id,
+          puzzleId: 'streak$i',
+          puzzleDifficulty: 1,
+          isCorrect: true,
+          solveTime: 5,
+        );
+      }
+
+      final doc = await firestore
+          .collection('puzzleRushSessions')
+          .doc(session.id)
+          .get();
+      expect(PuzzleRushRecord.fromJson(doc.data()!).maxCombo, 4);
+    });
+
     test('endPuzzleRush with a displayName creates a leaderboard entry '
         'carrying it (regression: leaderboard previously had no '
         'displayName field at all)', () async {
