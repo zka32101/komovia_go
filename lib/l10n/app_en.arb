@@ -1074,6 +1074,7 @@
   },
   "deadStoneMarkingResetButton": "Reset",
   "deadStoneMarkingConfirmButton": "Confirm This Score",
+  "deadStoneMarkingWaitingMessage": "Waiting for your opponent to confirm dead stones. If both marks match, the game ends; if they differ, play resumes.",
 
   "messagesTitle": "Messages",
   "noConversationsYetMessage": "No conversations yet",

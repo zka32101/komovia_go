@@ -49,7 +49,7 @@ void main() {
       expect(outOfTurn, false);
     });
 
-    test('two consecutive passes end the game with a real area score, not a stones-only guess', () async {
+    test('two consecutive passes move to scoring, and agreeing on no dead stones ends the game with a real area score', () async {
       final game = await service.createGame(
         boardSize: 9,
         blackUid: 'black',
@@ -69,6 +69,13 @@ void main() {
       final ended = await service.pass(gameId: game.id, uid: 'black');
       expect(ended, true);
 
+      final scoring = await service.getGame(game.id);
+      expect(scoring!.isScoring, true);
+
+      // Both players agree there are no dead stones.
+      await service.submitDeadStones(gameId: game.id, uid: 'black', deadPoints: {});
+      await service.submitDeadStones(gameId: game.id, uid: 'white', deadPoints: {});
+
       final finished = await service.getGame(game.id);
       expect(finished!.isFinished, true);
       expect(finished.result, 'score');
@@ -77,6 +84,29 @@ void main() {
       expect(finished.blackScore, 81.0);
       // 0 stones + 0 territory + 3.75 komi for white.
       expect(finished.whiteScore, 3.75);
+    });
+
+    test('disagreeing dead-stone submissions reset to active and let play resume', () async {
+      final game = await service.createGame(
+        boardSize: 9,
+        blackUid: 'black',
+        blackDisplayName: 'Black',
+        whiteUid: 'white',
+        whiteDisplayName: 'White',
+      );
+
+      await service.applyMove(gameId: game.id, uid: 'black', row: 4, col: 4);
+      await service.pass(gameId: game.id, uid: 'white');
+      await service.pass(gameId: game.id, uid: 'black');
+
+      await service.submitDeadStones(gameId: game.id, uid: 'black', deadPoints: {});
+      await service.submitDeadStones(gameId: game.id, uid: 'white', deadPoints: {(4, 4)});
+
+      final resumed = await service.getGame(game.id);
+      expect(resumed!.isActive, true);
+      expect(resumed.consecutivePasses, 0);
+      expect(resumed.blackDeadStones, null);
+      expect(resumed.whiteDeadStones, null);
     });
 
     test('resign ends the game immediately in favor of the opponent', () async {

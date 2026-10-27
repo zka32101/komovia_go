@@ -18,7 +18,12 @@ class PvpGame {
   final int? lastMoveCol;
   final int movesCount;
   final int consecutivePasses;
-  final String status; // 'active', 'finished'
+  final String status; // 'active', 'scoring', 'finished'
+  // 死石マーキング中（status == 'scoring'）の各プレイヤーの提出内容。
+  // "row,col"形式の文字列リスト。未提出はnull。両者が提出し一致すれば
+  // 自動確定、不一致ならリセットして対局再開（PvpGameService.submitDeadStones参照）。
+  final List<String>? blackDeadStones;
+  final List<String>? whiteDeadStones;
   final String? winnerUid;
   final String? result; // 'resignation', 'score', null(進行中)
   final double? blackScore; // 中国ルールの地合計算結果（'score'決着時のみ）
@@ -65,6 +70,8 @@ class PvpGame {
     required this.movesCount,
     required this.consecutivePasses,
     required this.status,
+    this.blackDeadStones,
+    this.whiteDeadStones,
     this.winnerUid,
     this.result,
     this.blackScore,
@@ -84,6 +91,7 @@ class PvpGame {
        whiteTimeMs = whiteTimeMs ?? mainTimeSeconds * 1000;
 
   bool get isActive => status == 'active';
+  bool get isScoring => status == 'scoring';
   bool get isFinished => status == 'finished';
 
   /// 現時点([now])での[forBlack]側の残り時間（ミリ秒）。手番側は
@@ -161,6 +169,8 @@ class PvpGame {
       movesCount: data['movesCount'] as int? ?? 0,
       consecutivePasses: data['consecutivePasses'] as int? ?? 0,
       status: data['status'] as String? ?? 'active',
+      blackDeadStones: (data['blackDeadStones'] as List<dynamic>?)?.cast<String>(),
+      whiteDeadStones: (data['whiteDeadStones'] as List<dynamic>?)?.cast<String>(),
       winnerUid: data['winnerUid'] as String?,
       result: data['result'] as String?,
       blackScore: (data['blackScore'] as num?)?.toDouble(),
@@ -201,6 +211,8 @@ class PvpGame {
       'movesCount': movesCount,
       'consecutivePasses': consecutivePasses,
       'status': status,
+      'blackDeadStones': blackDeadStones,
+      'whiteDeadStones': whiteDeadStones,
       'winnerUid': winnerUid,
       'result': result,
       'blackScore': blackScore,

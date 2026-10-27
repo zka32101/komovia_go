@@ -286,6 +286,24 @@ final passPvpGameProvider = Provider((ref) {
   };
 });
 
+/// 死石マーキングを提出する（status == 'scoring'の間のみ）。両者の提出が
+/// 一致すれば終局するので、resign/claimForfeit系と同様に_onGameFinishedで
+/// Eloレーティング・トーナメント結果報告を反映する（不一致でactiveに
+/// 戻った場合はisFinished==falseなので何もしない）。
+final submitDeadStonesProvider = Provider((ref) {
+  return (String gameId, String uid, Set<(int, int)> deadPoints) async {
+    final service = ref.watch(pvpGameServiceProvider);
+    try {
+      await service.submitDeadStones(gameId: gameId, uid: uid, deadPoints: deadPoints);
+      _logger.i('Submitted PvP dead stones: $gameId by=$uid');
+      await _onGameFinished(ref, service, gameId);
+    } catch (e) {
+      _logger.e('Error submitting PvP dead stones: $e');
+      rethrow;
+    }
+  };
+});
+
 final resignPvpGameProvider = Provider((ref) {
   return (String gameId, String uid) async {
     final service = ref.watch(pvpGameServiceProvider);

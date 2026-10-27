@@ -221,4 +221,46 @@ void main() {
       expect(data['turnStartedAt'], isNotNull);
     });
   });
+
+  group('PvpGame scoring state', () {
+    PvpGame buildScoringGame({
+      String status = 'scoring',
+      List<String>? blackDeadStones,
+      List<String>? whiteDeadStones,
+    }) {
+      return PvpGame(
+        id: 'game-1',
+        boardSize: 9,
+        blackUid: 'black',
+        blackDisplayName: 'Black',
+        whiteUid: 'white',
+        whiteDisplayName: 'White',
+        stones: List.generate(9, (_) => List.filled(9, 0)),
+        isBlackTurn: true,
+        capturedBlack: 0,
+        capturedWhite: 0,
+        movesCount: 0,
+        consecutivePasses: 2,
+        status: status,
+        blackDeadStones: blackDeadStones,
+        whiteDeadStones: whiteDeadStones,
+        createdAt: DateTime.now(),
+      );
+    }
+
+    test('isScoring is true only for status == scoring', () {
+      expect(buildScoringGame(status: 'scoring').isScoring, isTrue);
+      expect(buildScoringGame(status: 'active').isScoring, isFalse);
+      expect(buildScoringGame(status: 'finished').isScoring, isFalse);
+    });
+
+    test('toFirestore/fromFirestore round-trips dead-stone submissions', () {
+      final game = buildScoringGame(blackDeadStones: ['4,4'], whiteDeadStones: null);
+      final data = game.toFirestore();
+      expect(data['status'], 'scoring');
+      expect(data['blackDeadStones'], ['4,4']);
+      expect(data['whiteDeadStones'], isNull);
+    });
+
+  });
 }
