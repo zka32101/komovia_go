@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -6,6 +8,24 @@ import 'package:komovia_go/services/ad_service.dart';
 import 'package:komovia_go/viewmodels/index.dart';
 
 final _logger = Logger();
+
+/// バナー広告の読み込み失敗時リトライ方針（指数バックオフ）。
+/// ウィジェットのStateから切り離した純粋関数として、ロジックを
+/// プラットフォームチャネルのモック無しでユニットテストできるようにする。
+class AdBannerRetryPolicy {
+  const AdBannerRetryPolicy._();
+
+  static const maxRetries = 3;
+  static const baseDelay = Duration(seconds: 5);
+
+  /// 次の再試行までの待機時間。[attemptNumber]は1始まり
+  /// （1回目の失敗後のリトライなら1）。
+  /// [maxRetries]を超えたら再試行しないことを示すnullを返す。
+  static Duration? delayForAttempt(int attemptNumber) {
+    if (attemptNumber < 1 || attemptNumber > maxRetries) return null;
+    return baseDelay * (1 << (attemptNumber - 1));
+  }
+}
 
 /// 画面下部に置くバナー広告。プレミアム会員には広告を出さない
 /// （isSubscriptionActiveProviderを見て、有効なら何も描画しない）。
@@ -19,6 +39,8 @@ class AdBanner extends ConsumerStatefulWidget {
 class _AdBannerState extends ConsumerState<AdBanner> {
   BannerAd? _bannerAd;
   bool _isLoaded = false;
+  int _retryCount = 0;
+  Timer? _retryTimer;
 
   @override
   void initState() {
@@ -37,11 +59,13 @@ class _AdBannerState extends ConsumerState<AdBanner> {
             ad.dispose();
             return;
           }
+          _retryCount = 0;
           setState(() => _isLoaded = true);
         },
         onAdFailedToLoad: (ad, error) {
           _logger.w('Banner ad failed to load: $error');
           ad.dispose();
+          _scheduleRetry();
         },
       ),
     );
@@ -49,8 +73,25 @@ class _AdBannerState extends ConsumerState<AdBanner> {
     banner.load();
   }
 
+  /// 読み込み失敗時、一時的なネットワーク不調などから自動で復帰できるよう
+  /// 指数バックオフで再試行する（永久に非表示になったままだと広告枠から
+  /// 収益が一切上がらなくなるため）。最大試行回数に達したら諦める
+  /// （ウィジェットを再マウントすれば initState からまた最初から試せる）。
+  void _scheduleRetry() {
+    if (!mounted) return;
+    final delay = AdBannerRetryPolicy.delayForAttempt(_retryCount + 1);
+    if (delay == null) return;
+    _retryCount++;
+    _retryTimer?.cancel();
+    _retryTimer = Timer(delay, () {
+      if (!mounted) return;
+      _loadBanner();
+    });
+  }
+
   @override
   void dispose() {
+    _retryTimer?.cancel();
     _bannerAd?.dispose();
     super.dispose();
   }
