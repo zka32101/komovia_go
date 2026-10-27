@@ -125,6 +125,7 @@ class PuzzleRushService {
   /// Puzzle Rush セッションを終了
   Future<PuzzleRushRecord> endPuzzleRush({
     required String sessionId,
+    String? displayName,
   }) async {
     try {
       _logger.i('Ending Puzzle Rush session: $sessionId');
@@ -151,7 +152,7 @@ class PuzzleRushService {
           .set(updatedSession.toJson());
 
       // リーダーボードを更新
-      await _updateLeaderboard(session: updatedSession);
+      await _updateLeaderboard(session: updatedSession, displayName: displayName);
 
       _logger.i('Puzzle Rush session ended');
       return updatedSession;
@@ -267,9 +268,22 @@ class PuzzleRushService {
   }
 
   /// リーダーボードを更新
-  Future<void> _updateLeaderboard({required PuzzleRushRecord session}) async {
+  ///
+  /// [displayName]はPuzzleRushRecord自体に無い(セッション開始時に
+  /// ユーザー名を持っていない)ため呼び出し元(endPuzzleRushProvider経由で
+  /// 画面がcurrentUserProviderから渡す)から受け取る。無ければ既存の
+  /// 表示名を保持し、新規作成時はnull(画面側がuid断片にフォールバック)。
+  Future<void> _updateLeaderboard({
+    required PuzzleRushRecord session,
+    String? displayName,
+  }) async {
     try {
       _logger.i('Updating leaderboard for session: ${session.id}');
+
+      final accuracy = session.solvedCount > 0
+          ? ((session.correctCount / session.solvedCount) * 100)
+              .toStringAsFixed(1)
+          : '0.0';
 
       // ユーザーの既存エントリを取得
       final existingQuery = await _firestore
@@ -290,8 +304,8 @@ class PuzzleRushService {
               .update({
                 'score': session.score,
                 'solvedCount': session.solvedCount,
-                'accuracy': (session.correctCount / session.solvedCount * 100)
-                    .toStringAsFixed(1),
+                'accuracy': accuracy,
+                'displayName': displayName ?? existingEntry.displayName,
                 'updatedAt': DateTime.now(),
               });
           _logger.i('Leaderboard entry updated');
@@ -299,10 +313,6 @@ class PuzzleRushService {
       } else {
         // 新規エントリを作成
         final entryId = _firestore.collection('puzzleRushLeaderboard').doc().id;
-        final accuracy = session.solvedCount > 0
-            ? ((session.correctCount / session.solvedCount) * 100)
-                .toStringAsFixed(1)
-            : '0.0';
 
         await _firestore
             .collection('puzzleRushLeaderboard')
@@ -313,6 +323,7 @@ class PuzzleRushService {
               'score': session.score,
               'solvedCount': session.solvedCount,
               'accuracy': accuracy,
+              'displayName': displayName,
               'createdAt': DateTime.now(),
               'updatedAt': DateTime.now(),
             });
@@ -378,6 +389,7 @@ class PuzzleRushStats {
 /// Puzzle Rush リーダーボードエントリ
 class PuzzleRushLeaderboardEntry {
   final String uid;
+  final String? displayName;
   final String difficulty;
   final int score;
   final int solvedCount;
@@ -387,6 +399,7 @@ class PuzzleRushLeaderboardEntry {
 
   PuzzleRushLeaderboardEntry({
     required this.uid,
+    this.displayName,
     required this.difficulty,
     required this.score,
     required this.solvedCount,
@@ -398,6 +411,10 @@ class PuzzleRushLeaderboardEntry {
   factory PuzzleRushLeaderboardEntry.fromJson(Map<String, dynamic> json) {
     return PuzzleRushLeaderboardEntry(
       uid: json['uid'] as String,
+      // displayNameはこのフィールドが追加される前のドキュメントには
+      // 存在しないため、null-safeに読む(その場合は画面側がuid断片に
+      // フォールバックする)。
+      displayName: json['displayName'] as String?,
       difficulty: json['difficulty'] as String,
       score: json['score'] as int,
       solvedCount: json['solvedCount'] as int,
@@ -409,6 +426,7 @@ class PuzzleRushLeaderboardEntry {
 
   Map<String, dynamic> toJson() => {
         'uid': uid,
+        'displayName': displayName,
         'difficulty': difficulty,
         'score': score,
         'solvedCount': solvedCount,
@@ -420,6 +438,7 @@ class PuzzleRushLeaderboardEntry {
   @override
   String toString() => 'PuzzleRushLeaderboardEntry('
       'uid: $uid, '
+      'displayName: $displayName, '
       'score: $score, '
       'solvedCount: $solvedCount, '
       'accuracy: $accuracy%)';

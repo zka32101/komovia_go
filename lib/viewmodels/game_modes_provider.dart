@@ -278,11 +278,14 @@ final solvePuzzleProvider = FutureProvider.family<void,
 });
 
 /// Puzzle Rush セッション終了プロバイダー
-final endPuzzleRushProvider =
-    FutureProvider.family<PuzzleRushRecord, String>((ref, sessionId) async {
-  _logger.i('Ending Puzzle Rush session: $sessionId');
+final endPuzzleRushProvider = FutureProvider.family<PuzzleRushRecord,
+    ({String sessionId, String? displayName})>((ref, params) async {
+  _logger.i('Ending Puzzle Rush session: ${params.sessionId}');
   final service = ref.watch(puzzleRushServiceProvider);
-  return service.endPuzzleRush(sessionId: sessionId);
+  return service.endPuzzleRush(
+    sessionId: params.sessionId,
+    displayName: params.displayName,
+  );
 });
 
 /// ユーザーの Puzzle Rush 履歴プロバイダー
