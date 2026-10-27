@@ -96,5 +96,88 @@ void main() {
       expect(activeIds.contains(live.id), true);
       expect(activeIds.contains(ended.id), false);
     });
+
+    test('joinSpectatorSession increments spectatorCount and adds the uid',
+        () async {
+      final session = await service.createSpectatorSession(
+        gameId: 'g6',
+        gameType: 'ai_game',
+        hostUid: 'host',
+        hostDisplayName: 'Host',
+        isLive: true,
+        boardSize: 9,
+      );
+
+      await service.joinSpectatorSession(session.id, 'spectator1');
+
+      final fetched = await service.getSpectatorSession(session.id);
+      expect(fetched!.spectatorCount, 1);
+      expect(fetched.spectatorUids, contains('spectator1'));
+    });
+
+    test(
+        'joining a session already joined by the same uid does not '
+        'double-count (regression: spectatorUids used arrayUnion, which is '
+        "idempotent, but spectatorCount was a plain increment applied "
+        'unconditionally in the same update, so re-entering an already-'
+        'joined session - e.g. reopening SpectatorViewScreen without ever '
+        'leaving - inflated the count forever)', () async {
+      final session = await service.createSpectatorSession(
+        gameId: 'g7',
+        gameType: 'ai_game',
+        hostUid: 'host',
+        hostDisplayName: 'Host',
+        isLive: true,
+        boardSize: 9,
+      );
+
+      await service.joinSpectatorSession(session.id, 'spectator1');
+      await service.joinSpectatorSession(session.id, 'spectator1');
+
+      final fetched = await service.getSpectatorSession(session.id);
+      expect(fetched!.spectatorCount, 1);
+      expect(fetched.spectatorUids, ['spectator1']);
+    });
+
+    test(
+        'leaveSpectatorSession decrements spectatorCount and removes the uid '
+        '(regression: nothing in lib/ ever called this - SpectatorViewScreen '
+        'had no leave hook at all, so spectatorCount only ever grew)',
+        () async {
+      final session = await service.createSpectatorSession(
+        gameId: 'g8',
+        gameType: 'ai_game',
+        hostUid: 'host',
+        hostDisplayName: 'Host',
+        isLive: true,
+        boardSize: 9,
+      );
+
+      await service.joinSpectatorSession(session.id, 'spectator1');
+      await service.joinSpectatorSession(session.id, 'spectator2');
+      await service.leaveSpectatorSession(session.id, 'spectator1');
+
+      final fetched = await service.getSpectatorSession(session.id);
+      expect(fetched!.spectatorCount, 1);
+      expect(fetched.spectatorUids, ['spectator2']);
+    });
+
+    test('leaving a session the uid never joined is a no-op', () async {
+      final session = await service.createSpectatorSession(
+        gameId: 'g9',
+        gameType: 'ai_game',
+        hostUid: 'host',
+        hostDisplayName: 'Host',
+        isLive: true,
+        boardSize: 9,
+      );
+
+      await service.joinSpectatorSession(session.id, 'spectator1');
+      await service.leaveSpectatorSession(session.id, 'never-joined');
+
+      final fetched = await service.getSpectatorSession(session.id);
+      expect(fetched!.spectatorCount, 1);
+      expect(fetched.spectatorUids, ['spectator1']);
+    });
   });
 }
