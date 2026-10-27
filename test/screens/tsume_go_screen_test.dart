@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_go/models/index.dart';
 import 'package:komovia_go/views/screens/tsume_go_screen.dart';
 import 'package:komovia_go/viewmodels/index.dart';
+import 'package:komovia_go/views/widgets/index.dart';
 import 'package:komovia_go/config/theme.dart';
 
 import '../fixtures/test_data.dart';
@@ -312,6 +313,33 @@ void main() {
       await tester.pump();
 
       expect(find.text('今日のパズル'), findsWidgets);
+    });
+
+    testWidgets(
+        'share button carries the real elapsed solving time, not the old '
+        'hardcoded 300s placeholder', (WidgetTester tester) async {
+      final solvedContainer = ProviderContainer(
+        overrides: [
+          currentUserProvider.overrideWithValue(TestData.testUser),
+          todaysTsumeProblemProvider.overrideWith((ref) async => _testProblem),
+          isPuzzleSolvedProvider.overrideWith((ref) => true),
+          puzzleSolvingTimeProvider.overrideWith((ref) => 42),
+        ],
+      );
+      addTearDown(solvedContainer.dispose);
+
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const TsumeGoScreen(),
+          container: solvedContainer,
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      final shareButton =
+          tester.widget<PuzzleShareButton>(find.byType(PuzzleShareButton));
+      expect(shareButton.puzzleData.solvingTime, const Duration(seconds: 42));
     });
   });
 }

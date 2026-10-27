@@ -70,7 +70,7 @@ class _TsumeGoScreenState extends ConsumerState<TsumeGoScreen> {
               puzzleId: puzzle.id,
               difficulty: _getDifficultyLabel(puzzle.difficulty),
               attemptCount: attemptCount,
-              solvingTime: Duration(seconds: 300), // Placeholder
+              solvingTime: Duration(seconds: ref.watch(puzzleSolvingTimeProvider)),
               isSolved: true,
               currentStreak: currentUser != null
                   ? (ref.watch(tsumeGoStreakProvider(currentUser.uid)).value ??
