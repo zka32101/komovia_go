@@ -359,18 +359,24 @@ class GameModeService {
     }
   }
 
-  /// Calculate average game duration in seconds
+  /// Calculate average game duration in seconds, from each game's real
+  /// `startedAt`/`endedAt` timestamps. Games missing either field (still in
+  /// progress, or predating these fields) are skipped entirely rather than
+  /// counted as 0s, so they don't drag the average down artificially.
   int _calculateAvgDuration(List<QueryDocumentSnapshot> docs) {
-    if (docs.isEmpty) return 0;
-
     int totalSeconds = 0;
+    int countedGames = 0;
     for (final doc in docs) {
       final data = doc.data() as Map<String, dynamic>;
-      if (data.containsKey('startedAt') && data.containsKey('endedAt')) {
-        // Parse timestamps and calculate duration
-        totalSeconds += 300; // Placeholder
+      final startedAt = data['startedAt'];
+      final endedAt = data['endedAt'];
+      if (startedAt is Timestamp && endedAt is Timestamp) {
+        final duration = endedAt.toDate().difference(startedAt.toDate());
+        if (duration.isNegative) continue;
+        totalSeconds += duration.inSeconds;
+        countedGames++;
       }
     }
-    return docs.isNotEmpty ? totalSeconds ~/ docs.length : 0;
+    return countedGames > 0 ? totalSeconds ~/ countedGames : 0;
   }
 }

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_go/services/game_mode_service.dart';
@@ -377,6 +378,64 @@ void main() {
       expect(stats['modeId'], modeId);
       expect(stats['totalGames'], 2);
       expect(stats.containsKey('avgDuration'), true);
+    });
+
+    test('avgDuration is computed from real startedAt/endedAt timestamps, '
+        'not a fixed placeholder', () async {
+      // Given - two games: 100s and 300s long -> average should be 200s.
+      // This is a regression test: the previous implementation added a
+      // hardcoded `300` for every game that had both fields, regardless of
+      // their actual values, so the average was always exactly 300.
+      final modeId = 'puzzle_rush';
+      final start1 = DateTime(2026, 1, 1, 12, 0, 0);
+      await firestore.collection('games').add({
+        'modeId': modeId,
+        'startedAt': Timestamp.fromDate(start1),
+        'endedAt': Timestamp.fromDate(start1.add(const Duration(seconds: 100))),
+      });
+      final start2 = DateTime(2026, 1, 1, 13, 0, 0);
+      await firestore.collection('games').add({
+        'modeId': modeId,
+        'startedAt': Timestamp.fromDate(start2),
+        'endedAt': Timestamp.fromDate(start2.add(const Duration(seconds: 300))),
+      });
+
+      // When
+      final stats = await gameModeService.getGameModeStats(modeId);
+
+      // Then
+      expect(stats['avgDuration'], 200);
+    });
+
+    test('avgDuration ignores games missing startedAt/endedAt rather than '
+        'treating them as 0 duration', () async {
+      final modeId = 'correspondence';
+      final start = DateTime(2026, 1, 1, 12, 0, 0);
+      await firestore.collection('games').add({
+        'modeId': modeId,
+        'startedAt': Timestamp.fromDate(start),
+        'endedAt': Timestamp.fromDate(start.add(const Duration(seconds: 120))),
+      });
+      // Still in progress - no endedAt yet.
+      await firestore.collection('games').add({
+        'modeId': modeId,
+        'startedAt': Timestamp.fromDate(start),
+      });
+
+      final stats = await gameModeService.getGameModeStats(modeId);
+
+      expect(stats['totalGames'], 2);
+      expect(stats['avgDuration'], 120);
+    });
+
+    test('avgDuration is 0 when no games have both timestamps', () async {
+      final modeId = 'team';
+      await firestore.collection('games').add({'modeId': modeId});
+
+      final stats = await gameModeService.getGameModeStats(modeId);
+
+      expect(stats['totalGames'], 1);
+      expect(stats['avgDuration'], 0);
     });
 
   });
