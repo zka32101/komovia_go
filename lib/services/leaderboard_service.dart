@@ -25,9 +25,55 @@ extension _LeaderboardEntryFirestore on LeaderboardEntry {
   }
 }
 
+/// 選択されたdaily/weekly/monthlyがUI上は選べるのに常に空のまま
+/// だった実バグの修正: 以前は全ての書き込みが`period.toShortString()`
+/// （例: 'daily'固定の1ドキュメント）を参照しており、それをリセットする
+/// Cloud Functions相当の仕組みが無いまま蓄積し続けるだけだったため、
+/// UIからdaily/weekly/monthlyを選ぶと実質どの期間でも同じ内容が
+/// 返ってきてしまっていた（pvp_game_provider.dartの既存コメントが示す
+/// ように、意図的にallTimeのみ書き込むよう回避されていた）。
+/// Cloud Functionsを使わずに「期間ごとに自然にリセットされる」ようにする
+/// ため、daily/weekly/monthlyは現在の日付から導出した期間キーを
+/// ドキュメントIDに含める（例: 'daily_2026-10-27'/'weekly_2026-W44'/
+/// 'monthly_2026-10'）。新しい期間に入ると自動的に新しいドキュメントに
+/// 切り替わり、古いデータは単に読まれなくなるだけで削除の仕組みは不要。
+/// allTimeは従来通り固定のドキュメントID('all_time')のまま。
+String periodDocId(LeaderboardPeriod period, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  switch (period) {
+    case LeaderboardPeriod.allTime:
+      return period.toShortString();
+    case LeaderboardPeriod.daily:
+      return 'daily_${_yyyyMmDd(current)}';
+    case LeaderboardPeriod.weekly:
+      return 'weekly_${_isoWeekKey(current)}';
+    case LeaderboardPeriod.monthly:
+      return 'monthly_${current.year}-${current.month.toString().padLeft(2, '0')}';
+  }
+}
+
+String _yyyyMmDd(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+/// ISO 8601週番号（月曜始まり、1年の最初の木曜を含む週が第1週）。
+String _isoWeekKey(DateTime d) {
+  // ISO8601: その日を含む週の木曜日が属する年がISO年、木曜日からの
+  // 週番号を1月1日からの日数で算出する標準的なアルゴリズム。
+  final date = DateTime.utc(d.year, d.month, d.day);
+  final weekday = date.weekday; // 1=Mon..7=Sun
+  final thursday = date.add(Duration(days: 4 - weekday));
+  final isoYear = thursday.year;
+  final jan1 = DateTime.utc(isoYear, 1, 1);
+  final weekNumber = ((thursday.difference(jan1).inDays) / 7).floor() + 1;
+  return '$isoYear-W${weekNumber.toString().padLeft(2, '0')}';
+}
+
 /// Leaderboard データベース操作サービス
 class LeaderboardService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+
+  LeaderboardService({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   static const String leaderboardCollection = 'leaderboards';
 
@@ -60,7 +106,7 @@ class LeaderboardService {
 
       final query = _firestore
           .collection(leaderboardCollection)
-          .doc(period.toShortString())
+          .doc(periodDocId(period))
           .collection(type.toShortString())
           .orderBy(_sortFieldFor(type), descending: true)
           .limit(limit);
@@ -95,7 +141,7 @@ class LeaderboardService {
 
       final doc = await _firestore
           .collection(leaderboardCollection)
-          .doc(period.toShortString())
+          .doc(periodDocId(period))
           .collection(type.toShortString())
           .doc(uid)
           .get();
@@ -123,7 +169,7 @@ class LeaderboardService {
       final batch = _firestore.batch();
       final collectionRef = _firestore
           .collection(leaderboardCollection)
-          .doc(period.toShortString())
+          .doc(periodDocId(period))
           .collection(type.toShortString());
 
       // ランク順にソート
@@ -172,7 +218,7 @@ class LeaderboardService {
 
       await _firestore
           .collection(leaderboardCollection)
-          .doc(period.toShortString())
+          .doc(periodDocId(period))
           .collection(type.toShortString())
           .doc(uid)
           .set(entry.toFirestoreFields(), SetOptions(merge: true));
@@ -208,7 +254,7 @@ class LeaderboardService {
 
       final docRef = _firestore
           .collection(leaderboardCollection)
-          .doc(period.toShortString())
+          .doc(periodDocId(period))
           .collection(type.toShortString())
           .doc(uid);
 
@@ -263,7 +309,7 @@ class LeaderboardService {
 
       final snapshot = await _firestore
           .collection(leaderboardCollection)
-          .doc(period.toShortString())
+          .doc(periodDocId(period))
           .collection(type.toShortString())
           .get();
 
