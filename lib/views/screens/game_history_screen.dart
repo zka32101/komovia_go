@@ -108,7 +108,8 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
               break;
             case 'duration':
               filteredGames.sort((a, b) =>
-                  b.playedAt.compareTo(a.playedAt));
+                  (b.gameDuration ?? Duration.zero)
+                      .compareTo(a.gameDuration ?? Duration.zero));
               break;
             case 'recent':
             default:

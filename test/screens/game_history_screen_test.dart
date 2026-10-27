@@ -315,6 +315,72 @@ void main() {
       expect(find.text('最長'), findsWidgets);
     });
 
+    testWidgets('sorting by "最長" (duration) orders by gameDuration, not playedAt', (
+      WidgetTester tester,
+    ) async {
+      // gameShort was played more recently but lasted a shorter time;
+      // gameLong was played earlier but lasted longer. A correct
+      // duration-sort must put gameLong (the longer game) first, even
+      // though it is NOT the more recently played game.
+      final gameShort = GameRecord(
+        id: 'game-short',
+        uid: TestData.testUser.uid,
+        boardSize: 9,
+        sgfData: '(;GM[1]SZ[9];B[cc])',
+        result: GameResult.playerWin,
+        aiLevel: 5,
+        playedAt: DateTime(2020, 6, 1),
+        movesCount: 1,
+        gameDuration: const Duration(minutes: 2),
+        blackScore: 10,
+        whiteScore: 5,
+      );
+      final gameLong = GameRecord(
+        id: 'game-long',
+        uid: TestData.testUser.uid,
+        boardSize: 9,
+        sgfData: '(;GM[1]SZ[9];B[cc])',
+        result: GameResult.playerWin,
+        aiLevel: 5,
+        playedAt: DateTime(2019, 1, 1),
+        movesCount: 1,
+        gameDuration: const Duration(minutes: 90),
+        blackScore: 10,
+        whiteScore: 5,
+      );
+
+      final sortContainer = ProviderContainer(
+        overrides: [
+          currentUserProvider.overrideWithValue(TestData.testUser),
+          userGameRecordsProvider(
+            TestData.testUser.uid,
+          ).overrideWith((ref) async => [gameShort, gameLong]),
+        ],
+      );
+
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const GameHistoryScreen(),
+          container: sortContainer,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('最長'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('最長'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      final shortDateY = tester.getTopLeft(find.text('2020/6/1').first).dy;
+      final longDateY = tester.getTopLeft(find.text('2019/1/1').first).dy;
+
+      // gameLong (90 min) must render above gameShort (2 min) once sorted
+      // by duration, even though gameShort has the more recent playedAt.
+      expect(longDateY, lessThan(shortDateY));
+    });
+
     testWidgets('shows auth required state when no user', (WidgetTester tester) async {
       final noAuthContainer = TestUtils.createTestContainer(
         currentUser: null,

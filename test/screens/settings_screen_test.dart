@@ -437,6 +437,46 @@ void main() {
       expect(find.byType(ChoiceChip), findsWidgets);
     });
 
+    testWidgets(
+      'board size preference writes to quickBoardSizeProvider (the provider '
+      'the main Play AI Game flow actually reads), not the Blitz-only one',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          TestUtils.buildTestableWidget(
+            child: const SettingsScreen(),
+            container: container,
+          ),
+        );
+
+        // Board size chips are [7, 9, 13, 19]; tap the 3rd chip ('13×13').
+        await tester.ensureVisible(find.byType(ChoiceChip).at(2));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(ChoiceChip).at(2));
+        await tester.pumpAndSettle();
+
+        expect(container.read(quickBoardSizeProvider), 13);
+      },
+    );
+
+    testWidgets(
+      'AI difficulty preference writes to aiLevelProvider (the provider '
+      'the main Play AI Game flow actually reads), not the Blitz-only one',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          TestUtils.buildTestableWidget(
+            child: const SettingsScreen(),
+            container: container,
+          ),
+        );
+
+        final slider = tester.widget<Slider>(find.byType(Slider));
+        slider.onChanged!(8.0);
+        await tester.pumpAndSettle();
+
+        expect(container.read(aiLevelProvider), 8);
+      },
+    );
+
     testWidgets('premium member shows active status', (WidgetTester tester) async {
       final premiumContainer = TestUtils.createTestContainer(
         currentUser: TestData.premiumUser,

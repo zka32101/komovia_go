@@ -48,14 +48,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _logger.i('SettingsScreen initialized');
     _displayNameController = TextEditingController();
 
-    // Initialize board size and AI level from game settings
+    // Initialize board size and AI level from the main "Play AI Game" defaults
     Future.microtask(() {
-      final blitzSize = ref.read(blitzBoardSizeProvider);
-      final blitzLevel = ref.read(blitzAiLevelProvider);
+      final boardSize = ref.read(quickBoardSizeProvider);
+      final aiLevel = ref.read(aiLevelProvider);
       if (mounted) {
         setState(() {
-          _selectedBoardSize = int.tryParse(blitzSize) ?? 9;
-          _selectedAiLevel = blitzLevel;
+          _selectedBoardSize = boardSize;
+          _selectedAiLevel = aiLevel;
         });
       }
     });
@@ -479,7 +479,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onSelected: (selected) {
                 if (selected) {
                   setState(() => _selectedBoardSize = size);
-                  ref.read(blitzBoardSizeProvider.notifier).state = size.toString();
+                  ref.read(quickBoardSizeProvider.notifier).state = size;
                   _logger.i('Board size preference changed to $size');
                 }
               },
@@ -507,7 +507,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               activeColor: AppColors.kin,
               onChanged: (value) {
                 setState(() => _selectedAiLevel = value.toInt());
-                ref.read(blitzAiLevelProvider.notifier).state = value.toInt();
+                ref.read(aiLevelProvider.notifier).state = value.toInt();
                 _logger.i('AI difficulty preference changed to $value');
               },
             ),
