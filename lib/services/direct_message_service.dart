@@ -89,10 +89,20 @@ class DirectMessageService {
       'sentAt': Timestamp.fromDate(now),
     });
 
+    // firestore.rules' message_threads update rule requires
+    // participantUids to stay byte-for-byte unchanged across writes
+    // (list equality is order-sensitive) - writing [fromUid, toUid] here
+    // flips the array's order depending on who is sending *this*
+    // message, so every other reply in a thread (whichever party isn't
+    // the thread's original creator) would have its write rejected.
+    // Use the same stable sort threadIdFor already derives the doc id
+    // from, so the array never changes shape across senders.
+    final sortedUids = [fromUid, toUid]..sort();
+
     batch.set(
       threadRef,
       {
-        'participantUids': [fromUid, toUid],
+        'participantUids': sortedUids,
         'participantNames': {fromUid: fromDisplayName, toUid: toDisplayName},
         'lastMessage': trimmed,
         'lastMessageAt': Timestamp.fromDate(now),

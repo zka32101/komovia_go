@@ -225,5 +225,39 @@ void main() {
       final messages = await service.watchMessages(threadId).first;
       expect(messages.map((m) => m.content).toList(), equals(['Hello!', 'Thank you!']));
     });
+
+    test(
+        'participantUids is written in a stable sorted order regardless of '
+        'who is replying (regression: it used to be written as '
+        '[fromUid, toUid], which flips order depending on the sender and '
+        "is rejected by firestore.rules' message_threads update rule, "
+        'whose requirement that participantUids stay byte-for-byte '
+        'unchanged across writes is order-sensitive - every other reply '
+        'in a thread would have failed outright)', () async {
+      await service.sendMessage(
+        fromUid: 'uid1',
+        fromDisplayName: 'Alice',
+        toUid: 'uid2',
+        toDisplayName: 'Bob',
+        content: 'Hello!',
+      );
+
+      final threadId = DirectMessageService.threadIdFor('uid1', 'uid2');
+      final threadRef = firestore.collection('message_threads').doc(threadId);
+      final afterFirstSend = await threadRef.get();
+      final expectedOrder = List<String>.from(afterFirstSend.data()!['participantUids'] as List);
+
+      // 相手(uid2)が返信する - fromUid/toUidが入れ替わる。
+      await service.sendMessage(
+        fromUid: 'uid2',
+        fromDisplayName: 'Bob',
+        toUid: 'uid1',
+        toDisplayName: 'Alice',
+        content: 'Thank you!',
+      );
+
+      final afterReply = await threadRef.get();
+      expect(afterReply.data()!['participantUids'], equals(expectedOrder));
+    });
   });
 }
