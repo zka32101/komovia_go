@@ -243,8 +243,11 @@ service cloud.firestore {
         // triggered by whichever participant's match completion closes out a
         // round, or by whoever taps "start" — not just the organizer. There's
         // no Cloud Function to own this step, so any participant may do it.
+        // Swiss format's startTournament also stamps totalRounds alongside
+        // status when a non-organizer participant taps "start" (the total
+        // round count isn't known until round 1's pairings are generated).
         (request.auth.uid in resource.data.participantUids &&
-         onlyChanged(['status', 'winnerId', 'lastAdvancedRound']))
+         onlyChanged(['status', 'winnerId', 'lastAdvancedRound', 'totalRounds']))
       );
       // Organizer may delete only while still 'upcoming' (before any
       // bracket/schedule is generated). participants/{uid} subdocs are
