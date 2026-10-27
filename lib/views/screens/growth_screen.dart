@@ -73,7 +73,11 @@ class _GrowthBody extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           recordsAsync.when(
-            data: (records) => _buildTrendSection(context, records),
+            data: (records) => _buildTrendSection(
+              context,
+              records,
+              entry: rankAsync.valueOrNull,
+            ),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => Text(
               l10n.growthTrendUnavailableMessage,
@@ -124,7 +128,11 @@ class _GrowthBody extends ConsumerWidget {
     );
   }
 
-  Widget _buildTrendSection(BuildContext context, List<GameRecord> records) {
+  Widget _buildTrendSection(
+    BuildContext context,
+    List<GameRecord> records, {
+    required LeaderboardEntry? entry,
+  }) {
     final l10n = AppLocalizations.of(context)!;
 
     if (records.isEmpty) {
@@ -145,8 +153,18 @@ class _GrowthBody extends ConsumerWidget {
     final chronological = records.reversed.toList();
     final ratings = _reconstructRatingTrend(chronological);
 
-    final wins = records.where((r) => r.result == GameResult.playerWin).length;
-    final winRatePercent = (wins / records.length * 100).round();
+    // "総対局数"/"勝率" はライフタイム累計を謳っているが、userGameRecordsProvider
+    // 自体は直近20局にlimitされている（game_provider.dart）。そのため、既に
+    // このUIが取得済みの非cappedなLeaderboardEntry集計（gamesPlayed/winRate）
+    // があればそちらを使い、無い場合のみ（未参戦等でエントリ未生成）直近分を
+    // フォールバックとして表示する。
+    final totalGames = entry?.gamesPlayed ?? records.length;
+    final winRatePercent = entry != null
+        ? (entry.winRate * 100).round()
+        : (records.where((r) => r.result == GameResult.playerWin).length /
+                records.length *
+                100)
+            .round();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,7 +175,7 @@ class _GrowthBody extends ConsumerWidget {
               child: _buildStatTile(
                 context,
                 label: l10n.growthTotalGamesLabel,
-                value: '${records.length}',
+                value: '$totalGames',
               ),
             ),
             const SizedBox(width: 12),
