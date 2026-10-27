@@ -240,5 +240,20 @@ void main() {
       expect(find.text('続きから対局する'), findsOneWidget);
       expect(find.textContaining('4'), findsWidgets);
     });
+
+    testWidgets(
+        'shows an entry point to AnalyticsDashboardScreen (regression: it '
+        'was previously registered as a route but had no navigation into '
+        'it from anywhere in the app)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const HomeScreen(),
+          container: container,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('対局分析・アチーブメント'), findsOneWidget);
+    });
   });
 }

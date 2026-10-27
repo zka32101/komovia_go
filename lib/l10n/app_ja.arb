@@ -133,6 +133,8 @@
   "homeHowToPlaySubtitle": "ルールをいつでも確認できます",
   "homeJosekiTitle": "戦法（定石）",
   "homeJosekiSubtitle": "代表的な定石と狙いを学ぶ",
+  "homeAnalyticsTitle": "対局分析・アチーブメント",
+  "homeAnalyticsSubtitle": "勝率グラフと獲得したアチーブメントを見る",
 
   "statsGamesPlayedLabel": "対局数",
   "statsMemberSinceLabel": "登録日",
@@ -727,6 +729,7 @@
   "winRateByAiLevelTitle": "AI レベル別勝率",
   "aiLevelAxisLabel": "AIレベル",
   "achievementsTitle": "アチーブメント",
+  "viewAllAchievementsButton": "すべて見る",
   "noAchievementsMessage": "アチーブメントを獲得してください",
   "achievementsUnlockedSectionTitle": "解除済み",
   "achievementsLockedSectionTitle": "未解除",

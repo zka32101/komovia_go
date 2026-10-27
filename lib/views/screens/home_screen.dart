@@ -271,6 +271,19 @@ class HomeScreen extends ConsumerWidget {
                     color: Colors.indigo[300]!,
                     onTap: () => _navigateToJoseki(context),
                   ),
+                  const SizedBox(height: 16),
+
+                  // Analytics dashboard (win-rate charts + achievements) -
+                  // previously registered as a route but with no navigation
+                  // into it from anywhere in the app.
+                  _buildActionCard(
+                    context,
+                    title: l10n.homeAnalyticsTitle,
+                    subtitle: l10n.homeAnalyticsSubtitle,
+                    icon: Icons.bar_chart,
+                    color: Colors.deepPurple[300]!,
+                    onTap: () => _navigateToAnalyticsDashboard(context),
+                  ),
                 ],
               ),
             ),
@@ -648,6 +661,11 @@ class HomeScreen extends ConsumerWidget {
   void _navigateToJoseki(BuildContext context) {
     _logger.i('Navigating to Joseki');
     Navigator.of(context).pushNamed('/joseki');
+  }
+
+  void _navigateToAnalyticsDashboard(BuildContext context) {
+    _logger.i('Navigating to Analytics Dashboard');
+    Navigator.of(context).pushNamed('/analytics-dashboard');
   }
 
   /// Messages icon with an unread-count badge
