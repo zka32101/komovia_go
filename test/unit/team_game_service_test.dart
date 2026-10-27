@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:komovia_go/services/index.dart';
 
 class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
@@ -134,6 +135,86 @@ void main() {
     test('インスタンス生成 - カスタムFirestore', () {
       final serviceCustom = TeamGameService(firestore: mockFirestore);
       expect(serviceCustom, isNotNull);
+    });
+  });
+
+  group('TeamGameService.findActiveTeamGame - real behavior', () {
+    late FakeFirebaseFirestore fakeFirestore;
+    late TeamGameService service;
+
+    setUp(() {
+      fakeFirestore = FakeFirebaseFirestore();
+      service = TeamGameService(firestore: fakeFirestore);
+    });
+
+    test('finds the in-progress game for the same team composition', () async {
+      final game = await service.startTeamGame(
+        team1Players: ['p1', 'p2'],
+        team2Players: ['p3', 'p4'],
+        boardSize: 9,
+      );
+
+      final found = await service.findActiveTeamGame(
+        team1Players: ['p1', 'p2'],
+        team2Players: ['p3', 'p4'],
+      );
+
+      expect(found?.id, game.id);
+    });
+
+    test('finds the game regardless of player order within each team', () async {
+      final game = await service.startTeamGame(
+        team1Players: ['p1', 'p2'],
+        team2Players: ['p3', 'p4'],
+        boardSize: 9,
+      );
+
+      final found = await service.findActiveTeamGame(
+        team1Players: ['p2', 'p1'],
+        team2Players: ['p4', 'p3'],
+      );
+
+      expect(found?.id, game.id);
+    });
+
+    test('does not find a game that has already ended', () async {
+      final game = await service.startTeamGame(
+        team1Players: ['p1', 'p2'],
+        team2Players: ['p3', 'p4'],
+        boardSize: 9,
+      );
+      await service.endTeamGame(gameId: game.id, result: 'team1_win', sgfData: '');
+
+      final found = await service.findActiveTeamGame(
+        team1Players: ['p1', 'p2'],
+        team2Players: ['p3', 'p4'],
+      );
+
+      expect(found, isNull);
+    });
+
+    test('returns null when no game exists for this team composition', () async {
+      final found = await service.findActiveTeamGame(
+        team1Players: ['nobody1', 'nobody2'],
+        team2Players: ['nobody3', 'nobody4'],
+      );
+
+      expect(found, isNull);
+    });
+
+    test('does not match a different team composition sharing one player', () async {
+      await service.startTeamGame(
+        team1Players: ['p1', 'p2'],
+        team2Players: ['p3', 'p4'],
+        boardSize: 9,
+      );
+
+      final found = await service.findActiveTeamGame(
+        team1Players: ['p1', 'p5'],
+        team2Players: ['p3', 'p4'],
+      );
+
+      expect(found, isNull);
     });
   });
 }

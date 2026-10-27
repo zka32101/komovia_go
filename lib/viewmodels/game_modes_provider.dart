@@ -178,6 +178,32 @@ final startTeamGameProvider = FutureProvider.family<TeamGameRecord,
   );
 });
 
+/// 同じチーム編成の進行中のゲームがあれば再開し、無ければ新規作成する。
+/// TeamGameScreenが開かれるたびにstartTeamGameProviderを直接呼んでいた
+/// 以前の実装では、再度同じ画面を開くたびに新しい対局が作られてしまい、
+/// 既存の進行中の対局に戻る方法が無かった（実バグ）。
+final resumeOrStartTeamGameProvider = FutureProvider.family<TeamGameRecord,
+    ({List<String> team1Players, List<String> team2Players, int boardSize})>(
+    (ref, params) async {
+  final service = ref.watch(teamGameServiceProvider);
+
+  final existing = await service.findActiveTeamGame(
+    team1Players: params.team1Players,
+    team2Players: params.team2Players,
+  );
+  if (existing != null) {
+    _logger.i('Resuming existing Team game: ${existing.id}');
+    return existing;
+  }
+
+  _logger.i('Starting Team game with params: $params');
+  return service.startTeamGame(
+    team1Players: params.team1Players,
+    team2Players: params.team2Players,
+    boardSize: params.boardSize,
+  );
+});
+
 /// Team ゲーム手追加プロバイダー
 final addTeamMoveProvider = FutureProvider.family<void,
     ({String gameId, String move, String playerColor})>((ref, params) async {

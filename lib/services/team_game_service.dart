@@ -165,6 +165,49 @@ class TeamGameService {
     }
   }
 
+  /// 指定したチーム編成の進行中（未終了）のゲームを探す。TeamGameRecordには
+  /// 明示的なstatusフィールドが無く、startedAt/endedAtが生成時点で同じ
+  /// DateTimeインスタンスに設定され、endTeamGameでのみ別のタイムスタンプに
+  /// 更新される——これを「未終了」の既存の暗黙的シグナルとして利用する
+  /// （新フィールドを追加するより、既存モデルの設計をそのまま使う方が
+  /// このバグ修正のスコープとして小さい）。見つからなければnull。
+  ///
+  /// team1Players.firstが対局を開始した時点のチーム編成なので、
+  /// arrayContainsで絞り込んだ後、両チームの編成が完全一致するものだけを
+  /// クライアント側でフィルタする。
+  Future<TeamGameRecord?> findActiveTeamGame({
+    required List<String> team1Players,
+    required List<String> team2Players,
+  }) async {
+    try {
+      if (team1Players.isEmpty) return null;
+
+      final snapshot = await _firestore
+          .collection('teamGames')
+          .where('team1Players', arrayContains: team1Players.first)
+          .get();
+
+      for (final doc in snapshot.docs) {
+        final game = TeamGameRecord.fromJson(doc.data());
+        final isUnfinished = game.startedAt.isAtSameMomentAs(game.endedAt);
+        final sameTeams = _sameTeams(game.team1Players, team1Players) &&
+            _sameTeams(game.team2Players, team2Players);
+        if (isUnfinished && sameTeams) {
+          return game;
+        }
+      }
+      return null;
+    } catch (e) {
+      _logger.e('Error finding active Team game: $e');
+      rethrow;
+    }
+  }
+
+  bool _sameTeams(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    return a.toSet().containsAll(b) && b.toSet().containsAll(a);
+  }
+
   /// プレイヤーが参加している Team ゲーム一覧を取得
   Future<List<TeamGameRecord>> getPlayerTeamGames({
     required String uid,
