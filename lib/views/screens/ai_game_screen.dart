@@ -53,17 +53,39 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
   int? _captureFlashCount;
   Timer? _aiMoveRequestTimer;
 
+  /// 「同時刻の碁盤」機能(ConcurrentSessionService)のためのハートビート。
+  /// startNewGameProviderが対局開始時に一度だけactive_play_sessions
+  /// ドキュメントを作るが、lastHeartbeatAtを更新する呼び出し元が
+  /// どこにも無かったため、staleAfter(5分)を過ぎた瞬間に対局中でも
+  /// このプレイヤーが一覧から消えていた。対局が有効な間、この周期で
+  /// 定期的にheartbeatを送り続ける。
+  static const _heartbeatInterval = Duration(minutes: 2);
+  Timer? _heartbeatTimer;
+
   @override
   void initState() {
     super.initState();
     _logger.i('AIGameScreen initialized');
     _selectedRow = -1;
     _selectedCol = -1;
+    _startHeartbeat();
+  }
+
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) {
+      final uid = ref.read(currentUserProvider)?.uid;
+      if (uid == null || !ref.read(isGameActiveProvider)) return;
+      ref.read(sendPlaySessionHeartbeatProvider)(uid).catchError((e) {
+        _logger.w('縁: play session heartbeat failed (non-fatal): $e');
+      });
+    });
   }
 
   @override
   void dispose() {
     _aiMoveRequestTimer?.cancel();
+    _heartbeatTimer?.cancel();
     super.dispose();
   }
 
