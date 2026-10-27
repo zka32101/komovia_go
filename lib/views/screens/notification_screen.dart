@@ -6,6 +6,8 @@ import 'package:komovia_go/viewmodels/index.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
 import 'pvp_game_screen.dart';
 import 'friends_screen.dart';
+import 'achievements_screen.dart';
+import 'tournament_bracket_screen.dart';
 import 'package:komovia_go/config/theme.dart';
 
 final _logger = Logger();
@@ -65,7 +67,14 @@ class NotificationScreen extends ConsumerWidget {
             final n = notifications[index];
             final gameId = n.type == 'pvp_challenge' ? (n.data?['gameId'] as String?) : null;
             final isGameInvitation = n.type == 'game_invitation';
-            final opensElsewhere = gameId != null || isGameInvitation;
+            final isFriendRequest = n.type == 'friend_request';
+            final tournamentId = n.type == 'tournament_match' ? (n.data?['tournamentId'] as String?) : null;
+            final isAchievement = n.type == 'achievement';
+            final opensElsewhere = gameId != null ||
+                isGameInvitation ||
+                isFriendRequest ||
+                tournamentId != null ||
+                isAchievement;
             return ListTile(
               tileColor: n.isRead ? null : AppColors.kin.withOpacity(0.05),
               leading: Icon(_iconFor(n.type), color: n.isRead ? AppColors.washiDim : AppColors.kin),
@@ -87,7 +96,13 @@ class NotificationScreen extends ConsumerWidget {
                   ? () => _openPvpGame(context, ref, uid, n, gameId)
                   : (isGameInvitation
                       ? () => _openGameInvitations(context, ref, uid, n)
-                      : (n.isRead ? null : () => _markAsRead(ref, uid, n.id))),
+                      : (isFriendRequest
+                          ? () => _openFriendRequests(context, ref, uid, n)
+                          : (tournamentId != null
+                              ? () => _openTournament(context, ref, uid, n, tournamentId)
+                              : (isAchievement
+                                  ? () => _openAchievements(context, ref, uid, n)
+                                  : (n.isRead ? null : () => _markAsRead(ref, uid, n.id)))))),
             );
           },
         );
@@ -148,6 +163,59 @@ class NotificationScreen extends ConsumerWidget {
     if (context.mounted) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const FriendsScreen(initialTabIndex: 2)),
+      );
+    }
+  }
+
+  Future<void> _openFriendRequests(
+    BuildContext context,
+    WidgetRef ref,
+    String uid,
+    AppNotification notification,
+  ) async {
+    if (!notification.isRead) {
+      await _markAsRead(ref, uid, notification.id);
+    }
+    if (context.mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const FriendsScreen(initialTabIndex: 1)),
+      );
+    }
+  }
+
+  Future<void> _openTournament(
+    BuildContext context,
+    WidgetRef ref,
+    String uid,
+    AppNotification notification,
+    String tournamentId,
+  ) async {
+    if (!notification.isRead) {
+      await _markAsRead(ref, uid, notification.id);
+    }
+    try {
+      final tournament = await ref.read(tournamentByIdProvider(tournamentId).future);
+      if (tournament == null || !context.mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => TournamentBracketScreen(tournament: tournament)),
+      );
+    } catch (e) {
+      _logger.e('Failed to open tournament from notification: $e');
+    }
+  }
+
+  Future<void> _openAchievements(
+    BuildContext context,
+    WidgetRef ref,
+    String uid,
+    AppNotification notification,
+  ) async {
+    if (!notification.isRead) {
+      await _markAsRead(ref, uid, notification.id);
+    }
+    if (context.mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => AchievementsScreen(uid: uid)),
       );
     }
   }
