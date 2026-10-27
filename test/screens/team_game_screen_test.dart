@@ -7,13 +7,13 @@ import 'package:komovia_go/views/screens/index.dart';
 
 import '../test_utils.dart';
 
-/// Overrides [startTeamGameProvider] so TeamGameScreen never touches a
-/// real Firestore connection (there is none in a plain `flutter test`
-/// process), returning a fixed successful record instead.
+/// Overrides [resumeOrStartTeamGameProvider] so TeamGameScreen never
+/// touches a real Firestore connection (there is none in a plain
+/// `flutter test` process), returning a fixed successful record instead.
 ProviderContainer _buildContainer() {
   return ProviderContainer(
     overrides: [
-      startTeamGameProvider.overrideWith(
+      resumeOrStartTeamGameProvider.overrideWith(
         (ref, params) async => TeamGameRecord(
           id: 'test-team-game-1',
           team1Players: params.team1Players,
@@ -258,7 +258,7 @@ void main() {
       expect(find.byType(TeamGameScreen), findsOneWidget);
     });
 
-    testWidgets('プロバイダー統合 - startTeamGameProvider呼び出し', (
+    testWidgets('プロバイダー統合 - resumeOrStartTeamGameProvider呼び出し', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(

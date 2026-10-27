@@ -54,7 +54,7 @@ class _TeamGameScreenState extends ConsumerState<TeamGameScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     final gameAsync = ref.watch(
-      startTeamGameProvider(
+      resumeOrStartTeamGameProvider(
         (
           team1Players: widget.team1Players,
           team2Players: widget.team2Players,
