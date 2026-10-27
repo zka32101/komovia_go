@@ -71,68 +71,80 @@ class PuzzleRushService {
         'puzzleId: $puzzleId, isCorrect: $isCorrect, solveTime: ${solveTime}s',
       );
 
-      final sessionDoc =
-          await _firestore.collection('puzzleRushSessions').doc(sessionId).get();
+      // 以前はセッションのread-then-writeがトランザクション無しで行われて
+      // いたため、同じセッションに対するsolvePuzzle呼び出しが短時間に
+      // 重複する(UIの二重タップ、タイムアウト後のリトライで実は先の
+      // 呼び出しも成功していた、など)と、両方の呼び出しが同じ古い
+      // score/solvedCount/correctCount/totalAttempts/maxComboを読み取って
+      // それぞれ+1した値を書き込み、片方の加算が失われていた。配列
+      // フィールド(puzzleIds等)は読み取った配列に1件追加するだけなので
+      // 同様に古い配列を基準にすると、スカラーのカウントと配列の長さが
+      // 食い違う内部矛盾したレコードになり得る。runTransaction内で読み取りと
+      // 書き込みを行い、再試行時は常に最新のセッション状態を基準にすることで
+      // この競合を防ぐ。
+      await _firestore.runTransaction((transaction) async {
+        final sessionRef =
+            _firestore.collection('puzzleRushSessions').doc(sessionId);
+        final sessionDoc = await transaction.get(sessionRef);
 
-      if (!sessionDoc.exists) {
-        throw Exception('Session not found: $sessionId');
-      }
-
-      final session = PuzzleRushRecord.fromJson(sessionDoc.data()!);
-
-      // スコア計算：難易度係数 × 正解フラグ
-      final difficultyMultiplier = _getDifficultyMultiplier(puzzleDifficulty);
-      final pointsEarned = isCorrect ? (10 * difficultyMultiplier).toInt() : 0;
-
-      // コンボの計算: maxComboは「セッション中に一度でも到達した最長の
-      // 連続正解数」を記録するフィールドであり、現在の連続正解数
-      // (currentCombo)とは別物。以前の実装はsession.maxComboを現在の
-      // 連続数として使い回していたため、連続が途切れた後に再度連続して
-      // 正解するとその時点の現在連続数で過去の最大値が上書きされ、
-      // 本来の最大コンボが失われていた(例: 3連続→1回ミス→1連続正解で
-      // maxComboが3→1に下がる)。puzzleResultsの末尾から数えた現在の
-      // 連続正解数を毎回計算し、記録済みの最大値を下回ることがないよう
-      // max()で比較する。
-      final allResults = [...session.puzzleResults, isCorrect];
-      var currentCombo = 0;
-      for (var i = allResults.length - 1; i >= 0; i--) {
-        if (allResults[i]) {
-          currentCombo++;
-        } else {
-          break;
+        if (!sessionDoc.exists) {
+          throw Exception('Session not found: $sessionId');
         }
-      }
-      final newMaxCombo =
-          currentCombo > session.maxCombo ? currentCombo : session.maxCombo;
 
-      // 平均解答時間を更新
-      final newAverageSolveTime = session.solveTimes.isEmpty
-          ? solveTime.toDouble()
-          : (session.solveTimes.fold<int>(0, (a, b) => a + b) + solveTime) /
-              (session.solveTimes.length + 1);
+        final session = PuzzleRushRecord.fromJson(sessionDoc.data()!);
 
-      // 以前はこれら4フィールドをFieldValue.arrayUnionで更新していたが、
-      // arrayUnionは値ベースで重複を除去するため、puzzleResults/
-      // puzzleDifficulties/solveTimesのように同じ値(true/true, 同じ難易度,
-      // 同じ解答時間など)が繰り返し現れる履歴配列では、2回目以降の同じ値が
-      // 追記されず配列が実質的に高々2〜3要素のセットに縮退していた
-      // (例: true,true,trueと解いても配列は[true]のまま)。これが
-      // maxComboの計算が常に壊れていた真因。読み取り済みのsessionの配列に
-      // 単純に要素を追加してupdateする(セットではなく履歴として扱う)ように修正。
-      await _firestore
-          .collection('puzzleRushSessions')
-          .doc(sessionId)
-          .update({
-        'puzzleIds': [...session.puzzleIds, puzzleId],
-        'puzzleDifficulties': [...session.puzzleDifficulties, puzzleDifficulty],
-        'puzzleResults': allResults,
-        'solveTimes': [...session.solveTimes, solveTime],
-        'score': session.score + pointsEarned,
-        'solvedCount': session.solvedCount + 1,
-        'correctCount': isCorrect ? session.correctCount + 1 : session.correctCount,
-        'totalAttempts': session.totalAttempts + 1,
-        'maxCombo': newMaxCombo,
-        'averageSolveTime': newAverageSolveTime,
+        // スコア計算：難易度係数 × 正解フラグ
+        final difficultyMultiplier = _getDifficultyMultiplier(puzzleDifficulty);
+        final pointsEarned = isCorrect ? (10 * difficultyMultiplier).toInt() : 0;
+
+        // コンボの計算: maxComboは「セッション中に一度でも到達した最長の
+        // 連続正解数」を記録するフィールドであり、現在の連続正解数
+        // (currentCombo)とは別物。以前の実装はsession.maxComboを現在の
+        // 連続数として使い回していたため、連続が途切れた後に再度連続して
+        // 正解するとその時点の現在連続数で過去の最大値が上書きされ、
+        // 本来の最大コンボが失われていた(例: 3連続→1回ミス→1連続正解で
+        // maxComboが3→1に下がる)。puzzleResultsの末尾から数えた現在の
+        // 連続正解数を毎回計算し、記録済みの最大値を下回ることがないよう
+        // max()で比較する。
+        final allResults = [...session.puzzleResults, isCorrect];
+        var currentCombo = 0;
+        for (var i = allResults.length - 1; i >= 0; i--) {
+          if (allResults[i]) {
+            currentCombo++;
+          } else {
+            break;
+          }
+        }
+        final newMaxCombo =
+            currentCombo > session.maxCombo ? currentCombo : session.maxCombo;
+
+        // 平均解答時間を更新
+        final newAverageSolveTime = session.solveTimes.isEmpty
+            ? solveTime.toDouble()
+            : (session.solveTimes.fold<int>(0, (a, b) => a + b) + solveTime) /
+                (session.solveTimes.length + 1);
+
+        // 以前はこれら4フィールドをFieldValue.arrayUnionで更新していたが、
+        // arrayUnionは値ベースで重複を除去するため、puzzleResults/
+        // puzzleDifficulties/solveTimesのように同じ値(true/true, 同じ難易度,
+        // 同じ解答時間など)が繰り返し現れる履歴配列では、2回目以降の同じ値が
+        // 追記されず配列が実質的に高々2〜3要素のセットに縮退していた
+        // (例: true,true,trueと解いても配列は[true]のまま)。これが
+        // maxComboの計算が常に壊れていた真因。読み取り済みのsessionの配列に
+        // 単純に要素を追加してupdateする(セットではなく履歴として扱う)ように修正。
+        transaction.update(sessionRef, {
+          'puzzleIds': [...session.puzzleIds, puzzleId],
+          'puzzleDifficulties': [...session.puzzleDifficulties, puzzleDifficulty],
+          'puzzleResults': allResults,
+          'solveTimes': [...session.solveTimes, solveTime],
+          'score': session.score + pointsEarned,
+          'solvedCount': session.solvedCount + 1,
+          'correctCount':
+              isCorrect ? session.correctCount + 1 : session.correctCount,
+          'totalAttempts': session.totalAttempts + 1,
+          'maxCombo': newMaxCombo,
+          'averageSolveTime': newAverageSolveTime,
+        });
       });
 
       _logger.i('Puzzle solved successfully');
