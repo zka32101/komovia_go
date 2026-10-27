@@ -33,6 +33,32 @@ class MockBlitzGameService {
       createdAt: DateTime.now(),
     );
   }
+
+  BlitzGameRecord _fakeRecord({
+    required String gameId,
+    required String result,
+    required String winnerColor,
+  }) {
+    final now = DateTime.now();
+    return BlitzGameRecord(
+      id: gameId,
+      uid: 'test-user',
+      boardSize: 9,
+      aiLevel: null,
+      opponentUid: 'opponent',
+      whitePlayer: 'test-user',
+      blackPlayer: 'opponent',
+      moveHistory: const [],
+      result: result,
+      winnerColor: winnerColor,
+      ratingChange: 0,
+      sgfData: '',
+      startedAt: now,
+      endedAt: now,
+      durationSeconds: 0,
+      createdAt: now,
+    );
+  }
 }
 
 /// Overrides [startBlitzGameProvider] so BlitzGameScreen never touches a
@@ -47,6 +73,17 @@ ProviderContainer _buildContainer() {
           boardSize: params.boardSize,
           aiLevel: params.aiLevel,
           opponentUid: params.opponentUid,
+        ),
+      ),
+      // 盤面操作テストは実対局(タップ→着手記録、投了→終局)を駆動するが、
+      // 実Firestoreへの接続は無い(plain flutter test)ため、記録系の
+      // プロバイダーは成功レスポンスを返すだけのスタブに差し替える。
+      addBlitzMoveProvider.overrideWith((ref, params) async {}),
+      endBlitzGameProvider.overrideWith(
+        (ref, params) async => MockBlitzGameService()._fakeRecord(
+          gameId: params.gameId,
+          result: params.result,
+          winnerColor: params.winnerColor,
         ),
       ),
     ],
@@ -125,7 +162,7 @@ void main() {
       expect(find.text('AIレベル'), findsWidgets);
     });
 
-    testWidgets('着手履歴の表示 - 空状態', (WidgetTester tester) async {
+    testWidgets('捕獲数表示 - 初期状態は両者0', (WidgetTester tester) async {
       await tester.pumpWidget(
         TestUtils.buildTestableWidget(
           child: BlitzGameScreen(uid: 'test-user', boardSize: 19),
@@ -134,10 +171,11 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('着手履歴'), findsWidgets);
+      expect(find.text('捕獲'), findsWidgets);
+      expect(find.textContaining('黒0'), findsWidgets);
     });
 
-    testWidgets('アクションボタン - 着手提出ボタン表示', (WidgetTester tester) async {
+    testWidgets('アクションボタン - パス/投了ボタン表示', (WidgetTester tester) async {
       await tester.pumpWidget(
         TestUtils.buildTestableWidget(
           child: BlitzGameScreen(uid: 'test-user', boardSize: 19),
@@ -146,10 +184,13 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('着手を提出'), findsWidgets);
+      expect(find.text('パス'), findsOneWidget);
+      expect(find.text('投了'), findsOneWidget);
     });
 
-    testWidgets('ゲーム終了ボタン - 表示確認', (WidgetTester tester) async {
+    testWidgets('盤面 - 実際に石を置けるGestureDetector/盤面が表示される', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         TestUtils.buildTestableWidget(
           child: BlitzGameScreen(uid: 'test-user', boardSize: 19),
@@ -158,7 +199,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('ゲーム終了'), findsWidgets);
+      expect(find.byType(GestureDetector), findsWidgets);
+      expect(find.byType(CustomPaint), findsWidgets);
     });
 
     testWidgets('エラー状態表示 - エラーメッセージ表示', (WidgetTester tester) async {
@@ -196,7 +238,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(SingleChildScrollView), findsWidgets);
+      expect(find.byType(AspectRatio), findsOneWidget);
     });
 
     testWidgets('複数ボードサイズ対応 - 9x9', (WidgetTester tester) async {
@@ -257,30 +299,46 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('操作: 着手提出ボタンクリック可能性確認', (WidgetTester tester) async {
+    testWidgets('操作: 盤面タップで石が置かれる(対人戦ローカル対面)', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         TestUtils.buildTestableWidget(
-          child: BlitzGameScreen(uid: 'test-user', boardSize: 19),
+          child: BlitzGameScreen(uid: 'test-user', boardSize: 9),
           container: _buildContainer(),
         ),
       );
       await tester.pump();
 
-      final button = find.text('着手を提出');
-      expect(button, findsWidgets);
+      // 対人戦(aiLevel==null)なので最初のタップで即座に黒石が置かれる。
+      await tester.tapAt(tester.getCenter(find.byType(AspectRatio)));
+      await tester.pump();
+
+      expect(find.byType(GestureDetector), findsWidgets);
     });
 
-    testWidgets('操作: ゲーム終了ボタンクリック可能性確認', (WidgetTester tester) async {
+    testWidgets('操作: 投了すると終局処理が走り投了ボタンが無効化される', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         TestUtils.buildTestableWidget(
-          child: BlitzGameScreen(uid: 'test-user', boardSize: 19),
+          child: BlitzGameScreen(uid: 'test-user', boardSize: 9),
           container: _buildContainer(),
         ),
       );
       await tester.pump();
 
-      final button = find.text('ゲーム終了');
-      expect(button, findsWidgets);
+      await tester.tap(find.text('投了'));
+      await tester.pump();
+      await tester.pump();
+
+      final resignButton = tester.widget<ElevatedButton>(
+        find.ancestor(
+          of: find.text('投了'),
+          matching: find.byType(ElevatedButton),
+        ),
+      );
+      expect(resignButton.onPressed, isNull);
     });
 
     testWidgets('状態遷移: ローディング → データ表示', (WidgetTester tester) async {
