@@ -8,6 +8,8 @@ import 'pvp_game_screen.dart';
 import 'friends_screen.dart';
 import 'achievements_screen.dart';
 import 'tournament_bracket_screen.dart';
+import 'correspondence_game_screen.dart';
+import 'team_game_screen.dart';
 import 'package:komovia_go/config/theme.dart';
 
 final _logger = Logger();
@@ -70,11 +72,16 @@ class NotificationScreen extends ConsumerWidget {
             final isFriendRequest = n.type == 'friend_request';
             final tournamentId = n.type == 'tournament_match' ? (n.data?['tournamentId'] as String?) : null;
             final isAchievement = n.type == 'achievement';
+            final correspondenceGameId =
+                n.type == 'correspondence_game' ? (n.data?['gameId'] as String?) : null;
+            final teamGameId = n.type == 'team_game' ? (n.data?['gameId'] as String?) : null;
             final opensElsewhere = gameId != null ||
                 isGameInvitation ||
                 isFriendRequest ||
                 tournamentId != null ||
-                isAchievement;
+                isAchievement ||
+                correspondenceGameId != null ||
+                teamGameId != null;
             return ListTile(
               tileColor: n.isRead ? null : AppColors.kin.withOpacity(0.05),
               leading: Icon(_iconFor(n.type), color: n.isRead ? AppColors.washiDim : AppColors.kin),
@@ -102,7 +109,14 @@ class NotificationScreen extends ConsumerWidget {
                               ? () => _openTournament(context, ref, uid, n, tournamentId)
                               : (isAchievement
                                   ? () => _openAchievements(context, ref, uid, n)
-                                  : (n.isRead ? null : () => _markAsRead(ref, uid, n.id)))))),
+                                  : (correspondenceGameId != null
+                                      ? () => _openCorrespondenceGame(
+                                          context, ref, uid, n, correspondenceGameId)
+                                      : (teamGameId != null
+                                          ? () => _openTeamGame(context, ref, uid, n, teamGameId)
+                                          : (n.isRead
+                                              ? null
+                                              : () => _markAsRead(ref, uid, n.id)))))))),
             );
           },
         );
@@ -217,6 +231,63 @@ class NotificationScreen extends ConsumerWidget {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => AchievementsScreen(uid: uid)),
       );
+    }
+  }
+
+  Future<void> _openCorrespondenceGame(
+    BuildContext context,
+    WidgetRef ref,
+    String uid,
+    AppNotification notification,
+    String gameId,
+  ) async {
+    if (!notification.isRead) {
+      await _markAsRead(ref, uid, notification.id);
+    }
+    try {
+      final service = ref.read(correspondenceGameServiceProvider);
+      final game = await service.getGame(gameId);
+      if (game == null || !context.mounted) return;
+      final opponentUid = game.uid == uid ? game.opponentUid : game.uid;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CorrespondenceGameScreen(
+            uid: uid,
+            opponentUid: opponentUid,
+            boardSize: game.boardSize,
+          ),
+        ),
+      );
+    } catch (e) {
+      _logger.e('Failed to open correspondence game from notification: $e');
+    }
+  }
+
+  Future<void> _openTeamGame(
+    BuildContext context,
+    WidgetRef ref,
+    String uid,
+    AppNotification notification,
+    String gameId,
+  ) async {
+    if (!notification.isRead) {
+      await _markAsRead(ref, uid, notification.id);
+    }
+    try {
+      final service = ref.read(teamGameServiceProvider);
+      final game = await service.getGame(gameId);
+      if (game == null || !context.mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TeamGameScreen(
+            team1Players: game.team1Players,
+            team2Players: game.team2Players,
+            boardSize: game.boardSize,
+          ),
+        ),
+      );
+    } catch (e) {
+      _logger.e('Failed to open team game from notification: $e');
     }
   }
 

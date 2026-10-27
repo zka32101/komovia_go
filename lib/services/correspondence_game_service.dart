@@ -194,6 +194,20 @@ class CorrespondenceGameService {
     }
   }
 
+  /// id指定で1件取得する。`correspondence_game`通知のタップから対局画面へ
+  /// 遷移するのに使う（CorrespondenceGameScreenはopponentUid指定で開くため、
+  /// 通知の`gameId`から相手のuidを逆引きする必要がある）。
+  Future<CorrespondenceGameRecord?> getGame(String gameId) async {
+    try {
+      final doc = await _firestore.collection('correspondenceGames').doc(gameId).get();
+      if (!doc.exists) return null;
+      return CorrespondenceGameRecord.fromJson(doc.data()!);
+    } catch (e) {
+      _logger.e('Failed to fetch Correspondence game $gameId: $e');
+      return null;
+    }
+  }
+
   /// ユーザーの Correspondence ゲーム一覧を取得。[uid]が開始した対局
   /// (`uid`フィールド)と、[uid]が招待された対局(`opponentUid`フィールド)
   /// の両方を返す — Firestoreは単一クエリでOR条件を組めないため、
