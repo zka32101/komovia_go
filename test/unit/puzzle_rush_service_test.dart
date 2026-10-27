@@ -321,5 +321,41 @@ void main() {
       expect(entry.displayName, isNull);
       expect(entry.uid, 'legacy-user');
     });
+
+    test(
+        'sequential solvePuzzle calls still accumulate correctly now that '
+        'the read-modify-write happens inside a transaction (regression '
+        'guard for the solvePuzzle -> runTransaction rewrite: fixes a '
+        'read-then-write race where two near-simultaneous calls for the '
+        'same session, e.g. a UI double-tap or a timeout retry whose '
+        'original call actually succeeded, could both read the same stale '
+        'score/solvedCount/correctCount/totalAttempts and have one '
+        'increment silently clobbered by the other)', () async {
+      final session =
+          await service.startPuzzleRush(uid: 'u1', difficulty: 'normal');
+
+      for (var i = 0; i < 3; i++) {
+        await service.solvePuzzle(
+          sessionId: session.id,
+          puzzleId: 'p$i',
+          puzzleDifficulty: 1,
+          isCorrect: true,
+          solveTime: 5,
+        );
+      }
+
+      final doc = await firestore
+          .collection('puzzleRushSessions')
+          .doc(session.id)
+          .get();
+      final updated = PuzzleRushRecord.fromJson(doc.data()!);
+
+      expect(updated.solvedCount, 3);
+      expect(updated.correctCount, 3);
+      expect(updated.totalAttempts, 3);
+      expect(updated.score, 30);
+      expect(updated.puzzleIds, ['p0', 'p1', 'p2']);
+      expect(updated.maxCombo, 3);
+    });
   });
 }
