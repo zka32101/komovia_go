@@ -286,7 +286,7 @@ class _PuzzleRushSettingsScreenState extends ConsumerState<PuzzleRushSettingsScr
                 _logger.i('Starting Puzzle Rush: $settings');
 
                 // Save settings to persistent storage
-                await ref.read(savePuzzleRushSettingsProvider(settings).future);
+                await ref.read(savePuzzleRushSettingsProvider)(settings);
 
                 // Navigate to game screen
                 if (context.mounted) {

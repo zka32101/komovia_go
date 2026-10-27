@@ -288,16 +288,14 @@ class _GamePresetManagerScreenState
     String userId,
     GamePreset preset,
   ) async {
-    final success = await ref.read(
-      createGamePresetProvider((
-        userId: userId,
-        name: l10n.copyOfPresetName(preset.name),
-        gameMode: preset.gameMode,
-        boardSize: preset.boardSize,
-        aiLevel: preset.aiLevel,
-        playerColor: preset.playerColor,
-        handicap: preset.handicap,
-      )).future,
+    final success = await ref.read(createGamePresetProvider)(
+      userId: userId,
+      name: l10n.copyOfPresetName(preset.name),
+      gameMode: preset.gameMode,
+      boardSize: preset.boardSize,
+      aiLevel: preset.aiLevel,
+      playerColor: preset.playerColor,
+      handicap: preset.handicap,
     );
 
     if (success) {
@@ -537,7 +535,7 @@ class _PresetFormDialogState extends ConsumerState<_PresetFormDialog> {
     final editing = widget.editing;
 
     final success = editing == null
-        ? await ref.read(createGamePresetProvider((
+        ? await ref.read(createGamePresetProvider)(
             userId: widget.userId,
             name: name,
             gameMode: widget.gameMode,
@@ -545,8 +543,8 @@ class _PresetFormDialogState extends ConsumerState<_PresetFormDialog> {
             aiLevel: _selectedAiLevel,
             playerColor: 'black',
             handicap: handicap,
-          )).future)
-        : await ref.read(updateGamePresetProvider((
+          )
+        : await ref.read(updateGamePresetProvider)(
             userId: widget.userId,
             presetId: editing.id,
             name: name,
@@ -555,7 +553,7 @@ class _PresetFormDialogState extends ConsumerState<_PresetFormDialog> {
             aiLevel: _selectedAiLevel,
             playerColor: 'black',
             handicap: handicap,
-          )).future);
+          );
 
     if (success) {
       ref.invalidate(presetsByModeProvider((widget.userId, widget.gameMode)));

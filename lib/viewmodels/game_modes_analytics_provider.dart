@@ -62,56 +62,82 @@ final mostUsedPresetsProvider =
 );
 
 /// Create new game preset
-final createGamePresetProvider = FutureProvider.family<bool,
-    ({
-      String userId,
-      String name,
-      String gameMode,
-      int boardSize,
-      int aiLevel,
+///
+/// A plain action provider (not `.family`) so one-shot preset creation
+/// calls never grow the provider container's cache: a `.family` keyed on
+/// a record containing the preset's free-text name/settings would mint a
+/// brand-new, never-evicted cache entry for every distinct preset a user
+/// ever creates.
+final createGamePresetProvider = Provider<
+    Future<bool> Function({
+      required String userId,
+      required String name,
+      required String gameMode,
+      required int boardSize,
+      required int aiLevel,
       String? playerColor,
       HandicapSettings? handicap,
-    })>(
-  (ref, params) async {
-    final service = ref.watch(gamePresetServiceProvider);
+    })>((ref) {
+  final service = ref.watch(gamePresetServiceProvider);
+  return ({
+    required userId,
+    required name,
+    required gameMode,
+    required boardSize,
+    required aiLevel,
+    playerColor,
+    handicap,
+  }) {
     return service.createPreset(
-      userId: params.userId,
-      name: params.name,
-      gameMode: params.gameMode,
-      boardSize: params.boardSize,
-      aiLevel: params.aiLevel,
-      playerColor: params.playerColor,
-      handicap: params.handicap,
+      userId: userId,
+      name: name,
+      gameMode: gameMode,
+      boardSize: boardSize,
+      aiLevel: aiLevel,
+      playerColor: playerColor,
+      handicap: handicap,
     );
-  },
-);
+  };
+});
 
 /// Update existing preset
-final updateGamePresetProvider = FutureProvider.family<bool,
-    ({
-      String userId,
-      String presetId,
-      String name,
-      String gameMode,
-      int boardSize,
-      int aiLevel,
+///
+/// Same plain-action shape as [createGamePresetProvider], for the same
+/// cache-growth reason.
+final updateGamePresetProvider = Provider<
+    Future<bool> Function({
+      required String userId,
+      required String presetId,
+      required String name,
+      required String gameMode,
+      required int boardSize,
+      required int aiLevel,
       String? playerColor,
       HandicapSettings? handicap,
-    })>(
-  (ref, params) async {
-    final service = ref.watch(gamePresetServiceProvider);
+    })>((ref) {
+  final service = ref.watch(gamePresetServiceProvider);
+  return ({
+    required userId,
+    required presetId,
+    required name,
+    required gameMode,
+    required boardSize,
+    required aiLevel,
+    playerColor,
+    handicap,
+  }) {
     return service.updatePreset(
-      userId: params.userId,
-      presetId: params.presetId,
-      name: params.name,
-      gameMode: params.gameMode,
-      boardSize: params.boardSize,
-      aiLevel: params.aiLevel,
-      playerColor: params.playerColor,
-      handicap: params.handicap,
+      userId: userId,
+      presetId: presetId,
+      name: name,
+      gameMode: gameMode,
+      boardSize: boardSize,
+      aiLevel: aiLevel,
+      playerColor: playerColor,
+      handicap: handicap,
     );
-  },
-);
+  };
+});
 
 /// Delete preset
 final deleteGamePresetProvider =

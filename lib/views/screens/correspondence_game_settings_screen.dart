@@ -249,8 +249,7 @@ class _CorrespondenceGameSettingsScreenState
                 _logger.i('Starting Correspondence game: $settings');
 
                 // Save settings to persistent storage
-                await ref.read(
-                    saveCorrespondenceSettingsProvider(settings).future);
+                await ref.read(saveCorrespondenceSettingsProvider)(settings);
 
                 // Navigate to game screen
                 if (context.mounted) {
