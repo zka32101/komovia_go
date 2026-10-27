@@ -78,12 +78,21 @@ ProviderContainer _buildContainer() {
       // 盤面操作テストは実対局(タップ→着手記録、投了→終局)を駆動するが、
       // 実Firestoreへの接続は無い(plain flutter test)ため、記録系の
       // プロバイダーは成功レスポンスを返すだけのスタブに差し替える。
-      addBlitzMoveProvider.overrideWith((ref, params) async {}),
+      addBlitzMoveProvider.overrideWith(
+        (ref) => ({required gameId, required move, required playerColor}) async {},
+      ),
       endBlitzGameProvider.overrideWith(
-        (ref, params) async => MockBlitzGameService()._fakeRecord(
-          gameId: params.gameId,
-          result: params.result,
-          winnerColor: params.winnerColor,
+        (ref) => ({
+          required gameId,
+          required result,
+          required winnerColor,
+          required sgfData,
+          required ratingChange,
+        }) async =>
+            MockBlitzGameService()._fakeRecord(
+          gameId: gameId,
+          result: result,
+          winnerColor: winnerColor,
         ),
       ),
     ],

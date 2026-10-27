@@ -378,14 +378,10 @@ class _TeamGameScreenState extends ConsumerState<TeamGameScreen> {
       const move = 'D4'; // Example move
       final playerColor = game.moveHistory.length % 2 == 0 ? 'white' : 'black';
 
-      await ref.read(
-        addTeamMoveProvider(
-          (
-            gameId: game.id,
-            move: move,
-            playerColor: playerColor,
-          ),
-        ).future,
+      await ref.read(addTeamMoveProvider)(
+        gameId: game.id,
+        move: move,
+        playerColor: playerColor,
       );
 
       _logger.i('Move added successfully');
@@ -414,14 +410,10 @@ class _TeamGameScreenState extends ConsumerState<TeamGameScreen> {
     try {
       const result = 'team1_win'; // Example result
 
-      await ref.read(
-        endTeamGameProvider(
-          (
-            gameId: game.id,
-            result: result,
-            sgfData: '', // Would generate real SGF
-          ),
-        ).future,
+      await ref.read(endTeamGameProvider)(
+        gameId: game.id,
+        result: result,
+        sgfData: '', // Would generate real SGF
       );
 
       _logger.i('Game ended successfully');

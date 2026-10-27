@@ -339,14 +339,10 @@ class CorrespondenceGameScreen extends ConsumerWidget {
       final playerColor =
           game.currentPlayerColor == 'black' ? 'white' : 'black';
 
-      await ref.read(
-        addCorrespondenceMoveProvider(
-          (
-            gameId: game.id,
-            move: move,
-            playerColor: playerColor,
-          ),
-        ).future,
+      await ref.read(addCorrespondenceMoveProvider)(
+        gameId: game.id,
+        move: move,
+        playerColor: playerColor,
       );
 
       _logger.i('Move added successfully');

@@ -473,14 +473,10 @@ class _BlitzGameScreenState extends ConsumerState<BlitzGameScreen> {
     final game = _game;
     if (game == null) return;
     final move = '${String.fromCharCode(65 + col)}${row + 1}';
-    ref.read(
-      addBlitzMoveProvider(
-        (
-          gameId: game.id,
-          move: move,
-          playerColor: player == 1 ? 'black' : 'white',
-        ),
-      ),
+    ref.read(addBlitzMoveProvider)(
+      gameId: game.id,
+      move: move,
+      playerColor: player == 1 ? 'black' : 'white',
     );
   }
 
@@ -598,16 +594,12 @@ class _BlitzGameScreenState extends ConsumerState<BlitzGameScreen> {
         ratingChange = await _updateAiRating(result);
       }
 
-      await ref.read(
-        endBlitzGameProvider(
-          (
-            gameId: game.id,
-            result: result,
-            winnerColor: winnerColor,
-            sgfData: sgfData,
-            ratingChange: ratingChange,
-          ),
-        ).future,
+      await ref.read(endBlitzGameProvider)(
+        gameId: game.id,
+        result: result,
+        winnerColor: winnerColor,
+        sgfData: sgfData,
+        ratingChange: ratingChange,
       );
 
       if (mounted) {
