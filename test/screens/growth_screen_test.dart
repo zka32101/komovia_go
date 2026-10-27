@@ -133,5 +133,63 @@ void main() {
       expect(find.text('2'), findsOneWidget); // total games
       expect(find.text('50%'), findsOneWidget); // win rate
     });
+
+    testWidgets(
+      'uses the uncapped leaderboard entry for total games/win rate, not the capped records list',
+      (tester) async {
+        // userGameRecordsProvider is hard-capped at 20 (game_provider.dart),
+        // but a real player can have far more lifetime games. Regression
+        // test for the bug where "総対局数"/"勝率" silently showed only the
+        // most recent 20 games' stats instead of the lifetime totals the
+        // labels claim.
+        final records = List.generate(
+          20,
+          (i) => _record(
+            id: 'g$i',
+            result: i.isEven ? GameResult.playerWin : GameResult.aiWin,
+            aiLevel: 5,
+            ratingAfter: 1200 + i,
+            ratingDelta: 1,
+            playedAt: DateTime(2026, 1, 1 + i),
+          ),
+        );
+        final entry = LeaderboardEntry(
+          uid: 'test-uid',
+          displayName: 'Test',
+          rank: 1,
+          rating: 1450,
+          gamesPlayed: 150,
+          wins: 90,
+          winRate: 0.6,
+          puzzlesSolved: 0,
+          lastUpdated: DateTime(2026, 1, 20),
+        );
+        final container = ProviderContainer(
+          overrides: [
+            currentUserProvider.overrideWithValue(TestData.testUser),
+            userLeaderboardRankProvider((
+              uid: TestData.testUser.uid,
+              period: LeaderboardPeriod.allTime,
+              type: LeaderboardType.rating,
+            )).overrideWith((ref) async => entry),
+            userGameRecordsProvider(TestData.testUser.uid)
+                .overrideWith((ref) async => records.reversed.toList()),
+          ],
+        );
+
+        await tester.pumpWidget(
+          TestUtils.buildTestableWidget(child: const GrowthScreen(), container: container),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        // Lifetime totals from the LeaderboardEntry, not "20"/"50%" from
+        // the capped records list.
+        expect(find.text('150'), findsOneWidget);
+        expect(find.text('60%'), findsOneWidget);
+        expect(find.text('20'), findsNothing);
+        expect(find.text('50%'), findsNothing);
+      },
+    );
   });
 }
