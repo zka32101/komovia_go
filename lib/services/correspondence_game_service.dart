@@ -194,7 +194,12 @@ class CorrespondenceGameService {
     }
   }
 
-  /// ユーザーの Correspondence ゲーム一覧を取得
+  /// ユーザーの Correspondence ゲーム一覧を取得。[uid]が開始した対局
+  /// (`uid`フィールド)と、[uid]が招待された対局(`opponentUid`フィールド)
+  /// の両方を返す — Firestoreは単一クエリでOR条件を組めないため、
+  /// getPendingMoveCountと同様に2つのクエリを発行して結合する。
+  /// 以前は`uid`のみでクエリしていたため、招待を受けた側は自分が
+  /// 参加している対局を一覧に表示できなかった（実バグ）。
   Future<List<CorrespondenceGameRecord>> getUserCorrespondenceGames({
     required String uid,
     String status = 'active', // 'active', 'completed', 'all'
@@ -202,20 +207,30 @@ class CorrespondenceGameService {
     try {
       _logger.i('Fetching Correspondence games for user: $uid, status: $status');
 
-      Query query = _firestore
+      Query createdQuery = _firestore
           .collection('correspondenceGames')
-          .where('uid', isEqualTo: uid)
-          .orderBy('lastMoveAt', descending: true);
+          .where('uid', isEqualTo: uid);
+      Query invitedQuery = _firestore
+          .collection('correspondenceGames')
+          .where('opponentUid', isEqualTo: uid);
 
       if (status != 'all') {
-        query = query.where('status', isEqualTo: status);
+        createdQuery = createdQuery.where('status', isEqualTo: status);
+        invitedQuery = invitedQuery.where('status', isEqualTo: status);
       }
 
-      final snapshot = await query.get();
+      final results = await Future.wait([createdQuery.get(), invitedQuery.get()]);
 
-      final games = snapshot.docs
-          .map((doc) => CorrespondenceGameRecord.fromJson(doc.data() as Map<String, dynamic>))
-          .toList();
+      final gamesById = <String, CorrespondenceGameRecord>{};
+      for (final snapshot in results) {
+        for (final doc in snapshot.docs) {
+          final game = CorrespondenceGameRecord.fromJson(doc.data() as Map<String, dynamic>);
+          gamesById[game.id] = game;
+        }
+      }
+
+      final games = gamesById.values.toList()
+        ..sort((a, b) => b.lastMoveAt.compareTo(a.lastMoveAt));
 
       _logger.i('Fetched ${games.length} Correspondence games');
       return games;

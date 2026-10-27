@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:komovia_go/services/index.dart';
 
 class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
@@ -103,6 +104,88 @@ void main() {
     test('インスタンス生成 - カスタムFirestore', () {
       final serviceCustom = CorrespondenceGameService(firestore: mockFirestore);
       expect(serviceCustom, isNotNull);
+    });
+  });
+
+  group('CorrespondenceGameService.getUserCorrespondenceGames - real behavior', () {
+    late FakeFirebaseFirestore fakeFirestore;
+    late CorrespondenceGameService service;
+
+    setUp(() {
+      fakeFirestore = FakeFirebaseFirestore();
+      service = CorrespondenceGameService(firestore: fakeFirestore);
+    });
+
+    test('an invited player (opponentUid) sees the game, not only its creator', () async {
+      final game = await service.startCorrespondenceGame(
+        uid: 'creator',
+        opponentUid: 'invitee',
+        boardSize: 9,
+      );
+
+      final creatorGames = await service.getUserCorrespondenceGames(uid: 'creator');
+      final inviteeGames = await service.getUserCorrespondenceGames(uid: 'invitee');
+
+      expect(creatorGames.map((g) => g.id), contains(game.id));
+      expect(inviteeGames.map((g) => g.id), contains(game.id));
+    });
+
+    test('a game is not duplicated when the same uid is somehow both creator and opponent', () async {
+      await service.startCorrespondenceGame(
+        uid: 'self',
+        opponentUid: 'self',
+        boardSize: 9,
+      );
+
+      final games = await service.getUserCorrespondenceGames(uid: 'self');
+      expect(games.length, 1);
+    });
+
+    test('status filter excludes games not matching, for both creator and invitee', () async {
+      final game = await service.startCorrespondenceGame(
+        uid: 'creator2',
+        opponentUid: 'invitee2',
+        boardSize: 9,
+      );
+      await service.endCorrespondenceGame(
+        gameId: game.id,
+        result: 'win',
+        winnerColor: 'black',
+        sgfData: '',
+      );
+
+      final inviteeActive = await service.getUserCorrespondenceGames(
+        uid: 'invitee2',
+      );
+      final inviteeCompleted = await service.getUserCorrespondenceGames(
+        uid: 'invitee2',
+        status: 'completed',
+      );
+
+      expect(inviteeActive, isEmpty);
+      expect(inviteeCompleted.map((g) => g.id), contains(game.id));
+    });
+
+    test('results are sorted by lastMoveAt descending across both queries', () async {
+      final older = await service.startCorrespondenceGame(
+        uid: 'player',
+        opponentUid: 'other1',
+        boardSize: 9,
+      );
+      await fakeFirestore.collection('correspondenceGames').doc(older.id).update({
+        'lastMoveAt': DateTime(2020, 1, 1).toIso8601String(),
+      });
+      final newer = await service.startCorrespondenceGame(
+        uid: 'other2',
+        opponentUid: 'player',
+        boardSize: 9,
+      );
+      await fakeFirestore.collection('correspondenceGames').doc(newer.id).update({
+        'lastMoveAt': DateTime(2030, 1, 1).toIso8601String(),
+      });
+
+      final games = await service.getUserCorrespondenceGames(uid: 'player');
+      expect(games.map((g) => g.id).toList(), [newer.id, older.id]);
     });
   });
 }
