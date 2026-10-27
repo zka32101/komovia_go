@@ -285,5 +285,74 @@ void main() {
       expect(appBarWidget.backgroundColor, AppColors.primaryDark);
       expect(appBarWidget.elevation, 0);
     });
+
+    testWidgets(
+        '同時刻の碁盤機能のため、対局が続いている間は定期的にheartbeatを送る '
+        '(以前はstartNewGameProviderが対局開始時に一度だけセッションを作るのみで、'
+        'heartbeatが一度も送られずstaleAfter(5分)を過ぎると対局中でも'
+        '一覧から消えていた)', (WidgetTester tester) async {
+      var heartbeatCallCount = 0;
+      String? lastUid;
+      final heartbeatContainer = TestUtils.createTestContainer(
+        currentUser: TestData.testUser,
+        boardState: TestData.emptyBoardState,
+        isGameActive: true,
+        aiLevel: 5,
+        extraOverrides: [
+          sendPlaySessionHeartbeatProvider.overrideWithValue((uid) async {
+            heartbeatCallCount++;
+            lastUid = uid;
+          }),
+        ],
+      );
+      addTearDown(heartbeatContainer.dispose);
+
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const AIGameScreen(),
+          container: heartbeatContainer,
+        ),
+      );
+
+      // 初回表示直後はまだ送られていない（2分間隔のTimer.periodic）。
+      expect(heartbeatCallCount, 0);
+
+      // 2分経過で1回目のheartbeatが送られる。
+      await tester.pump(const Duration(minutes: 2));
+      expect(heartbeatCallCount, 1);
+      expect(lastUid, TestData.testUser.uid);
+
+      // さらに2分経過で2回目（periodicなので一度だけではない）。
+      await tester.pump(const Duration(minutes: 2));
+      expect(heartbeatCallCount, 2);
+    });
+
+    testWidgets(
+        '対局が終わった(isGameActiveがfalse)後はheartbeatを送らない',
+        (WidgetTester tester) async {
+      var heartbeatCallCount = 0;
+      final endedContainer = TestUtils.createTestContainer(
+        currentUser: TestData.testUser,
+        boardState: TestData.emptyBoardState,
+        isGameActive: false,
+        aiLevel: 5,
+        extraOverrides: [
+          sendPlaySessionHeartbeatProvider.overrideWithValue((uid) async {
+            heartbeatCallCount++;
+          }),
+        ],
+      );
+      addTearDown(endedContainer.dispose);
+
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const AIGameScreen(),
+          container: endedContainer,
+        ),
+      );
+
+      await tester.pump(const Duration(minutes: 2));
+      expect(heartbeatCallCount, 0);
+    });
   });
 }
