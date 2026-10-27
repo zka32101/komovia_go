@@ -1079,9 +1079,9 @@
   "messagesTitle": "メッセージ",
   "noConversationsYetMessage": "まだ会話がありません",
   "noMessagesYetMessage": "まだメッセージがありません。最初のメッセージを送ってみましょう。",
-  "messageInputHint": "メッセージを入力...",
-  "sendMessageButton": "送信",
   "messageSendFailedMessage": "メッセージの送信に失敗しました",
+  "dmPresetPickerButton": "メッセージを選ぶ",
+  "dmPresetPickerTitle": "送るメッセージを選んでください",
 
   "filterByDifficultyTitle": "難易度で絞り込む",
   "noGamesMatchFilterMessage": "この難易度に該当する棋譜はありません",

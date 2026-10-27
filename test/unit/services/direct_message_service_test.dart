@@ -66,14 +66,14 @@ void main() {
         fromDisplayName: 'Alice',
         toUid: 'uid2',
         toDisplayName: 'Bob',
-        content: 'Hi Bob',
+        content: 'Hello!',
       );
       await service.sendMessage(
         fromUid: 'uid2',
         fromDisplayName: 'Bob',
         toUid: 'uid1',
         toDisplayName: 'Alice',
-        content: 'Hi Alice',
+        content: 'Thank you!',
       );
 
       final threadId = DirectMessageService.threadIdFor('uid1', 'uid2');
@@ -81,7 +81,7 @@ void main() {
       final unread = Map<String, dynamic>.from(threadDoc.data()!['unreadCount'] as Map);
       expect(unread['uid1'], equals(1));
       expect(unread['uid2'], equals(1));
-      expect(threadDoc.data()!['lastMessage'], equals('Hi Alice'));
+      expect(threadDoc.data()!['lastMessage'], equals('Thank you!'));
       expect(threadDoc.data()!['lastSenderUid'], equals('uid2'));
 
       final messages = await firestore
@@ -99,14 +99,14 @@ void main() {
         fromDisplayName: 'Alice',
         toUid: 'uid2',
         toDisplayName: 'Bob',
-        content: 'Hi Bob',
+        content: 'Hello!',
       );
       await service.sendMessage(
         fromUid: 'uid1',
         fromDisplayName: 'Alice',
         toUid: 'uid2',
         toDisplayName: 'Bob',
-        content: 'Still there?',
+        content: 'Good game!',
       );
 
       final threadId = DirectMessageService.threadIdFor('uid1', 'uid2');
@@ -133,7 +133,7 @@ void main() {
         fromDisplayName: 'Alice',
         toUid: 'uid2',
         toDisplayName: 'Bob',
-        content: 'First thread',
+        content: 'Hello!',
       );
       await Future<void>.delayed(const Duration(milliseconds: 5));
       await service.sendMessage(
@@ -141,7 +141,7 @@ void main() {
         fromDisplayName: 'Alice',
         toUid: 'uid3',
         toDisplayName: 'Carol',
-        content: 'Second thread',
+        content: 'Nice move!',
       );
       // uid4 has no conversation with uid1 at all.
       await service.sendMessage(
@@ -149,12 +149,12 @@ void main() {
         fromDisplayName: 'Dave',
         toUid: 'uid3',
         toDisplayName: 'Carol',
-        content: 'Unrelated thread',
+        content: "You're strong!",
       );
 
       final threads = await service.watchThreadsForUser('uid1').first;
       expect(threads, hasLength(2));
-      expect(threads.first.lastMessage, equals('Second thread'));
+      expect(threads.first.lastMessage, equals('Nice move!'));
       expect(threads.map((t) => t.otherUidFor('uid1')), containsAll(['uid2', 'uid3']));
     });
 
@@ -210,7 +210,7 @@ void main() {
         fromDisplayName: 'Alice',
         toUid: 'uid2',
         toDisplayName: 'Bob',
-        content: 'one',
+        content: 'Hello!',
       );
       await Future<void>.delayed(const Duration(milliseconds: 5));
       await service.sendMessage(
@@ -218,12 +218,12 @@ void main() {
         fromDisplayName: 'Bob',
         toUid: 'uid1',
         toDisplayName: 'Alice',
-        content: 'two',
+        content: 'Thank you!',
       );
 
       final threadId = DirectMessageService.threadIdFor('uid1', 'uid2');
       final messages = await service.watchMessages(threadId).first;
-      expect(messages.map((m) => m.content).toList(), equals(['one', 'two']));
+      expect(messages.map((m) => m.content).toList(), equals(['Hello!', 'Thank you!']));
     });
   });
 }

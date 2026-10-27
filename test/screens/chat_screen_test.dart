@@ -75,51 +75,61 @@ void main() {
         fromDisplayName: 'Alice',
         toUid: 'uid2',
         toDisplayName: 'Bob',
-        content: 'Hi Bob',
+        content: 'こんにちは',
       );
       await service.sendMessage(
         fromUid: 'uid2',
         fromDisplayName: 'Bob',
         toUid: 'uid1',
         toDisplayName: 'Alice',
-        content: 'Hi Alice',
+        content: 'ありがとうございました',
       );
 
       await tester.pumpWidget(buildScreen());
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Hi Bob'), findsOneWidget);
-      expect(find.text('Hi Alice'), findsOneWidget);
+      expect(find.text('こんにちは'), findsOneWidget);
+      expect(find.text('ありがとうございました'), findsOneWidget);
     });
 
-    testWidgets('typing and tapping send delivers the message', (tester) async {
+    testWidgets('picking a preset message sends it', (tester) async {
       await tester.pumpWidget(buildScreen());
       await tester.pump();
 
-      await tester.enterText(find.byType(TextField), 'New message');
-      await tester.tap(find.byIcon(Icons.send));
+      await tester.tap(find.text('メッセージを選ぶ'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('こんにちは'));
       await tester.pump();
-      await tester.pump();
-
-      expect(find.text('New message'), findsOneWidget);
-
-      final threadId = DirectMessageService.threadIdFor('uid1', 'uid2');
-      final threadDoc = await firestore.collection('message_threads').doc(threadId).get();
-      expect(threadDoc.data()!['lastMessage'], equals('New message'));
-    });
-
-    testWidgets('sending a blank message does nothing', (tester) async {
-      await tester.pumpWidget(buildScreen());
-      await tester.pump();
-
-      await tester.enterText(find.byType(TextField), '   ');
-      await tester.tap(find.byIcon(Icons.send));
       await tester.pump();
 
       final threadId = DirectMessageService.threadIdFor('uid1', 'uid2');
       final threadDoc = await firestore.collection('message_threads').doc(threadId).get();
-      expect(threadDoc.exists, isFalse);
+      expect(threadDoc.data()!['lastMessage'], equals('こんにちは'));
+    });
+
+    testWidgets('picking an emoji sends it', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pump();
+
+      await tester.tap(find.text('メッセージを選ぶ'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('👍'));
+      await tester.pump();
+      await tester.pump();
+
+      final threadId = DirectMessageService.threadIdFor('uid1', 'uid2');
+      final threadDoc = await firestore.collection('message_threads').doc(threadId).get();
+      expect(threadDoc.data()!['lastMessage'], equals('👍'));
+    });
+
+    testWidgets('has no free-text input field', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pump();
+
+      expect(find.byType(TextField), findsNothing);
     });
   });
 }
