@@ -7,6 +7,8 @@ import '../models/game_record.dart';
 // uses.
 import 'package:komovia_core/komovia_core.dart' hide GameRecord;
 import '../models/playstyle.dart';
+import '../utils/sgf_parser.dart';
+import 'go_rules.dart';
 
 final _logger = Logger();
 
@@ -15,6 +17,52 @@ class PlaystyleService {
   final FirebaseFirestore _firestore;
 
   PlaystyleService(this._firestore);
+
+  /// 棋譜(sgfData、着手順そのものの本物のSGF - BoardState.toSgf()の最終
+  /// 局面スナップショット方言ではない)をGoRulesで再生し、対局全体での
+  /// 捕獲石数の合計を返す。非合法手やパースできない棋譜は0捕獲として
+  /// 無視し(観戦・学習用の再生と同じ寛容な方針)、プロファイル算出全体を
+  /// 失敗させない。
+  int _countTotalCaptures(GameRecord record) {
+    try {
+      final moves = parseSgfMoves(record.sgfData);
+      if (moves.isEmpty) return 0;
+      final boardSize = parseSgfBoardSize(record.sgfData);
+
+      var stones = List.generate(boardSize, (_) => List.filled(boardSize, 0));
+      int? koRow;
+      int? koCol;
+      var totalCaptures = 0;
+
+      for (final move in moves) {
+        if (move.isPass) continue;
+        if (move.row < 0 ||
+            move.row >= boardSize ||
+            move.col < 0 ||
+            move.col >= boardSize) {
+          continue;
+        }
+        final result = GoRules.applyMove(
+          stones: stones,
+          boardSize: boardSize,
+          row: move.row,
+          col: move.col,
+          player: move.player,
+          koRow: koRow,
+          koCol: koCol,
+        );
+        if (result == null) continue;
+        stones = result.stones;
+        koRow = result.koRow;
+        koCol = result.koCol;
+        totalCaptures += result.capturedCount;
+      }
+      return totalCaptures;
+    } catch (e) {
+      _logger.w('Could not replay SGF for capture count: $e');
+      return 0;
+    }
+  }
 
   /// ユーザーの対局記録から棋風プロファイルを算出して保存する
   Future<PlaystyleProfile> computeAndSaveProfile(String uid) async {
@@ -42,10 +90,17 @@ class PlaystyleService {
         final moves = record.movesCount ?? 0;
         if (moves <= 0) continue;
 
-        // 捕獲の多さ = 戦闘の多さ（攻撃的な棋風の指標）
-        final captures = (record.blackScore ?? 0) + (record.whiteScore ?? 0) > 0
-            ? ((record.blackScore ?? 0) - (record.whiteScore ?? 0)).abs()
-            : 0.0;
+        // 捕獲の多さ = 戦闘の多さ（攻撃的な棋風の指標）。以前はここが
+        // |blackScore - whiteScore|（最終スコア差、つまり地合いの差）を
+        // 「捕獲数」と称して使っており、下のterritorialityと変数が完全に
+        // 同一だったため、aggressiveness + territorialityが常に1に
+        // 固定されてしまい、2軸が独立して変動できなかった(接戦で激しく
+        // 打ち合った対局は「捕獲が少ない=消極的」と誤判定され、逆に
+        // 一方的な地合い勝ちの静かな対局は「捕獲が多い=攻撃的」と誤判定
+        // されていた)。GameRecord自体には捕獲数フィールドが無いため、
+        // 棋譜(sgfData、着手順そのもの)をGoRulesで再生して実際の捕獲数を
+        // 数える。
+        final captures = _countTotalCaptures(record).toDouble();
         final aggressiveness = (captures / (moves + 1)).clamp(0.0, 1.0);
 
         // スコア差の小ささ = 地合い重視で堅実に打つ棋風の指標
