@@ -254,30 +254,27 @@ class CorrespondenceGameService {
     }
   }
 
-  /// 待機中の手を数える（相手の番のゲーム）
+  /// 待機中の手を数える（自分の番のゲーム）。
+  ///
+  /// 実バグ修正: 以前は`opponentUid`のみでクエリしており、対局を作成した
+  /// 側（`uid`、常に黒番から開始）のゲームが一件もカウントされなかった
+  /// （[getUserCorrespondenceGames]と同じ、作成者/招待者の非対称バグ）。
+  /// さらに、黒番ターン・白番ターンの2クエリを無条件に合算していたため、
+  /// `opponentUid`側であっても実際には相手(黒)の番であるゲームまで
+  /// 誤ってカウントしていた（＝「待機中」ではなく単に「進行中」の対局数
+  /// になっていた）。[getUserCorrespondenceGames]と同じ作成者/招待者
+  /// 統合クエリを再利用し、各対局について本当にこの[uid]の番かどうか
+  /// （作成者なら黒番、招待された側なら白番）をクライアント側で判定する。
   Future<int> getPendingMoveCount({required String uid}) async {
     try {
       _logger.i('Counting pending moves for user: $uid');
 
-      // uid が currentPlayerColor の色でプレイしているゲーム
-      // ただし、API の制限により OR クエリが直接できないため、複数のクエリを組み合わせ
-      final blackTurn = await _firestore
-          .collection('correspondenceGames')
-          .where('opponentUid', isEqualTo: uid)
-          .where('status', isEqualTo: 'active')
-          .where('currentPlayerColor', isEqualTo: 'black')
-          .count()
-          .get();
+      final games = await getUserCorrespondenceGames(uid: uid, status: 'active');
+      final count = games.where((game) {
+        final myColor = game.uid == uid ? 'black' : 'white';
+        return game.currentPlayerColor == myColor;
+      }).length;
 
-      final whiteTurn = await _firestore
-          .collection('correspondenceGames')
-          .where('opponentUid', isEqualTo: uid)
-          .where('status', isEqualTo: 'active')
-          .where('currentPlayerColor', isEqualTo: 'white')
-          .count()
-          .get();
-
-      final count = (blackTurn.count ?? 0) + (whiteTurn.count ?? 0);
       _logger.i('Pending moves: $count');
       return count;
     } catch (e) {

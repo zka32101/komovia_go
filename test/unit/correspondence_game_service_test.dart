@@ -188,4 +188,59 @@ void main() {
       expect(games.map((g) => g.id).toList(), [newer.id, older.id]);
     });
   });
+
+  group('CorrespondenceGameService.getPendingMoveCount - real behavior', () {
+    late FakeFirebaseFirestore fakeFirestore;
+    late CorrespondenceGameService service;
+
+    setUp(() {
+      fakeFirestore = FakeFirebaseFirestore();
+      service = CorrespondenceGameService(firestore: fakeFirestore);
+    });
+
+    Future<void> _setTurn(String gameId, String color) {
+      return fakeFirestore
+          .collection('correspondenceGames')
+          .doc(gameId)
+          .update({'currentPlayerColor': color});
+    }
+
+    test(
+        "counts a game the user created (always black) when it's actually "
+        'black\'s turn - the real bug this fixes only ever queried '
+        'opponentUid, so the creator never saw a pending-move count', () async {
+      final game = await service.startCorrespondenceGame(
+        uid: 'creator',
+        opponentUid: 'invitee',
+        boardSize: 9,
+      );
+      // startCorrespondenceGame always begins with black (the creator) to
+      // move, so this is already true, but set it explicitly for clarity.
+      await _setTurn(game.id, 'black');
+
+      expect(await service.getPendingMoveCount(uid: 'creator'), 1);
+      expect(await service.getPendingMoveCount(uid: 'invitee'), 0);
+    });
+
+    test(
+        "does not count a game the user was invited to (always white) when "
+        "it's actually black's (the creator's) turn - the real bug this "
+        'fixes summed both colors\' turn-counts unconditionally, so the '
+        'invitee\'s badge counted every active game, not just the ones '
+        'genuinely awaiting their move', () async {
+      final game = await service.startCorrespondenceGame(
+        uid: 'creator2',
+        opponentUid: 'invitee2',
+        boardSize: 9,
+      );
+      await _setTurn(game.id, 'black');
+
+      expect(await service.getPendingMoveCount(uid: 'invitee2'), 0);
+
+      await _setTurn(game.id, 'white');
+
+      expect(await service.getPendingMoveCount(uid: 'invitee2'), 1);
+      expect(await service.getPendingMoveCount(uid: 'creator2'), 0);
+    });
+  });
 }

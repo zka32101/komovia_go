@@ -307,7 +307,6 @@ Future<void> _reflectTournamentWinIfCompleted(
     await ref.read(incrementUserStatsProvider)(
       uid: tournament.winnerId!,
       displayName: 'Player',
-      period: LeaderboardPeriod.allTime,
       type: LeaderboardType.tournament,
       tournamentWinsDelta: 1,
     );
