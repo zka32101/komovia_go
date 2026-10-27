@@ -241,7 +241,7 @@ class _TeamGameSettingsScreenState extends ConsumerState<TeamGameSettingsScreen>
                 _logger.i('Starting Team game: $settings');
 
                 // Save settings to persistent storage
-                await ref.read(saveTeamSettingsProvider(settings).future);
+                await ref.read(saveTeamSettingsProvider)(settings);
 
                 // Navigate to game screen
                 if (context.mounted) {

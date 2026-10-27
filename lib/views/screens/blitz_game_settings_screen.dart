@@ -248,7 +248,7 @@ class _BlitzGameSettingsScreenState
                 _logger.i('Starting Blitz game with settings: $settings');
 
                 // Save settings to persistent storage
-                await ref.read(saveBlitzSettingsProvider(settings).future);
+                await ref.read(saveBlitzSettingsProvider)(settings);
 
                 // Navigate to Blitz game screen with settings
                 if (context.mounted) {

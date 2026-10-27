@@ -162,18 +162,27 @@ final loadBlitzSettingsProvider = FutureProvider<BlitzGameSettings?>((ref) async
 });
 
 /// Blitzゲーム設定を保存
-final saveBlitzSettingsProvider = FutureProvider.family<bool, BlitzGameSettings>((ref, settings) async {
-  try {
-    final service = await ref.watch(gameSettingsStorageServiceProvider.future);
-    final result = await service.saveBlitzSettings(settings);
-    if (result) {
-      _logger.i('Saved Blitz settings: $settings');
+///
+/// 保存先ごとに一意な設定値を鍵とする`.family`ではなく、呼び出すたびに
+/// サービスを呼ぶだけのプレーンなアクションプロバイダー。`.family`だと
+/// 設定を変更して保存するたびにコンテナへ新しいキャッシュエントリが
+/// 永続的に残ってしまう（このセッションで既に修正した他のプロバイダーと
+/// 同じ無制限キャッシュ増大パターン）。
+final saveBlitzSettingsProvider =
+    Provider<Future<bool> Function(BlitzGameSettings)>((ref) {
+  return (settings) async {
+    try {
+      final service = await ref.watch(gameSettingsStorageServiceProvider.future);
+      final result = await service.saveBlitzSettings(settings);
+      if (result) {
+        _logger.i('Saved Blitz settings: $settings');
+      }
+      return result;
+    } catch (e) {
+      _logger.e('Error saving Blitz settings: $e');
+      return false;
     }
-    return result;
-  } catch (e) {
-    _logger.e('Error saving Blitz settings: $e');
-    return false;
-  }
+  };
 });
 
 /// 保存済みのCorrespondenceGameSettingsを読み込み
@@ -196,18 +205,23 @@ final loadCorrespondenceSettingsProvider = FutureProvider<CorrespondenceGameSett
 });
 
 /// Correspondenceゲーム設定を保存
-final saveCorrespondenceSettingsProvider = FutureProvider.family<bool, CorrespondenceGameSettings>((ref, settings) async {
-  try {
-    final service = await ref.watch(gameSettingsStorageServiceProvider.future);
-    final result = await service.saveCorrespondenceSettings(settings);
-    if (result) {
-      _logger.i('Saved Correspondence settings: $settings');
+///
+/// [saveBlitzSettingsProvider]と同じ理由でプレーンなアクションプロバイダー。
+final saveCorrespondenceSettingsProvider =
+    Provider<Future<bool> Function(CorrespondenceGameSettings)>((ref) {
+  return (settings) async {
+    try {
+      final service = await ref.watch(gameSettingsStorageServiceProvider.future);
+      final result = await service.saveCorrespondenceSettings(settings);
+      if (result) {
+        _logger.i('Saved Correspondence settings: $settings');
+      }
+      return result;
+    } catch (e) {
+      _logger.e('Error saving Correspondence settings: $e');
+      return false;
     }
-    return result;
-  } catch (e) {
-    _logger.e('Error saving Correspondence settings: $e');
-    return false;
-  }
+  };
 });
 
 /// 保存済みのTeamGameSettingsを読み込み
@@ -230,18 +244,23 @@ final loadTeamSettingsProvider = FutureProvider<TeamGameSettings?>((ref) async {
 });
 
 /// Teamゲーム設定を保存
-final saveTeamSettingsProvider = FutureProvider.family<bool, TeamGameSettings>((ref, settings) async {
-  try {
-    final service = await ref.watch(gameSettingsStorageServiceProvider.future);
-    final result = await service.saveTeamSettings(settings);
-    if (result) {
-      _logger.i('Saved Team settings: $settings');
+///
+/// [saveBlitzSettingsProvider]と同じ理由でプレーンなアクションプロバイダー。
+final saveTeamSettingsProvider =
+    Provider<Future<bool> Function(TeamGameSettings)>((ref) {
+  return (settings) async {
+    try {
+      final service = await ref.watch(gameSettingsStorageServiceProvider.future);
+      final result = await service.saveTeamSettings(settings);
+      if (result) {
+        _logger.i('Saved Team settings: $settings');
+      }
+      return result;
+    } catch (e) {
+      _logger.e('Error saving Team settings: $e');
+      return false;
     }
-    return result;
-  } catch (e) {
-    _logger.e('Error saving Team settings: $e');
-    return false;
-  }
+  };
 });
 
 /// 保存済みのPuzzleRushSettingsを読み込み
@@ -262,18 +281,23 @@ final loadPuzzleRushSettingsProvider = FutureProvider<PuzzleRushSettings?>((ref)
 });
 
 /// Puzzle Rushゲーム設定を保存
-final savePuzzleRushSettingsProvider = FutureProvider.family<bool, PuzzleRushSettings>((ref, settings) async {
-  try {
-    final service = await ref.watch(gameSettingsStorageServiceProvider.future);
-    final result = await service.savePuzzleRushSettings(settings);
-    if (result) {
-      _logger.i('Saved Puzzle Rush settings: $settings');
+///
+/// [saveBlitzSettingsProvider]と同じ理由でプレーンなアクションプロバイダー。
+final savePuzzleRushSettingsProvider =
+    Provider<Future<bool> Function(PuzzleRushSettings)>((ref) {
+  return (settings) async {
+    try {
+      final service = await ref.watch(gameSettingsStorageServiceProvider.future);
+      final result = await service.savePuzzleRushSettings(settings);
+      if (result) {
+        _logger.i('Saved Puzzle Rush settings: $settings');
+      }
+      return result;
+    } catch (e) {
+      _logger.e('Error saving Puzzle Rush settings: $e');
+      return false;
     }
-    return result;
-  } catch (e) {
-    _logger.e('Error saving Puzzle Rush settings: $e');
-    return false;
-  }
+  };
 });
 
 /// すべての設定をクリア
