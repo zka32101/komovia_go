@@ -12,6 +12,7 @@ import 'package:komovia_go/viewmodels/leaderboard_provider.dart';
 import 'package:komovia_go/viewmodels/position_echo_provider.dart';
 import 'package:komovia_go/viewmodels/spectator_provider.dart';
 import 'package:komovia_go/viewmodels/friend_activity_provider.dart';
+import 'package:komovia_go/viewmodels/notification_provider.dart';
 import 'package:komovia_go/utils/sgf_parser.dart';
 import 'package:komovia_go/utils/handicap_points.dart';
 import 'package:komovia_go/utils/ai_rating.dart';
@@ -867,6 +868,24 @@ void _checkAndRecordAchievements(Ref ref, String uid) {
         achievementsUnlockedDelta: newlyUnlocked.length,
       );
       _logger.i('✅ ${newlyUnlocked.length} achievement(s) unlocked for $uid');
+
+      // notification_screen.dartのアイコン切り分け('achievement'ケース)は
+      // 既に存在していたが、この通知タイプを実際に送るコードがどこにも無く
+      // 死んでいた。トースト(GameResultScreenを開いている間だけ見える)とは
+      // 別に、通知ベル/履歴にも残るようにする。
+      for (final achievement in newlyUnlocked) {
+        try {
+          await ref.read(sendNotificationProvider)(
+            uid: uid,
+            title: '実績解除: ${achievement.name}',
+            body: achievement.description,
+            type: 'achievement',
+            data: {'achievementId': achievement.id},
+          );
+        } catch (e) {
+          _logger.w('実績通知送信失敗 (non-fatal): $e');
+        }
+      }
     } catch (e) {
       _logger.w('実績判定/リーダーボード反映失敗 (non-fatal): $e');
     }
