@@ -1074,6 +1074,7 @@
   },
   "deadStoneMarkingResetButton": "リセット",
   "deadStoneMarkingConfirmButton": "この地合で確定する",
+  "deadStoneMarkingWaitingMessage": "相手の死石確認を待っています。双方の確認内容が一致すると終局します。食い違った場合は対局が再開されます。",
 
   "messagesTitle": "メッセージ",
   "noConversationsYetMessage": "まだ会話がありません",

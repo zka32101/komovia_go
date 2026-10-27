@@ -11,6 +11,7 @@ import 'package:komovia_go/utils/go_board_geometry.dart';
 import 'package:komovia_go/config/theme.dart';
 import 'package:komovia_go/views/widgets/index.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
+import 'package:komovia_go/views/screens/dead_stone_marking_screen.dart';
 
 final _logger = Logger();
 
@@ -96,6 +97,10 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
             WidgetsBinding.instance.addPostFrameCallback((_) => _showResultDialog(context, game));
           }
 
+          if (game.isScoring) {
+            return _buildScoringContent(context, l10n, game);
+          }
+
           return _buildContent(context, l10n, game);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -137,6 +142,56 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
           ))
             _buildAbandonmentClaimCard(context, l10n, game),
         ],
+      ),
+    );
+  }
+
+  /// 終局処理のための死石マーキング段階（status == 'scoring'）。自分がまだ
+  /// 提出していなければDeadStoneMarkingScreenを表示し、提出済みなら相手の
+  /// 提出を待つ画面を表示する。両者の提出が一致すればsubmitDeadStones側で
+  /// 自動的に'finished'へ進むため、このウィジェットはpvpGameStreamProvider
+  /// の更新を受けて自然に次の状態（待機→終局 or 不一致でactiveへ戻る）へ
+  /// 遷移する。
+  Widget _buildScoringContent(BuildContext context, AppLocalizations l10n, PvpGame game) {
+    final myColor = game.playerColorOf(widget.uid);
+    if (myColor == 0) {
+      return Center(
+        child: Text(l10n.deadStoneMarkingWaitingMessage, style: TextStyle(color: AppColors.washiDim)),
+      );
+    }
+
+    final isBlack = myColor == 1;
+    final mySubmission = isBlack ? game.blackDeadStones : game.whiteDeadStones;
+
+    if (mySubmission == null) {
+      return DeadStoneMarkingScreen(
+        stones: game.stones,
+        boardSize: game.boardSize,
+        onConfirm: (deadPoints) async {
+          try {
+            await ref.read(submitDeadStonesProvider)(widget.gameId, widget.uid, deadPoints);
+          } catch (e) {
+            _logger.e('Error submitting dead stones: $e');
+          }
+        },
+      );
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              l10n.deadStoneMarkingWaitingMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.washiDim),
+            ),
+          ],
+        ),
       ),
     );
   }

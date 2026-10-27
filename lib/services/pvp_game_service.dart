@@ -269,11 +269,12 @@ class PvpGameService {
     }
   }
 
-  /// パスする。2連続パスで終局とし、中国ルールの地合計算
-  /// （GoScoring — AI対局のFuegoEngineService.judgeGameEndと同じロジック）
-  /// で勝者を決める。死石判定は行わない（ネイティブFuegoの安全性読みに
-  /// 委ねているAI対局と異なり、PvP対局にはエンジンが介在しないため）ので、
-  /// 盤面に残った石は全て生きているものとして数える。
+  /// パスする。2連続パスで'scoring'状態に移行し、死石マーキング
+  /// （submitDeadStones参照）を経て終局する。AI対局はネイティブFuegoの
+  /// 安全性読みで死石を自動検出できるが、PvP対局にはエンジンが介在しない
+  /// ため、両プレイヤーの合意（相互マーキングの一致）で死石を確定する
+  /// ——GoScoringの設計コメントが明示する「OGS/KGS/Tygemなど他の囲碁
+  /// サーバーと同じ終局処理」そのもの。
   Future<bool> pass({required String gameId, required String uid}) async {
     try {
       return await _firestore.runTransaction<bool>((transaction) async {
@@ -306,15 +307,9 @@ class PvpGameService {
         };
 
         if (gameEnded) {
-          final areaScore = GoScoring.computeAreaScore(game.stones, game.boardSize);
-          update['status'] = 'finished';
-          update['winnerUid'] = areaScore.winnerUid(
-            blackUid: game.blackUid,
-            whiteUid: game.whiteUid,
-          );
-          update['result'] = 'score';
-          update['blackScore'] = areaScore.blackScore;
-          update['whiteScore'] = areaScore.whiteScore;
+          update['status'] = 'scoring';
+          update['blackDeadStones'] = null;
+          update['whiteDeadStones'] = null;
         }
 
         transaction.update(docRef, update);
@@ -325,6 +320,87 @@ class PvpGameService {
       _logger.e('Error passing PvP game: $e');
       rethrow;
     }
+  }
+
+  /// 死石マーキングを提出する（status == 'scoring'の間のみ）。[deadPoints]は
+  /// "row,col"の座標集合をエンコードした文字列に変換して保存する。
+  ///
+  /// 両者が提出済みで、集合が完全一致すれば合意成立として
+  /// GoScoring.computeAreaScore（死石除去後）で確定・終局する。既に一方が
+  /// 提出していて今回の提出が食い違う場合は不一致とみなし、両者の提出を
+  /// クリアして'active'に戻し対局を再開する（2連続パスはこの時点で
+  /// リセットするので、次のパスはまた新たに2回必要になる）。
+  Future<void> submitDeadStones({
+    required String gameId,
+    required String uid,
+    required Set<(int, int)> deadPoints,
+  }) async {
+    try {
+      await _firestore.runTransaction<void>((transaction) async {
+        final docRef = _games.doc(gameId);
+        final snapshot = await transaction.get(docRef);
+        if (!snapshot.exists) return;
+
+        final game = PvpGame.fromFirestore(snapshot);
+        if (!game.isScoring || game.playerColorOf(uid) == 0) return;
+
+        final encoded = deadPoints.map((p) => '${p.$1},${p.$2}').toSet();
+        final isBlack = game.playerColorOf(uid) == 1;
+        final opponentEncoded = (isBlack ? game.whiteDeadStones : game.blackDeadStones)
+            ?.toSet();
+
+        if (opponentEncoded == null) {
+          // 自分が最初の提出者。相手の提出を待つ。
+          transaction.update(docRef, {
+            if (isBlack) 'blackDeadStones': encoded.toList() else 'whiteDeadStones': encoded.toList(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          return;
+        }
+
+        if (!_setEquals(encoded, opponentEncoded)) {
+          // 不一致。両者の提出をクリアし対局を再開する。
+          transaction.update(docRef, {
+            'status': 'active',
+            'blackDeadStones': null,
+            'whiteDeadStones': null,
+            'consecutivePasses': 0,
+            'turnStartedAt': Timestamp.fromDate(DateTime.now()),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          return;
+        }
+
+        // 合意成立。死石を除去して確定スコアリング。
+        final deadPointsForScoring = encoded
+            .map((s) {
+              final parts = s.split(',');
+              return (int.parse(parts[0]), int.parse(parts[1]));
+            })
+            .toSet();
+        final scoredStones = GoScoring.withDeadStonesRemoved(game.stones, deadPointsForScoring);
+        final areaScore = GoScoring.computeAreaScore(scoredStones, game.boardSize);
+
+        transaction.update(docRef, {
+          'status': 'finished',
+          'winnerUid': areaScore.winnerUid(blackUid: game.blackUid, whiteUid: game.whiteUid),
+          'result': 'score',
+          'blackScore': areaScore.blackScore,
+          'whiteScore': areaScore.whiteScore,
+          if (isBlack) 'blackDeadStones': encoded.toList() else 'whiteDeadStones': encoded.toList(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      });
+      _logger.i('PvP dead stones submitted: game=$gameId uid=$uid');
+    } catch (e) {
+      _logger.e('Error submitting PvP dead stones: $e');
+      rethrow;
+    }
+  }
+
+  bool _setEquals(Set<String> a, Set<String> b) {
+    if (a.length != b.length) return false;
+    return a.every(b.contains);
   }
 
   /// トランザクション内で読み取り・判定・書き込みを行い、パス2連続による
