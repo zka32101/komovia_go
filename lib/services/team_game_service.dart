@@ -208,6 +208,21 @@ class TeamGameService {
     return a.toSet().containsAll(b) && b.toSet().containsAll(a);
   }
 
+  /// id指定で1件取得する。`team_game`通知のタップから対局画面へ遷移する
+  /// のに使う（TeamGameScreenはチーム編成指定で開き、resumeOrStartTeamGame
+  /// Providerが既存の対局を見つけて再開するため、通知の`gameId`から
+  /// team1Players/team2Playersを逆引きする必要がある）。
+  Future<TeamGameRecord?> getGame(String gameId) async {
+    try {
+      final doc = await _firestore.collection('teamGames').doc(gameId).get();
+      if (!doc.exists) return null;
+      return TeamGameRecord.fromJson(doc.data()!);
+    } catch (e) {
+      _logger.e('Failed to fetch Team game $gameId: $e');
+      return null;
+    }
+  }
+
   /// プレイヤーが参加している Team ゲーム一覧を取得
   Future<List<TeamGameRecord>> getPlayerTeamGames({
     required String uid,

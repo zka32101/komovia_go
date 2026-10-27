@@ -8,6 +8,8 @@ import 'package:komovia_go/views/screens/notification_screen.dart';
 import 'package:komovia_go/views/screens/friends_screen.dart';
 import 'package:komovia_go/views/screens/achievements_screen.dart';
 import 'package:komovia_go/views/screens/tournament_bracket_screen.dart';
+import 'package:komovia_go/views/screens/correspondence_game_screen.dart';
+import 'package:komovia_go/views/screens/team_game_screen.dart';
 
 import '../fixtures/test_data.dart';
 import '../test_utils.dart';
@@ -32,6 +34,9 @@ void main() {
         extraOverrides: [
           notificationServiceProvider.overrideWithValue(notificationService),
           tournamentServiceProvider.overrideWithValue(TournamentService(firestore)),
+          correspondenceGameServiceProvider
+              .overrideWithValue(CorrespondenceGameService(firestore: firestore)),
+          teamGameServiceProvider.overrideWithValue(TeamGameService(firestore: firestore)),
         ],
       );
     });
@@ -112,6 +117,87 @@ void main() {
 
       final screen = tester.widget<AchievementsScreen>(find.byType(AchievementsScreen));
       expect(screen.uid, equals(uid));
+    });
+
+    testWidgets('tapping a correspondence_game notification opens the right opponent\'s game',
+        (tester) async {
+      final game = CorrespondenceGameRecord(
+        id: 'correspondence-game-1', // real Firestore auto-ids are always ≥8 chars
+        uid: 'friend-1',
+        opponentUid: uid,
+        boardSize: 13,
+        startDate: DateTime.now(),
+        endDate: null,
+        currentTurnNumber: 1,
+        currentPlayerColor: 'black',
+        status: 'active',
+        moveHistory: const [],
+        lastMoveAt: DateTime.now(),
+        result: '',
+        winnerColor: null,
+        sgfData: '',
+        timePerMoveHours: 24,
+        createdAt: DateTime.now(),
+      );
+      await firestore
+          .collection('correspondenceGames')
+          .doc('correspondence-game-1')
+          .set(game.toJson());
+      await notificationService.sendNotification(
+        uid: uid,
+        title: '通信対局',
+        body: 'Carolさんの手番です',
+        type: 'correspondence_game',
+        data: {'gameId': 'correspondence-game-1'},
+      );
+
+      await pumpScreen(tester);
+      await tester.tap(find.text('通信対局'));
+      await tester.pump();
+      await tester.pump();
+
+      final screen =
+          tester.widget<CorrespondenceGameScreen>(find.byType(CorrespondenceGameScreen));
+      expect(screen.uid, equals(uid));
+      expect(screen.opponentUid, equals('friend-1'));
+      expect(screen.boardSize, equals(13));
+    });
+
+    testWidgets('tapping a team_game notification opens the right team composition',
+        (tester) async {
+      final game = TeamGameRecord(
+        id: 'tg1',
+        team1Players: const [uid, 'friend-1'],
+        team2Players: const ['friend-2', 'friend-3'],
+        boardSize: 19,
+        startedAt: DateTime.now(),
+        endedAt: DateTime.now(),
+        durationSeconds: 0,
+        result: '',
+        winningTeam: '',
+        moveHistory: const [],
+        sgfData: '',
+        team1Moves: '',
+        team2Moves: '',
+        createdAt: DateTime.now(),
+      );
+      await firestore.collection('teamGames').doc('tg1').set(game.toJson());
+      await notificationService.sendNotification(
+        uid: uid,
+        title: 'チーム対局',
+        body: 'チーム対局の手番です',
+        type: 'team_game',
+        data: {'gameId': 'tg1'},
+      );
+
+      await pumpScreen(tester);
+      await tester.tap(find.text('チーム対局'));
+      await tester.pump();
+      await tester.pump();
+
+      final screen = tester.widget<TeamGameScreen>(find.byType(TeamGameScreen));
+      expect(screen.team1Players, equals([uid, 'friend-1']));
+      expect(screen.team2Players, equals(['friend-2', 'friend-3']));
     });
 
     testWidgets('tapping any of these notification types marks it read', (tester) async {
