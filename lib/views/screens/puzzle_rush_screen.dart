@@ -419,14 +419,17 @@ class _PuzzleRushScreenState extends ConsumerState<PuzzleRushScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        entry.uid.substring(0, 8),
+                                        entry.displayName ??
+                                            entry.uid.substring(0, 8),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall
                                             ?.copyWith(
                                           color: AppColors.washi,
                                           fontWeight: FontWeight.bold,
-                                          fontFamily: 'monospace',
+                                          fontFamily: entry.displayName == null
+                                              ? 'monospace'
+                                              : null,
                                         ),
                                       ),
                                       Text(
@@ -506,8 +509,11 @@ class _PuzzleRushScreenState extends ConsumerState<PuzzleRushScreen> {
     _logger.i('Ending Puzzle Rush session: ${session.id}');
 
     try {
+      final displayName = ref.read(currentUserProvider)?.displayName;
       await ref.read(
-        endPuzzleRushProvider(session.id).future,
+        endPuzzleRushProvider(
+          (sessionId: session.id, displayName: displayName),
+        ).future,
       );
 
       _logger.i('Session ended successfully');
