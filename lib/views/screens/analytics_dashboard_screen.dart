@@ -5,6 +5,7 @@ import '../../viewmodels/index.dart';
 import '../widgets/index.dart';
 import 'package:komovia_go/config/theme.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
+import 'achievements_screen.dart';
 
 /// Analytics dashboard screen
 class AnalyticsDashboardScreen extends ConsumerWidget {
@@ -44,7 +45,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
 
                   // Achievements
-                  _buildAchievementsSection(l10n, ref, currentUser.uid),
+                  _buildAchievementsSection(context, l10n, ref, currentUser.uid),
 
                   const SizedBox(height: 24),
                 ],
@@ -247,7 +248,12 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAchievementsSection(AppLocalizations l10n, WidgetRef ref, String userId) {
+  Widget _buildAchievementsSection(
+    BuildContext context,
+    AppLocalizations l10n,
+    WidgetRef ref,
+    String userId,
+  ) {
     final achievementsAsync = ref.watch(unlockedAchievementsProvider(userId));
 
     return Padding(
@@ -255,9 +261,24 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.achievementsTitle,
-            style: TextStyle(color: AppColors.washi, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l10n.achievementsTitle,
+                style: TextStyle(color: AppColors.washi, fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AchievementsScreen(uid: userId),
+                    ),
+                  );
+                },
+                child: Text(l10n.viewAllAchievementsButton),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           achievementsAsync.when(
@@ -277,7 +298,11 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                 achievements: achievements,
                 crossAxisCount: 3,
                 onAchievementTap: () {
-                  // Future: Show achievement detail dialog
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AchievementsScreen(uid: userId),
+                    ),
+                  );
                 },
               );
             },

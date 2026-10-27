@@ -133,6 +133,8 @@
   "homeHowToPlaySubtitle": "Review the rules anytime",
   "homeJosekiTitle": "Strategies (Joseki)",
   "homeJosekiSubtitle": "Learn common joseki and their ideas",
+  "homeAnalyticsTitle": "Analytics & Achievements",
+  "homeAnalyticsSubtitle": "View win-rate charts and your unlocked achievements",
 
   "statsGamesPlayedLabel": "Games Played",
   "statsMemberSinceLabel": "Member Since",
@@ -727,6 +729,7 @@
   "winRateByAiLevelTitle": "Win Rate by AI Level",
   "aiLevelAxisLabel": "AI Level",
   "achievementsTitle": "Achievements",
+  "viewAllAchievementsButton": "View All",
   "noAchievementsMessage": "No achievements unlocked yet",
   "achievementsUnlockedSectionTitle": "Unlocked",
   "achievementsLockedSectionTitle": "Locked",
