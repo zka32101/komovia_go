@@ -169,31 +169,44 @@ class TournamentService {
 
       final tournamentRef =
           _firestore.collection(tournamentsCollection).doc(tournamentId);
-      final tournamentDoc = await tournamentRef.get();
 
-      if (!tournamentDoc.exists) {
-        throw Exception('Tournament not found');
-      }
+      // isFullのチェックと参加者追加を1つのトランザクションにまとめることで、
+      // 2人が同じタイミングで参加ボタンを押した場合に両者とも同じ
+      // (まだ更新前の)participantUids件数を見て両方isFullチェックを
+      // 通過し、maxParticipantsを超えて参加できてしまう競合を防ぐ。
+      await _firestore.runTransaction((transaction) async {
+        final tournamentDoc = await transaction.get(tournamentRef);
 
-      final tournament = _tournamentFromFirestore(
-          tournamentDoc as DocumentSnapshot<Map<String, dynamic>>);
+        if (!tournamentDoc.exists) {
+          throw Exception('Tournament not found');
+        }
 
-      if (tournament.isFull) {
-        throw Exception('Tournament is full');
-      }
+        final tournament = _tournamentFromFirestore(
+            tournamentDoc as DocumentSnapshot<Map<String, dynamic>>);
 
-      // Add participant
-      await tournamentRef.collection(participantsCollection).doc(uid).set({
-        'tournamentId': tournamentId,
-        'displayName': displayName,
-        'seed': tournament.participantUids.length + 1,
-        'currentRound': 1,
-        'joinedAt': Timestamp.now(),
-      });
+        if (tournament.participantUids.contains(uid)) {
+          // 既に参加済み。二重タップで同じ処理が2回走っても安全に
+          // no-opにする。
+          return;
+        }
 
-      // Update participant list in tournament
-      await tournamentRef.update({
-        'participantUids': FieldValue.arrayUnion([uid]),
+        if (tournament.isFull) {
+          throw Exception('Tournament is full');
+        }
+
+        final participantRef =
+            tournamentRef.collection(participantsCollection).doc(uid);
+        transaction.set(participantRef, {
+          'tournamentId': tournamentId,
+          'displayName': displayName,
+          'seed': tournament.participantUids.length + 1,
+          'currentRound': 1,
+          'joinedAt': Timestamp.now(),
+        });
+
+        transaction.update(tournamentRef, {
+          'participantUids': FieldValue.arrayUnion([uid]),
+        });
       });
 
       _logger.i('✅ User joined tournament');
