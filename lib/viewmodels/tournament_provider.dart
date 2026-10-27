@@ -15,6 +15,14 @@ final tournamentServiceProvider = Provider<TournamentService>((ref) {
   return TournamentService(null, ref.watch(notificationServiceProvider));
 });
 
+/// id指定でトーナメントを1件取得する。tournament_matchの通知タップから
+/// TournamentBracketScreenへ遷移するのに必要（遷移にはTournament一式が
+/// 必要で、idだけでは画面を構築できない）。
+final tournamentByIdProvider = FutureProvider.family<Tournament?, String>((ref, tournamentId) async {
+  final service = ref.watch(tournamentServiceProvider);
+  return service.getTournament(tournamentId);
+});
+
 /// アクティブなトーナメント一覧
 final activeTournamentsProvider = FutureProvider<List<Tournament>>((ref) async {
   _logger.i('Loading active tournaments');

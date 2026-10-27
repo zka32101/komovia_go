@@ -728,6 +728,8 @@
   "aiLevelAxisLabel": "AI Level",
   "achievementsTitle": "Achievements",
   "noAchievementsMessage": "No achievements unlocked yet",
+  "achievementsUnlockedSectionTitle": "Unlocked",
+  "achievementsLockedSectionTitle": "Locked",
 
   "noActivePvpGamesMessage": "No active PvP games",
   "boardMovesLabel": "{boardSize}-line board · Move {moves}",

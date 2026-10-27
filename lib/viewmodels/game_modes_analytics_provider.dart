@@ -1,7 +1,14 @@
 import 'package:riverpod/riverpod.dart';
+import 'package:logger/logger.dart';
 import '../models/extended_game_models.dart';
+import '../models/leaderboard.dart';
 import '../services/game_preset_service.dart';
 import '../services/analytics_service.dart';
+import 'auth_provider.dart';
+import 'leaderboard_provider.dart';
+import 'notification_provider.dart';
+
+final _logger = Logger();
 
 // ==================== Game Preset Service Provider ====================
 
@@ -218,12 +225,55 @@ final achievementDefsProvider = Provider<List<Achievement>>((ref) {
 });
 
 /// 対局終了直後に検出された、まだ画面に見せていない新規解除実績。
-/// `game_provider.dart`の`_checkAndRecordAchievements`（対局保存後に
-/// best-effortで実行される）がここに書き込み、`GameResultScreen`が
+/// `checkAndRecordAchievementsAfterGame`（各ゲームモードの対局終了処理から
+/// best-effortで呼ばれる）がここに書き込み、`GameResultScreen`が
 /// `ref.listen`で拾ってトースト表示した後に空リストへ戻す。
 final newlyUnlockedAchievementsProvider = StateProvider<List<Achievement>>((ref) {
   return [];
 });
+
+/// 実績判定(`AnalyticsService.checkAchievements`)・リーダーボード
+/// (achievementsタイプ)反映・通知送信をまとめて行う。元は
+/// `game_provider.dart`のAI対局終了フックにのみ存在していたため、PvP・
+/// ブリッツ・通信対局・チーム対局・パズルラッシュでは実績が一切解除
+/// されなかった（判定処理自体は呼ばれたことが無かった）。各ゲームモード
+/// の対局終了箇所から共通して呼べるよう、ここに公開関数として配置する。
+/// Best-effort: 呼び出し元の対局終了処理自体をブロックしない。
+Future<void> checkAndRecordAchievementsAfterGame(Ref ref, String uid) async {
+  try {
+    final newlyUnlocked = await ref.read(checkAchievementsProvider(uid).future);
+    if (newlyUnlocked.isEmpty) return;
+
+    ref.read(newlyUnlockedAchievementsProvider.notifier).state = newlyUnlocked;
+
+    final user = ref.read(currentUserProvider);
+    final displayName = user?.displayName ?? 'Player';
+    await ref.read(incrementUserStatsProvider)(
+      uid: uid,
+      displayName: displayName,
+      period: LeaderboardPeriod.allTime,
+      type: LeaderboardType.achievements,
+      achievementsUnlockedDelta: newlyUnlocked.length,
+    );
+    _logger.i('✅ ${newlyUnlocked.length} achievement(s) unlocked for $uid');
+
+    for (final achievement in newlyUnlocked) {
+      try {
+        await ref.read(sendNotificationProvider)(
+          uid: uid,
+          title: '実績解除: ${achievement.name}',
+          body: achievement.description,
+          type: 'achievement',
+          data: {'achievementId': achievement.id},
+        );
+      } catch (e) {
+        _logger.w('実績通知送信失敗 (non-fatal): $e');
+      }
+    }
+  } catch (e) {
+    _logger.w('実績判定/リーダーボード反映失敗 (non-fatal): $e');
+  }
+}
 
 /// Get achievement progress
 final achievementProgressProvider = FutureProvider.family<

@@ -737,7 +737,9 @@ final saveGameRecordProvider = Provider<
 
       _finalizeEnSession(ref, uid, boardState, movesCount);
       _updateAiGameRating(ref, uid, gameId, gameRecord.result, aiLevel);
-      _checkAndRecordAchievements(ref, uid);
+      () async {
+        await checkAndRecordAchievementsAfterGame(ref, uid);
+      }();
 
       return gameId;
     } catch (e) {
@@ -834,60 +836,6 @@ void _updateAiGameRating(
           );
     } catch (e) {
       _logger.w('AI対局のレーティング反映失敗 (non-fatal): $e');
-    }
-  }();
-}
-
-/// AnalyticsService.checkAchievements（新規解除された実績の判定・
-/// users/{uid}/achievements への保存）は、AnalyticsDashboardScreen の
-/// 表示側（unlockedAchievementsProvider＝解除済みを読むだけ）からは
-/// 一度も呼ばれておらず、対局終了時のフックも存在しなかったため、実績が
-/// 実際に解除される経路がアプリのどこにも無かった。ここで対局終了の
-/// たびに判定を走らせ、新規解除分をリーダーボード(achievementsタイプ)
-/// にも反映する。newlyUnlockedAchievementsProviderにも書き込み、
-/// GameResultScreenが対局結果画面上でトースト表示できるようにする
-/// （それまでは実績が解除されてもAnalyticsDashboardScreenを自分から
-/// 開かない限り気づけなかった）。Best-effort: never blocks the
-/// (already successful) game-record save.
-void _checkAndRecordAchievements(Ref ref, String uid) {
-  () async {
-    try {
-      final newlyUnlocked =
-          await ref.read(checkAchievementsProvider(uid).future);
-      if (newlyUnlocked.isEmpty) return;
-
-      ref.read(newlyUnlockedAchievementsProvider.notifier).state = newlyUnlocked;
-
-      final user = ref.read(currentUserProvider);
-      final displayName = user?.displayName ?? 'Player';
-      await ref.read(incrementUserStatsProvider)(
-        uid: uid,
-        displayName: displayName,
-        period: LeaderboardPeriod.allTime,
-        type: LeaderboardType.achievements,
-        achievementsUnlockedDelta: newlyUnlocked.length,
-      );
-      _logger.i('✅ ${newlyUnlocked.length} achievement(s) unlocked for $uid');
-
-      // notification_screen.dartのアイコン切り分け('achievement'ケース)は
-      // 既に存在していたが、この通知タイプを実際に送るコードがどこにも無く
-      // 死んでいた。トースト(GameResultScreenを開いている間だけ見える)とは
-      // 別に、通知ベル/履歴にも残るようにする。
-      for (final achievement in newlyUnlocked) {
-        try {
-          await ref.read(sendNotificationProvider)(
-            uid: uid,
-            title: '実績解除: ${achievement.name}',
-            body: achievement.description,
-            type: 'achievement',
-            data: {'achievementId': achievement.id},
-          );
-        } catch (e) {
-          _logger.w('実績通知送信失敗 (non-fatal): $e');
-        }
-      }
-    } catch (e) {
-      _logger.w('実績判定/リーダーボード反映失敗 (non-fatal): $e');
     }
   }();
 }

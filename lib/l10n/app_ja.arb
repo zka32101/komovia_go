@@ -728,6 +728,8 @@
   "aiLevelAxisLabel": "AIレベル",
   "achievementsTitle": "アチーブメント",
   "noAchievementsMessage": "アチーブメントを獲得してください",
+  "achievementsUnlockedSectionTitle": "解除済み",
+  "achievementsLockedSectionTitle": "未解除",
 
   "noActivePvpGamesMessage": "進行中のPvP対局はありません",
   "boardMovesLabel": "{boardSize}路盤 · {moves}手目",
