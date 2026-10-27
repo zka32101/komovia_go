@@ -32,15 +32,36 @@ class EnScoreService {
 
   Future<int> _countSharedSpectateSessions(String uid, String friendUid) async {
     try {
-      final sessions = await _firestore
+      // spectator_sessionsのhostUidはspectatorUids配列には入らない
+      // (SpectatorService.createSpectatorSessionがspectatorUids: []で
+      // 作成し、ホスト自身を観戦者として追加することはない)。そのため
+      // 「uidが観戦者として入っているセッション」だけをarrayContainsで
+      // 検索すると、uid自身がホストだった共同観戦セッションが一件も
+      // 返ってこず、_countSharedSpectateSessions(hostUid, friendUid)と
+      // _countSharedSpectateSessions(friendUid, hostUid)で結果が非対称
+      // になっていた(友人が観戦者側から数えると見つかるのに、ホスト側
+      // から数えるとゼロになる)。uidが観戦者として参加したセッションと、
+      // uidがホストだったセッションの両方を取得し、重複を除いて走査する。
+      final asSpectator = await _firestore
           .collection('spectator_sessions')
           .where('spectatorUids', arrayContains: uid)
           .get();
-      return sessions.docs.where((doc) {
+      final asHost = await _firestore
+          .collection('spectator_sessions')
+          .where('hostUid', isEqualTo: uid)
+          .get();
+
+      final seenIds = <String>{};
+      var count = 0;
+      for (final doc in [...asSpectator.docs, ...asHost.docs]) {
+        if (!seenIds.add(doc.id)) continue;
         final spectators = List<String>.from(doc.data()['spectatorUids'] as List<dynamic>? ?? []);
         final hostUid = doc.data()['hostUid'] as String?;
-        return spectators.contains(friendUid) || hostUid == friendUid;
-      }).length;
+        if (spectators.contains(friendUid) || hostUid == friendUid) {
+          count++;
+        }
+      }
+      return count;
     } catch (e) {
       _logger.e('Error counting shared spectate sessions: $e');
       return 0;
