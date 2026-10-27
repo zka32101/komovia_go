@@ -25,6 +25,18 @@ class _SpectatorViewScreenState extends ConsumerState<SpectatorViewScreen> {
 
   @override
   void dispose() {
+    // leaveSpectatorSessionProviderを呼ばずに画面を離れると、spectatorCountが
+    // 入室のたびに増え続け、二度と減らない(SpectatorViewScreenには「退出する」
+    // 操作自体が無く、戻るボタンで閉じるのが唯一の離脱手段のため、これが
+    // 唯一の退出フック)。dispose()はasyncにできないので、ウィジェット破棄を
+    // 止めずにbest-effortで発火する(他のFirestore書き込み失敗と同様、
+    // 失敗してもUIをブロックしない)。
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid != null) {
+      ref.read(leaveSpectatorSessionProvider)(widget.sessionId, uid).catchError((Object e) {
+        _logger.w('Failed to leave spectator session on dispose: $e');
+      });
+    }
     _commentController.dispose();
     super.dispose();
   }

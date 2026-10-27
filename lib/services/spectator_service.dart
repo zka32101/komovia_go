@@ -148,13 +148,25 @@ class SpectatorService {
     }
   }
 
+  /// spectatorUids(arrayUnion、既に入っていればno-op)とspectatorCountが
+  /// 別々のフィールド更新だと、同じユーザーが同じセッションに再入室
+  /// (画面を開き直す等)した場合にarrayUnionは重複を防ぐ一方
+  /// spectatorCountは無条件にインクリメントされ続け、実際の観戦者数と
+  /// 乖離していく。既にspectatorUidsに含まれているかをトランザクション内で
+  /// 確認し、新規参加の場合のみカウントを動かす。
   Future<void> joinSpectatorSession(String sessionId, String spectatorUid) async {
     try {
       final docRef = _firestore.collection('spectator_sessions').doc(sessionId);
-      await docRef.update({
-        'spectatorUids': FieldValue.arrayUnion([spectatorUid]),
-        'spectatorCount': FieldValue.increment(1),
-        'updatedAt': FieldValue.serverTimestamp(),
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(docRef);
+        final data = snapshot.data();
+        final existingUids = List<String>.from((data?['spectatorUids'] as List?) ?? const []);
+        if (existingUids.contains(spectatorUid)) return;
+        transaction.update(docRef, {
+          'spectatorUids': FieldValue.arrayUnion([spectatorUid]),
+          'spectatorCount': FieldValue.increment(1),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       });
       _logger.i('Spectator $spectatorUid joined session $sessionId');
     } catch (e) {
@@ -166,10 +178,16 @@ class SpectatorService {
   Future<void> leaveSpectatorSession(String sessionId, String spectatorUid) async {
     try {
       final docRef = _firestore.collection('spectator_sessions').doc(sessionId);
-      await docRef.update({
-        'spectatorUids': FieldValue.arrayRemove([spectatorUid]),
-        'spectatorCount': FieldValue.increment(-1),
-        'updatedAt': FieldValue.serverTimestamp(),
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(docRef);
+        final data = snapshot.data();
+        final existingUids = List<String>.from((data?['spectatorUids'] as List?) ?? const []);
+        if (!existingUids.contains(spectatorUid)) return;
+        transaction.update(docRef, {
+          'spectatorUids': FieldValue.arrayRemove([spectatorUid]),
+          'spectatorCount': FieldValue.increment(-1),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       });
       _logger.i('Spectator $spectatorUid left session $sessionId');
     } catch (e) {
