@@ -237,10 +237,19 @@ class LeaderboardService {
   /// フィールドだけを更新したい場合、他方が把握していないフィールドを
   /// 0で上書きしてしまう。トランザクションで現在値を読み、デルタ分だけ
   /// 加算/絶対値で更新することでこれを避ける。
+  ///
+  /// 実バグ修正: 以前は呼び出し元が選んだ単一の`period`にしか書き込ま
+  /// なかったが、全ての呼び出し元が常に`LeaderboardPeriod.allTime`しか
+  /// 渡していなかった（LeaderboardScreenのdaily/weekly/monthlyタブは
+  /// UI上選べるのに、periodDocId()が期間ごとに正しいドキュメントIDを
+  /// 導出するようになった後も、肝心の書き込み側が追従しておらず、結局
+  /// それらのタブは永久に空のままだった）。対局・詰碁の結果はどの期間
+  /// のランキングにも等しく反映されるべき統計であり、呼び出し元が期間を
+  /// 選び分ける理由がないため、`period`引数を廃止し内部で
+  /// `LeaderboardPeriod.values`全件に書き込む。
   Future<void> incrementUserStats({
     required String uid,
     required String displayName,
-    required LeaderboardPeriod period,
     required LeaderboardType type,
     int? newRating,
     int gamesPlayedDelta = 0,
@@ -250,47 +259,49 @@ class LeaderboardService {
     int tournamentWinsDelta = 0,
   }) async {
     try {
-      _logger.i('Incrementing user stats: uid=$uid, period=$period, type=$type');
+      _logger.i('Incrementing user stats: uid=$uid, type=$type');
 
-      final docRef = _firestore
-          .collection(leaderboardCollection)
-          .doc(periodDocId(period))
-          .collection(type.toShortString())
-          .doc(uid);
+      for (final period in LeaderboardPeriod.values) {
+        final docRef = _firestore
+            .collection(leaderboardCollection)
+            .doc(periodDocId(period))
+            .collection(type.toShortString())
+            .doc(uid);
 
-      await _firestore.runTransaction((transaction) async {
-        final snapshot = await transaction.get(docRef);
-        final current = snapshot.exists
-            ? _entryFromDoc(snapshot as DocumentSnapshot<Map<String, dynamic>>)
-            : LeaderboardEntry(
-                uid: uid,
-                displayName: displayName,
-                rank: 0,
-                rating: 1200,
-                gamesPlayed: 0,
-                wins: 0,
-                winRate: 0.0,
-                puzzlesSolved: 0,
-                lastUpdated: DateTime.now(),
-              );
+        await _firestore.runTransaction((transaction) async {
+          final snapshot = await transaction.get(docRef);
+          final current = snapshot.exists
+              ? _entryFromDoc(snapshot as DocumentSnapshot<Map<String, dynamic>>)
+              : LeaderboardEntry(
+                  uid: uid,
+                  displayName: displayName,
+                  rank: 0,
+                  rating: 1200,
+                  gamesPlayed: 0,
+                  wins: 0,
+                  winRate: 0.0,
+                  puzzlesSolved: 0,
+                  lastUpdated: DateTime.now(),
+                );
 
-        final gamesPlayed = current.gamesPlayed + gamesPlayedDelta;
-        final wins = current.wins + winsDelta;
-        final updated = current.copyWith(
-          displayName: displayName,
-          rating: newRating ?? current.rating,
-          gamesPlayed: gamesPlayed,
-          wins: wins,
-          winRate: gamesPlayed > 0 ? wins / gamesPlayed : 0.0,
-          puzzlesSolved: current.puzzlesSolved + puzzlesSolvedDelta,
-          achievementsUnlocked:
-              current.achievementsUnlocked + achievementsUnlockedDelta,
-          tournamentWins: current.tournamentWins + tournamentWinsDelta,
-          lastUpdated: DateTime.now(),
-        );
+          final gamesPlayed = current.gamesPlayed + gamesPlayedDelta;
+          final wins = current.wins + winsDelta;
+          final updated = current.copyWith(
+            displayName: displayName,
+            rating: newRating ?? current.rating,
+            gamesPlayed: gamesPlayed,
+            wins: wins,
+            winRate: gamesPlayed > 0 ? wins / gamesPlayed : 0.0,
+            puzzlesSolved: current.puzzlesSolved + puzzlesSolvedDelta,
+            achievementsUnlocked:
+                current.achievementsUnlocked + achievementsUnlockedDelta,
+            tournamentWins: current.tournamentWins + tournamentWinsDelta,
+            lastUpdated: DateTime.now(),
+          );
 
-        transaction.set(docRef, updated.toFirestoreFields());
-      });
+          transaction.set(docRef, updated.toFirestoreFields());
+        });
+      }
 
       _logger.i('✅ User stats incremented: uid=$uid');
     } catch (e) {

@@ -165,14 +165,12 @@ void main() {
       await service.incrementUserStats(
         uid: 'u1',
         displayName: 'Alice',
-        period: LeaderboardPeriod.daily,
         type: LeaderboardType.puzzles,
         puzzlesSolvedDelta: 2,
       );
       await service.incrementUserStats(
         uid: 'u1',
         displayName: 'Alice',
-        period: LeaderboardPeriod.daily,
         type: LeaderboardType.puzzles,
         puzzlesSolvedDelta: 3,
       );
@@ -185,6 +183,30 @@ void main() {
 
       expect(entry, isNotNull);
       expect(entry!.puzzlesSolved, 5);
+    });
+
+    test(
+        'incrementUserStats writes to every period (daily/weekly/monthly/'
+        'allTime), not just one, so the daily/weekly/monthly leaderboard '
+        'tabs are never permanently empty', () async {
+      await service.incrementUserStats(
+        uid: 'u1',
+        displayName: 'Alice',
+        type: LeaderboardType.rating,
+        newRating: 1500,
+        gamesPlayedDelta: 1,
+        winsDelta: 1,
+      );
+
+      for (final period in LeaderboardPeriod.values) {
+        final entry = await service.getUserRank(
+          uid: 'u1',
+          period: period,
+          type: LeaderboardType.rating,
+        );
+        expect(entry, isNotNull, reason: 'missing entry for $period');
+        expect(entry!.rating, 1500);
+      }
     });
 
     test('resetLeaderboard only clears the specified period', () async {

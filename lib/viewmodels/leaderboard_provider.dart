@@ -159,12 +159,16 @@ final updateUserScoreProvider = Provider<
 
 /// ユーザーの統計を安全にインクリメント/更新する（PvP対局結果・詰碁の
 /// 正解など、他の呼び出し元が把握していないフィールドをゼロで
-/// 上書きしないための、updateUserScoreProviderの代替）
+/// 上書きしないための、updateUserScoreProviderの代替）。
+///
+/// 全期間（daily/weekly/monthly/allTime）のランキングに等しく反映される
+/// べき統計のため`period`を選ばせない（[LeaderboardService.incrementUserStats]
+/// 参照）。呼び出し元が以前`period: LeaderboardPeriod.allTime`を渡していた
+/// 箇所は単にその行を削除する。
 final incrementUserStatsProvider = Provider<
     Future<void> Function({
       required String uid,
       required String displayName,
-      required LeaderboardPeriod period,
       required LeaderboardType type,
       int? newRating,
       int gamesPlayedDelta,
@@ -178,7 +182,6 @@ final incrementUserStatsProvider = Provider<
   return ({
     required String uid,
     required String displayName,
-    required LeaderboardPeriod period,
     required LeaderboardType type,
     int? newRating,
     int gamesPlayedDelta = 0,
@@ -192,7 +195,6 @@ final incrementUserStatsProvider = Provider<
       await service.incrementUserStats(
         uid: uid,
         displayName: displayName,
-        period: period,
         type: type,
         newRating: newRating,
         gamesPlayedDelta: gamesPlayedDelta,

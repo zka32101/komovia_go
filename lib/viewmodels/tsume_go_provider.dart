@@ -247,7 +247,6 @@ Future<void> _incrementPuzzlesSolved(Ref ref, String uid) async {
     await ref.read(incrementUserStatsProvider)(
       uid: uid,
       displayName: displayName,
-      period: LeaderboardPeriod.allTime,
       type: LeaderboardType.puzzles,
       puzzlesSolvedDelta: 1,
     );

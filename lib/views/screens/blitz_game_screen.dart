@@ -650,7 +650,6 @@ class _BlitzGameScreenState extends ConsumerState<BlitzGameScreen> {
       await ref.read(incrementUserStatsProvider)(
         uid: widget.uid,
         displayName: 'Player',
-        period: LeaderboardPeriod.allTime,
         type: LeaderboardType.rating,
         newRating: currentRating + delta,
         gamesPlayedDelta: 1,

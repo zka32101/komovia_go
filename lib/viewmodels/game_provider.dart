@@ -822,7 +822,6 @@ void _updateAiGameRating(
       await ref.read(incrementUserStatsProvider)(
         uid: uid,
         displayName: displayName,
-        period: LeaderboardPeriod.allTime,
         type: LeaderboardType.rating,
         newRating: newRating,
         gamesPlayedDelta: 1,

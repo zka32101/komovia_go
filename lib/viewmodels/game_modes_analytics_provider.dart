@@ -277,7 +277,6 @@ Future<void> checkAndRecordAchievementsAfterGame(Ref ref, String uid) async {
     await ref.read(incrementUserStatsProvider)(
       uid: uid,
       displayName: displayName,
-      period: LeaderboardPeriod.allTime,
       type: LeaderboardType.achievements,
       achievementsUnlockedDelta: newlyUnlocked.length,
     );

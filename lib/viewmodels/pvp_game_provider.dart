@@ -486,7 +486,6 @@ Future<void> _updateEloRatings(Ref ref, PvpGame game) async {
   await incrementStats(
     uid: game.blackUid,
     displayName: game.blackDisplayName,
-    period: LeaderboardPeriod.allTime,
     type: LeaderboardType.rating,
     newRating: newBlackRating,
     gamesPlayedDelta: 1,
@@ -495,7 +494,6 @@ Future<void> _updateEloRatings(Ref ref, PvpGame game) async {
   await incrementStats(
     uid: game.whiteUid,
     displayName: game.whiteDisplayName,
-    period: LeaderboardPeriod.allTime,
     type: LeaderboardType.rating,
     newRating: newWhiteRating,
     gamesPlayedDelta: 1,
