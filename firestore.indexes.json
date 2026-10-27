@@ -178,23 +178,6 @@
       "collectionGroup": "correspondenceGames",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "uid", "order": "ASCENDING" },
-        { "fieldPath": "lastMoveAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "correspondenceGames",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "uid", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "lastMoveAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "correspondenceGames",
-      "queryScope": "COLLECTION",
-      "fields": [
         { "fieldPath": "opponentUid", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "currentPlayerColor", "order": "ASCENDING" }
