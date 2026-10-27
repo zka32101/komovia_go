@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 import '../models/index.dart';
+import '../utils/sgf_parser.dart';
 
 final _logger = Logger();
 
@@ -53,13 +54,33 @@ class PositionEchoService {
   }
 
   /// 棋譜ライブラリの名局の中に同一局面（最終盤面）を持つものがあるか探す
+  ///
+  /// 実バグ修正: 以前は`BoardState.fromSgf()`を使っていたが、これは
+  /// `BoardState.toSgf()`自身が書き出す「最終盤面のみ、カンマ区切り座標
+  /// (`B[c,d]`)」という自己対局用の独自ダイアレクトしか解釈できない。
+  /// 一方`kifuLibrary`の`sgfData`（秀策の碁など）は実際の着手順を持つ
+  /// 標準SGF（カンマ無し2文字座標、`;B[pd]`）であり、`fromSgf`の正規表現は
+  /// これに一度もマッチしないため、名局側は常に空盤面としてハッシュ化
+  /// されていた＝「名局と同じ局面に到達」機能は実質一度も機能していな
+  /// かった。`KifuObservationScreen`/`GameHistoryScreen`が既に使っている
+  /// 本物のSGFダイアレクト用パーサー（`parseSgfMoves`/`replaySgfMoves`、
+  /// `GoRules`で捕獲を反映しながら再生）に差し替える。
   Future<KifuLibrary?> _findHistoricalMatch(String positionHash) async {
     try {
       final snapshots = await _firestore.collection('kifuLibrary').limit(200).get();
       for (final doc in snapshots.docs) {
         final kifu = KifuLibrary.fromFirestore(doc);
         try {
-          final board = BoardState.fromSgf(kifu.sgfData);
+          final boardSize = parseSgfBoardSize(kifu.sgfData);
+          final moves = parseSgfMoves(kifu.sgfData);
+          final stones = replaySgfMoves(moves, boardSize, moves.length);
+          final board = BoardState(
+            boardSize: boardSize,
+            stones: stones,
+            capturedBlack: 0,
+            capturedWhite: 0,
+            isBlackTurn: true,
+          );
           if (computePositionHash(board) == positionHash) {
             return kifu;
           }
