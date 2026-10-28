@@ -16,8 +16,7 @@ final interstitialAdControllerProvider = Provider<InterstitialAdController>((ref
 /// 出さない。
 final showGameEndInterstitialProvider = Provider<Future<void> Function()>((ref) {
   return () async {
-    final isSubscriptionActive = ref.read(isSubscriptionActiveProvider);
-    if (isSubscriptionActive) return;
+    if (!ref.read(shouldShowAdsProvider)) return;
     await ref.read(interstitialAdControllerProvider).showIfAvailable();
   };
 });
