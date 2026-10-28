@@ -62,6 +62,15 @@ final isSubscriptionActiveProvider = Provider<bool>((ref) {
   return ref.watch(userEntitlementProvider).isCurrentlyActive();
 });
 
+/// Whether ads should currently be shown to this user — the single
+/// komovia_core `shouldShowAds` check, so `ad_provider.dart`/`ad_banner.dart`
+/// read one shared gate instead of each re-deriving
+/// `!isSubscriptionActive` independently (see komovia_core's `ad_gate.dart`
+/// doc comment for why that duplication is itself a latent regression risk).
+final shouldShowAdsProvider = Provider<bool>((ref) {
+  return shouldShowAds(ref.watch(userEntitlementProvider));
+});
+
 // ================== AUTH ACTIONS ==================
 
 /// Sign up with email and password

@@ -3,32 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/services/ad_service.dart';
 import 'package:komovia_go/viewmodels/index.dart';
 
 final _logger = Logger();
 
-/// バナー広告の読み込み失敗時リトライ方針（指数バックオフ）。
-/// ウィジェットのStateから切り離した純粋関数として、ロジックを
-/// プラットフォームチャネルのモック無しでユニットテストできるようにする。
-class AdBannerRetryPolicy {
-  const AdBannerRetryPolicy._();
-
-  static const maxRetries = 3;
-  static const baseDelay = Duration(seconds: 5);
-
-  /// 次の再試行までの待機時間。[attemptNumber]は1始まり
-  /// （1回目の失敗後のリトライなら1）。
-  /// [maxRetries]を超えたら再試行しないことを示すnullを返す。
-  static Duration? delayForAttempt(int attemptNumber) {
-    if (attemptNumber < 1 || attemptNumber > maxRetries) return null;
-    return baseDelay * (1 << (attemptNumber - 1));
-  }
-}
-
 /// 画面下部に置くバナー広告。プレミアム会員には広告を出さない
-/// （isSubscriptionActiveProviderを見て、有効なら何も描画しない）。
+/// （shouldShowAdsProviderを見て、falseなら何も描画しない）。
 class AdBanner extends ConsumerStatefulWidget {
   const AdBanner({super.key});
 
@@ -79,7 +62,7 @@ class _AdBannerState extends ConsumerState<AdBanner> {
   /// （ウィジェットを再マウントすれば initState からまた最初から試せる）。
   void _scheduleRetry() {
     if (!mounted) return;
-    final delay = AdBannerRetryPolicy.delayForAttempt(_retryCount + 1);
+    final delay = AdRetryPolicy.delayForAttempt(_retryCount + 1);
     if (delay == null) return;
     _retryCount++;
     _retryTimer?.cancel();
@@ -98,8 +81,8 @@ class _AdBannerState extends ConsumerState<AdBanner> {
 
   @override
   Widget build(BuildContext context) {
-    final isSubscriptionActive = ref.watch(isSubscriptionActiveProvider);
-    if (isSubscriptionActive) return const SizedBox.shrink();
+    final shouldShowAds = ref.watch(shouldShowAdsProvider);
+    if (!shouldShowAds) return const SizedBox.shrink();
 
     final ad = _bannerAd;
     if (!_isLoaded || ad == null) return const SizedBox.shrink();
