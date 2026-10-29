@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/models/index.dart';
@@ -494,6 +495,15 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _exportSgf(context, l10n, game),
+                    icon: const Icon(Icons.file_download_outlined),
+                    label: Text(l10n.exportSgfButton),
+                  ),
+                ),
               ],
             ),
           ),
@@ -612,6 +622,23 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
       }
     }
     return stoneWidgets;
+  }
+
+  /// [game.sgfData]は実着手順そのもののSGF（`sgf_parser.dart`参照 -
+  /// `BoardState.toSgf()`の最終局面のみのダイアレクトとは別物）なので、
+  /// そのままクリップボードにコピーするだけでOGS/Sabaki等の外部SGF
+  /// ビューアで開ける - 競合Goアプリ(OGS/Fox/Tygem)によくある
+  /// 「SGFエクスポート」機能の移植漏れ分。
+  Future<void> _exportSgf(
+    BuildContext context,
+    AppLocalizations l10n,
+    GameRecord game,
+  ) async {
+    await Clipboard.setData(ClipboardData(text: game.sgfData));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.sgfCopiedMessage)),
+    );
   }
 
   Widget _buildDetailRow(BuildContext context, String label, String value) {

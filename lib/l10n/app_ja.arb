@@ -216,6 +216,8 @@
 
   "onboardingHeaderTitle": "囲碁を学ぶ",
   "skipButton": "スキップ",
+  "exportSgfButton": "SGFをエクスポート",
+  "sgfCopiedMessage": "SGFをクリップボードにコピーしました",
   "backButton": "戻る",
   "nextButton": "次へ",
   "startPlayingButton": "対局を始める",

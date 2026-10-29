@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_go/models/index.dart';
@@ -195,6 +196,44 @@ void main() {
 
       // Details view should appear
       expect(find.text('勝ち'), findsWidgets);
+    });
+
+    testWidgets('exporting SGF copies the real move-order SGF to the clipboard', (
+      WidgetTester tester,
+    ) async {
+      String? copiedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedText = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(() {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        );
+      });
+
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const GameHistoryScreen(),
+          container: container,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(InkWell).first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('SGFをエクスポート'));
+      await tester.pumpAndSettle();
+
+      expect(copiedText, _testGameRecord.sgfData);
+      expect(find.text('SGFをクリップボードにコピーしました'), findsOneWidget);
     });
 
     testWidgets('game details shows final board', (WidgetTester tester) async {

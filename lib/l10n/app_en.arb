@@ -216,6 +216,8 @@
 
   "onboardingHeaderTitle": "Learn Go",
   "skipButton": "Skip",
+  "exportSgfButton": "Export SGF",
+  "sgfCopiedMessage": "SGF copied to clipboard",
   "backButton": "Back",
   "nextButton": "Next",
   "startPlayingButton": "Start Playing",
