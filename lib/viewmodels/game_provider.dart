@@ -844,6 +844,11 @@ GameResult _parseResult(String result) {
   switch (result.toLowerCase()) {
     case 'win':
     case 'playerwin':
+    // The AI resigning is a win for the player, not komovia_go's
+    // GameResult.resignation (which computeRatingDelta - ai_rating.dart -
+    // scores as a loss, since that case is specifically the player
+    // resigning).
+    case 'ai_resign':
       return GameResult.playerWin;
     case 'lose':
     case 'aiwin':

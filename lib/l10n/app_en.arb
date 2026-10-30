@@ -237,6 +237,7 @@
   "gameResultDefeatTitle": "Defeat",
   "gameResultGameOverTitle": "Game Over",
   "gameResultResignSubtitle": "You resigned the game",
+  "gameResultAiResignSubtitle": "The AI resigned",
   "gameResultDrawSubtitle": "The game ended in a draw",
   "gameResultDefaultSubtitle": "The game has ended",
   "gameResignedMessage": "Game resigned. No final score calculated.",
@@ -894,6 +895,9 @@
   "resignConfirmTitle": "Resign the game?",
   "resignConfirmContent": "You are about to resign this game. Are you sure?",
   "confirmResignButton": "Resign",
+  "aiResignedDialogTitle": "The AI resigned",
+  "aiResignedDialogContent": "The position became too one-sided, so the AI resigned.",
+  "aiResignedOkButton": "See result",
   "scoreDiffLabel": "Score Diff: {value}",
   "@scoreDiffLabel": {
     "placeholders": {
