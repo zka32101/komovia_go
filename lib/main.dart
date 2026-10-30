@@ -87,6 +87,24 @@ class GoEnApp extends ConsumerWidget {
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      // targetSdk 36 (Android 15+) draws edge-to-edge, so without this the
+      // bottom of every screen sits under the system navigation bar.
+      builder: (context, child) {
+        final media = MediaQuery.of(context);
+        final bottom = media.viewInsets.bottom > 0 ? 0.0 : media.viewPadding.bottom;
+        if (child == null || bottom <= 0) return child ?? const SizedBox.shrink();
+        return ColoredBox(
+          color: AppColors.bgDark,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: bottom),
+            child: MediaQuery.removePadding(
+              context: context,
+              removeBottom: true,
+              child: child,
+            ),
+          ),
+        );
+      },
       home: const SplashScreen(),
       navigatorObservers: [
         _AnalyticsNavigatorObserver(),
