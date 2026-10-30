@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:logger/logger.dart';
 import 'package:komovia_go/models/index.dart';
@@ -8,6 +10,10 @@ import 'package:komovia_go/services/firestore_service.dart';
 /// name, e.g. anonymous ones. Treat it as missing so UI fallbacks apply.
 String? _nameOrNull(String? name) =>
     (name == null || name.trim().isEmpty) ? null : name;
+
+/// Default display name for anonymous users, in the device language.
+String _guestDisplayName() =>
+    PlatformDispatcher.instance.locale.languageCode == 'ja' ? 'ゲスト' : 'Guest';
 
 /// Service for Firebase Authentication
 /// Handles user signup, signin, signout, and session management
@@ -250,7 +256,7 @@ class AuthService {
       final anonUser = User(
         uid: firebaseUser.uid,
         email: 'anonymous@goen.local',
-        displayName: 'Guest Player',
+        displayName: _guestDisplayName(),
         subscriptionActive: false,
         subscriptionStartDate: DateTime.now(),
         tutorialCompleted: false,

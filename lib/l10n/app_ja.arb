@@ -198,11 +198,11 @@
   "bestValueBadge": "お得プラン",
   "faqTitle": "よくある質問",
   "faqCancelQuestion": "いつでも解約できますか？",
-  "faqCancelAnswer": "はい！サブスクリプションは請求期間の終了まで有効です。アプリの設定からいつでも解約できます。",
+  "faqCancelAnswer": "はい！サブスクリプションは請求期間の終了まで有効です。Google Playのサブスクリプション管理からいつでも解約できます。",
   "faqPaymentQuestion": "どの支払い方法が使えますか？",
-  "faqPaymentAnswer": "安全な決済代行サービス経由で主要なクレジットカードをご利用いただけます。",
+  "faqPaymentAnswer": "お支払いはGoogle Playの決済で行われます。使える支払い方法は、Google Playアカウントに登録されているものです。",
   "faqTrialQuestion": "無料トライアルはありますか？",
-  "faqTrialAnswer": "現在はありませんが、無料プランでもAI対局を3局までお試しいただけます。",
+  "faqTrialAnswer": "現在はありませんが、レベル1〜5のAI対局は無料でお楽しみいただけます。",
   "subscribedTitle": "プレミアム会員です！",
   "subscribedDescription": "すべてのプレミアム機能を無制限にお楽しみください",
   "subscriptionActivatedMessage": "サブスクリプションが有効になりました！{plan}プラン",
@@ -882,7 +882,7 @@
       "level": { "type": "int" }
     }
   },
-  "capturesBlackWhiteLabel": "アゲハマ（黒/白）",
+  "capturesBlackWhiteLabel": "取られた石（黒/白）",
   "passButton": "パス",
   "resignButton": "投了",
   "gameInProgressLabel": "対局中...",

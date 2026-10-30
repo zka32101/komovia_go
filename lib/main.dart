@@ -80,7 +80,7 @@ class GoEnApp extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
 
     return MaterialApp(
-      title: 'GoEn - 碁縁',
+      title: '碁縁',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark, // Dark mode only for premium adults
