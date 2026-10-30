@@ -23,6 +23,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
   bool _isSearching = false;
   bool _isStartingGame = false;
   MatchResult? _foundMatch;
+  bool _queued = false;
   String? _error;
 
   @override
@@ -57,6 +58,14 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
                   _buildBoardSizeSelector(),
                   const SizedBox(height: 20),
                   if (_foundMatch != null) _buildMatchFoundCard(l10n, _foundMatch!, uid, currentUser!),
+                  if (_queued)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        l10n.noMatchFoundMessage,
+                        style: const TextStyle(color: AppColors.kinLight),
+                      ),
+                    ),
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -231,6 +240,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
   Future<void> _findMatch(AppLocalizations l10n, String uid, User currentUser) async {
     setState(() {
       _isSearching = true;
+      _queued = false;
       _error = null;
     });
 
@@ -247,7 +257,8 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
       if (!mounted) return;
       setState(() {
         _foundMatch = match;
-        _error = match == null ? l10n.noMatchFoundMessage : null;
+        // 相手がいなくても待機列には入っている。相手が見つけてくれたら通知で届く。
+        _queued = match == null;
       });
 
       if (match != null) {

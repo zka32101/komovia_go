@@ -469,7 +469,7 @@
   "@ratingBoardSizeLabel": {
     "placeholders": { "rating": { "type": "int" }, "boardSize": { "type": "int" } }
   },
-  "noMatchFoundMessage": "No suitable opponent was found right now. Please try again.",
+  "noMatchFoundMessage": "No opponent is available right now. You are in the queue, and we will notify you when a game starts.",
   "gameStartFailedMessage": "Could not start the game: {error}",
   "@gameStartFailedMessage": { "placeholders": { "error": { "type": "String" } } },
   "opponentGameStartedNotifTitle": "Your game with {name} has started",
@@ -1031,7 +1031,7 @@
   "pvpDrawResultTitle": "Draw",
   "pvpWinResultTitle": "You win!",
   "pvpLoseResultTitle": "You lose",
-  "resignationResultLabel": "Won by resignation",
+  "resignationResultLabel": "Ended by resignation",
   "scoreResultLabel": "Black {black} - White {white}",
   "@scoreResultLabel": {
     "placeholders": {
@@ -1127,10 +1127,10 @@
   "claimForfeitButton": "Claim win by forfeit",
   "claimForfeitConfirmTitle": "Claim a win by forfeit?",
   "claimForfeitConfirmContent": "Your opponent hasn't made a move in this game for over 48 hours. Claiming will end this game as a win for you.",
-  "forfeitResultLabel": "Won — opponent forfeited",
+  "forfeitResultLabel": "Ended by forfeit",
   "opponentTimeExpiredMessage": "Your opponent's time has run out",
   "claimTimeoutButton": "Claim win by timeout",
-  "timeoutResultLabel": "Won — opponent ran out of time",
+  "timeoutResultLabel": "Ended on time",
 
   "rematchButton": "Rematch",
   "rematchFailedMessage": "Could not start the rematch",

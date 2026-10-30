@@ -469,7 +469,7 @@
   "@ratingBoardSizeLabel": {
     "placeholders": { "rating": { "type": "int" }, "boardSize": { "type": "int" } }
   },
-  "noMatchFoundMessage": "今は条件に合う相手が見つかりませんでした。また試してください",
+  "noMatchFoundMessage": "今は対戦相手がいません。待機列に入りました。対局が始まると通知でお知らせします。",
   "gameStartFailedMessage": "対局を開始できませんでした: {error}",
   "@gameStartFailedMessage": { "placeholders": { "error": { "type": "String" } } },
   "opponentGameStartedNotifTitle": "{name} さんとの対局が始まりました",
