@@ -73,7 +73,7 @@ class _TsumeGoScreenState extends ConsumerState<TsumeGoScreen> {
               solvingTime: Duration(seconds: ref.watch(puzzleSolvingTimeProvider)),
               isSolved: true,
               currentStreak: currentUser != null
-                  ? (ref.watch(tsumeGoStreakProvider(currentUser.uid)).value ??
+                  ? (ref.watch(tsumeGoStreakProvider(currentUser.uid)).valueOrNull ??
                       0)
                   : 0,
             );

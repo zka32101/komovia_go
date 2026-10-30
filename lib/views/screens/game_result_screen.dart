@@ -558,7 +558,7 @@ class GameResultScreen extends ConsumerWidget {
       _logger.e('❌ Failed to save game: $e');
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.failedToSaveGameMessage('$e'))),
+        SnackBar(content: Text(l10n.failedToSaveGameMessage)),
       );
     }
   }

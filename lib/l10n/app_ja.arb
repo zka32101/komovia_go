@@ -252,10 +252,7 @@
   "backToHomeButton": "ホームに戻る",
   "pleaseLoginToSaveMessage": "対局を保存するにはログインが必要です",
   "gameSavedMessage": "対局を保存しました！",
-  "failedToSaveGameMessage": "対局の保存に失敗しました: {error}",
-  "@failedToSaveGameMessage": {
-    "placeholders": { "error": { "type": "String" } }
-  },
+  "failedToSaveGameMessage": "対局の保存に失敗しました。通信状況を確認して、もう一度お試しください。",
   "achievementUnlockedLabel": "実績解除！",
   "aiReviewTitle": "AI振り返り",
   "aiReviewPrompt": "AIが対局を振り返り、良かった手・改善点を解説します。",
