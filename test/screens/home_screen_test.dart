@@ -96,7 +96,88 @@ void main() {
         ),
       );
 
-      // Verify premium badge visible
+      // 項目2: プレミアムバッジは本文からAppBarへ移動した。
+      expect(find.text('プレミアム'), findsOneWidget);
+    });
+
+    testWidgets(
+        'groups action cards under category section headers (item 1: '
+        'the flat list is now organized into 対局/学ぶ/交流/記録)',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const HomeScreen(),
+          container: container,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('対局'), findsOneWidget);
+      expect(find.text('学ぶ'), findsOneWidget);
+      expect(find.text('交流'), findsOneWidget);
+      expect(find.text('記録'), findsOneWidget);
+    });
+
+    testWidgets(
+        'every previously-reachable screen is still reachable after the '
+        'item 1 reorganization (same navigation targets, just grouped)',
+        (WidgetTester tester) async {
+      // 全カードがスクロールなしで見えるよう、十分大きいテスト用の
+      // 画面サイズにしておく(縦に長いセクション分けになったため)。
+      tester.view.physicalSize = const Size(1080, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // 各遷移先ごとに画面を独立して検証する(1つのNavigatorスタックを
+      // push/popで使い回すより確実)。
+      Future<void> tapAndVerify(String cardTitle, String screenText) async {
+        // 同じ構造のウィジェットツリーをpumpWidgetし直すと、Flutterが
+        // 新規ツリーではなく「更新」として扱い、前回のNavigatorの
+        // ルート履歴を使い回してしまう(このリポジトリの自動化テストで
+        // 既知のピットフォール)。確実に作り直すため、間に空の
+        // ウィジェットを挟む。
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpWidget(
+          TestUtils.buildTestableWidget(
+            child: MaterialApp(
+              home: const HomeScreen(),
+              locale: const Locale('ja'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              routes: {
+                '/tsume-go': (_) => const Scaffold(body: Text('Tsume-Go画面')),
+                '/kifu-observation': (_) =>
+                    const Scaffold(body: Text('観戦・学習画面')),
+                '/game-history': (_) => const Scaffold(body: Text('対局履歴画面')),
+                '/friends': (_) => const Scaffold(body: Text('Friends画面')),
+                '/en-hub': (_) => const Scaffold(body: Text('En Hub画面')),
+                '/tournament': (_) =>
+                    const Scaffold(body: Text('Tournament画面')),
+                '/pvp-games': (_) => const Scaffold(body: Text('PvP画面')),
+                '/how-to-play': (_) =>
+                    const Scaffold(body: Text('How To Play画面')),
+                '/joseki': (_) => const Scaffold(body: Text('Joseki画面')),
+                '/growth': (_) => const Scaffold(body: Text('Growth画面')),
+                '/analytics-dashboard': (_) =>
+                    const Scaffold(body: Text('Analytics画面')),
+              },
+            ),
+            container: container,
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.text(cardTitle));
+        await tester.pumpAndSettle();
+        expect(find.text(screenText), findsOneWidget);
+      }
+
+      await tapAndVerify('今日の詰碁', 'Tsume-Go画面');
+      await tapAndVerify('観戦・学習', '観戦・学習画面');
+      await tapAndVerify('対局履歴', '対局履歴画面');
+      await tapAndVerify('フレンド', 'Friends画面');
+      await tapAndVerify('対局分析・アチーブメント', 'Analytics画面');
     });
 
     testWidgets('has correct dark theme styling',

@@ -39,6 +39,14 @@ class _KifuObservationScreenState extends ConsumerState<KifuObservationScreen> {
   Timer? _autoplayTimer;
   int? _filterDifficulty;
 
+  // 項目3: 再生速度の調整。倍速を掛けたときの実際の間隔
+  // ([_baseAutoplayInterval] ÷ 倍速)を[_handleAutoplay]で使う。
+  // 設定の永続化はせず（このスクリーン専用のローカルUI状態）、画面を
+  // 開くたびに標準速度(1.0x)から始まる。
+  static const Duration _baseAutoplayInterval = Duration(milliseconds: 700);
+  static const List<double> _playbackSpeeds = [0.5, 1.0, 1.5, 2.0];
+  double _playbackSpeed = 1.0;
+
   @override
   void initState() {
     super.initState();
@@ -656,6 +664,47 @@ class _KifuObservationScreenState extends ConsumerState<KifuObservationScreen> {
               ),
             ],
           ),
+
+          const SizedBox(height: 12),
+
+          // 項目3: 再生速度の調整。
+          Row(
+            children: [
+              Text(
+                l10n.playbackSpeedLabel,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.washiDim,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final speed in _playbackSpeeds)
+                      ChoiceChip(
+                        selected: speed == _playbackSpeed,
+                        showCheckmark: false,
+                        label: Text('${speed}x'),
+                        labelStyle: TextStyle(
+                          color: speed == _playbackSpeed
+                              ? AppColors.sumi
+                              : AppColors.washi,
+                          fontWeight: speed == _playbackSpeed
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                        selectedColor: AppColors.kin,
+                        backgroundColor: AppColors.sumi,
+                        side: BorderSide(color: AppColors.kin),
+                        onSelected: (_) =>
+                            _handleSpeedChanged(speed, totalMoves),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -798,8 +847,8 @@ class _KifuObservationScreenState extends ConsumerState<KifuObservationScreen> {
       return;
     }
 
-    _logger.i('Starting autoplay from move $_currentMoveIndex');
-    _autoplayTimer = Timer.periodic(const Duration(milliseconds: 700), (timer) {
+    _logger.i('Starting autoplay from move $_currentMoveIndex at ${_playbackSpeed}x');
+    _autoplayTimer = Timer.periodic(_currentAutoplayInterval, (timer) {
       if (_currentMoveIndex >= totalMoves) {
         _stopAutoplay();
         return;
@@ -807,6 +856,24 @@ class _KifuObservationScreenState extends ConsumerState<KifuObservationScreen> {
       setState(() => _currentMoveIndex++);
     });
     setState(() {});
+  }
+
+  /// 項目3: [_playbackSpeed]を反映した実際のTimer.periodic間隔
+  /// （倍速が大きいほど間隔は短い）。
+  Duration get _currentAutoplayInterval => Duration(
+        microseconds:
+            (_baseAutoplayInterval.inMicroseconds / _playbackSpeed).round(),
+      );
+
+  /// 項目3: 再生速度を変更する。再生中であれば現在のTimerを新しい間隔
+  /// で立て直す（進行中の再生を止めずに速度だけ変える）。
+  void _handleSpeedChanged(double speed, int totalMoves) {
+    setState(() => _playbackSpeed = speed);
+    if (_autoplayTimer != null) {
+      _autoplayTimer?.cancel();
+      _autoplayTimer = null;
+      _handleAutoplay(context, totalMoves);
+    }
   }
 
   void _stopAutoplay() {

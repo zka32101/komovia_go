@@ -595,5 +595,94 @@ void main() {
       expect(find.text('Hard Game'), findsOneWidget);
       expect(find.text('Unrated Game'), findsOneWidget);
     });
+
+    group('項目3: 再生速度の調整', () {
+      Future<void> _useTallViewport(WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+      }
+
+      testWidgets('shows a speed chip for each offered speed, defaulting to 1.0x',
+          (WidgetTester tester) async {
+        await _useTallViewport(tester);
+        await tester.pumpWidget(
+          TestUtils.buildTestableWidget(
+            child: const KifuObservationScreen(),
+            container: container,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(InkWell).first);
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(ChoiceChip, '0.5x'), findsOneWidget);
+        expect(find.widgetWithText(ChoiceChip, '1.0x'), findsOneWidget);
+        expect(find.widgetWithText(ChoiceChip, '1.5x'), findsOneWidget);
+        expect(find.widgetWithText(ChoiceChip, '2.0x'), findsOneWidget);
+
+        final defaultChip = tester.widget<ChoiceChip>(
+          find.widgetWithText(ChoiceChip, '1.0x'),
+        );
+        expect(defaultChip.selected, isTrue);
+      });
+
+      testWidgets(
+          'selecting a different speed changes the autoplay timer\'s '
+          'effective interval (faster speed advances more moves for the '
+          'same elapsed time)', (WidgetTester tester) async {
+        await _useTallViewport(tester);
+        await tester.pumpWidget(
+          TestUtils.buildTestableWidget(
+            child: const KifuObservationScreen(),
+            container: container,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(InkWell).first);
+        await tester.pumpAndSettle();
+
+        // 2.0x を選び、再生を開始する。
+        await tester.tap(find.widgetWithText(ChoiceChip, '2.0x'));
+        await tester.pump();
+        await tester.tap(find.widgetWithText(ElevatedButton, '再生'));
+        await tester.pump();
+
+        // このフィクスチャは2手しかないため、標準速度(0.7秒間隔)なら
+        // 0.7秒後にはまだ1手目だが、2倍速(0.35秒間隔)なら0.7秒で
+        // 2手(=全手)進み終局表示になる。
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(find.textContaining('2 / 2'), findsOneWidget);
+      });
+
+      testWidgets('switching speed mid-playback keeps playing without resetting progress',
+          (WidgetTester tester) async {
+        await _useTallViewport(tester);
+        await tester.pumpWidget(
+          TestUtils.buildTestableWidget(
+            child: const KifuObservationScreen(),
+            container: container,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(InkWell).first);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(ElevatedButton, '再生'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 700));
+        expect(find.textContaining('1 /'), findsOneWidget);
+
+        // 再生中に速度を変えても一時停止にならず、進行は続く。
+        await tester.tap(find.widgetWithText(ChoiceChip, '2.0x'));
+        await tester.pump();
+        expect(find.widgetWithText(ElevatedButton, '一時停止'), findsOneWidget);
+
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(find.textContaining('2 /'), findsOneWidget);
+      });
+    });
   });
 }

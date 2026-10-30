@@ -1,5 +1,6 @@
 import 'package:riverpod/riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:komovia_core/komovia_core.dart' as core;
 import 'package:komovia_go/models/index.dart';
 import 'package:komovia_go/services/index.dart';
 import 'package:komovia_go/services/fuego_engine_service.dart';
@@ -73,6 +74,28 @@ final aiLevelProvider = StateProvider<int>((ref) {
 final quickBoardSizeProvider = StateProvider<int>((ref) {
   return 9;
 });
+
+/// オプションのタイマーモード（項目5）。AIレベル選択シートで選んだ
+/// 時間設定 - デフォルトは「タイマーなし」(komovia_core.TimeControl.
+/// untimed())で、碁縁の「NO TIMERS」という既定の体験はそのまま。
+/// プレイヤーが明示的に選んだ場合のみ、次の対局がこの設定で始まる。
+final quickTimeControlProvider = StateProvider<core.TimeControl>((ref) {
+  return const core.TimeControl.untimed();
+});
+
+/// 現在進行中の対局で実際に使われているタイマー設定
+/// ([startNewGameProvider]が[quickTimeControlProvider]の値をコピーして
+/// セットする)。対局開始後に[quickTimeControlProvider]を変更しても
+/// 進行中の対局には影響しないよう、別のプロバイダーとして分けている。
+final activeTimeControlProvider = StateProvider<core.TimeControl>((ref) {
+  return const core.TimeControl.untimed();
+});
+
+/// 黒番の残り時間。タイマーなしの対局では常にnull。
+final blackTimeRemainingProvider = StateProvider<Duration?>((ref) => null);
+
+/// 白番（AI）の残り時間。タイマーなしの対局では常にnull。
+final whiteTimeRemainingProvider = StateProvider<Duration?>((ref) => null);
 
 /// Number of moves played in current game
 final movesCountProvider = StateProvider<int>((ref) {
@@ -153,6 +176,14 @@ final startNewGameProvider =
     );
     ref.read(gameBoardStateProvider.notifier).state = initial;
     ref.read(initialBoardStateProvider.notifier).state = initial;
+
+    // 項目5: タイマーモード。quickTimeControlProviderで選んだ設定を
+    // この対局用にコピーし、両者の残り時間を初期値にリセットする。
+    final timeControl = ref.read(quickTimeControlProvider);
+    ref.read(activeTimeControlProvider.notifier).state = timeControl;
+    ref.read(blackTimeRemainingProvider.notifier).state = timeControl.initial;
+    ref.read(whiteTimeRemainingProvider.notifier).state = timeControl.initial;
+
     ref.invalidate(movesCountProvider);
     ref.invalidate(moveHistoryProvider);
     ref.invalidate(gameResultProvider);
@@ -246,6 +277,14 @@ final resumeActiveGameProvider = Provider<void Function(ActiveAiGame)>((ref) {
       koCol: game.koCol,
     );
     ref.read(gameBoardStateProvider.notifier).state = initial;
+    // 項目5: タイマーモード。進行中対局の保存(ActiveAiGame)は現時点で
+    // 残り時間を持たないため、「続きから」で復元した対局は常に
+    // タイマーなしとして扱う（新規対局でタイマーモードを選んだ場合のみ
+    // 対象になる）。
+    ref.read(activeTimeControlProvider.notifier).state =
+        const core.TimeControl.untimed();
+    ref.read(blackTimeRemainingProvider.notifier).state = null;
+    ref.read(whiteTimeRemainingProvider.notifier).state = null;
     // 注: 元の対局がハンディキャップ付きだった場合、置石そのものは
     // moveHistoryには含まれないため、このリセットでは「待った」が
     // ハンディキャップの置石より前まで戻せない（置石数を保存していない

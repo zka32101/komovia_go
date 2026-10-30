@@ -94,6 +94,10 @@
   "homeGreeting": "Welcome back",
   "homeDefaultPlayerName": "Player",
   "homePremiumBadge": "Premium",
+  "homeSectionPlayTitle": "Play",
+  "homeSectionLearnTitle": "Learn",
+  "homeSectionSocialTitle": "Social",
+  "homeSectionRecordsTitle": "Records",
   "homeGameModesTitle": "Game Modes",
   "homeGameModesSubtitle": "Choose your game style",
   "homePlayAiGameTitle": "Play AI Game",
@@ -884,6 +888,8 @@
     }
   },
   "capturesBlackWhiteLabel": "Stones lost (Black/White)",
+  "blackClockLabel": "Black (You)",
+  "whiteClockLabel": "White (AI)",
   "passButton": "Pass",
   "resignButton": "Resign",
   "gameInProgressLabel": "Playing...",
@@ -1014,6 +1020,7 @@
   "previousButton": "Previous",
   "pauseButton": "Pause",
   "playButton": "Play",
+  "playbackSpeedLabel": "Speed",
   "commentaryTitle": "Commentary",
   "commentaryPlaceholderMessage": "Move-by-move AI commentary and strategic analysis will appear here as you play through the game.",
   "aboutKifuObservationTitle": "About Kifu Observation",
@@ -1110,6 +1117,17 @@
     }
   },
   "aiLevelStartButton": "Play at this strength",
+  "timeControlSheetLabel": "Timer mode (optional)",
+  "timeControlSheetNote": "Leave unselected and the game stays untimed, as usual",
+  "timeControlOptionNone": "No timer",
+  "timeControlOptionMinutes": "{minutes} min",
+  "@timeControlOptionMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "boardSizeSheetLabel": "Board size",
   "boardSizeQuickNote": "5x5 and 7x7 are for quick games that finish in a few minutes",
   "boardSizeOption5": "5x5 (shortest)",

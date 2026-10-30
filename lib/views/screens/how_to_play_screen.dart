@@ -155,19 +155,36 @@ class _BoardAnatomyPainter extends CustomPainter {
 
   const _BoardAnatomyPainter({required this.l10n});
 
+  // ラベルは交点から最大28px程度オフセットして描かれるため、盤面の
+  // 格子をキャンバスの内側にこのぶん余白を取って描く。以前は格子が
+  // キャンバス全体(size.width/height)を使っていたため、左上(隅)の
+  // ラベルがオフセット(-22,-18)でキャンバスの外（負の座標）に出て
+  // 見切れていた（項目4のバグ報告「外側が見切れている」）。
+  static const double _labelMargin = 30;
+
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
       ..color = AppColors.washiDim
       ..strokeWidth = 1;
-    final step = size.width / (_lines - 1);
+    final gridSize = size.width - _labelMargin * 2;
+    final step = gridSize / (_lines - 1);
 
     for (var i = 0; i < _lines; i++) {
-      canvas.drawLine(Offset(i * step, 0), Offset(i * step, size.height), gridPaint);
-      canvas.drawLine(Offset(0, i * step), Offset(size.width, i * step), gridPaint);
+      canvas.drawLine(
+        Offset(_labelMargin + i * step, _labelMargin),
+        Offset(_labelMargin + i * step, _labelMargin + gridSize),
+        gridPaint,
+      );
+      canvas.drawLine(
+        Offset(_labelMargin, _labelMargin + i * step),
+        Offset(_labelMargin + gridSize, _labelMargin + i * step),
+        gridPaint,
+      );
     }
 
-    Offset pointAt(int col, int row) => Offset(col * step, row * step);
+    Offset pointAt(int col, int row) =>
+        Offset(_labelMargin + col * step, _labelMargin + row * step);
 
     void drawHoshi(Offset center) {
       canvas.drawCircle(center, 4, Paint()..color = AppColors.washi);

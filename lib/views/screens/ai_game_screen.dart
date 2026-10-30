@@ -62,6 +62,14 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
   static const _heartbeatInterval = Duration(minutes: 2);
   Timer? _heartbeatTimer;
 
+  /// 項目5: オプションのタイマーモード用のカウントダウン。タイマーなし
+  /// の対局では[activeTimeControlProvider]が常にuntimedなので、
+  /// このTimerはtickごとにisTimedを確認するだけで何もしない
+  /// （既存の「NO TIMERS」挙動は変わらない）。
+  static const _clockTickInterval = Duration(milliseconds: 200);
+  Timer? _clockTimer;
+  bool _timeForfeitHandled = false;
+
   /// Consecutive AI moves in a row for which AiResignationService has
   /// judged the AI's position hopeless - reset to 0 whenever a check
   /// comes back favorable, and whenever a new game starts.
@@ -74,6 +82,72 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
     _selectedRow = -1;
     _selectedCol = -1;
     _startHeartbeat();
+    _startClockTicker();
+  }
+
+  /// 項目5: 手番側の残り時間を定期的に減らし、0になったら時間切れ負けと
+  /// する。タイマーなしの対局（既定）では[activeTimeControlProvider]が
+  /// 常にuntimedのため、この処理は何もしない。
+  void _startClockTicker() {
+    _clockTimer?.cancel();
+    _clockTimer = Timer.periodic(_clockTickInterval, (_) {
+      if (!mounted) return;
+      if (!ref.read(isGameActiveProvider)) return;
+      final timeControl = ref.read(activeTimeControlProvider);
+      if (!timeControl.isTimed) return;
+
+      final board = ref.read(gameBoardStateProvider);
+      final provider = board.isBlackTurn
+          ? blackTimeRemainingProvider
+          : whiteTimeRemainingProvider;
+      final current = ref.read(provider);
+      if (current == null) return;
+
+      final next = current - _clockTickInterval;
+      if (next <= Duration.zero) {
+        ref.read(provider.notifier).state = Duration.zero;
+        if (!_timeForfeitHandled) {
+          _timeForfeitHandled = true;
+          _handleTimeForfeit(blackExpired: board.isBlackTurn);
+        }
+        return;
+      }
+      ref.read(provider.notifier).state = next;
+    });
+  }
+
+  /// 項目5: 時間切れによる終局。[blackExpired]が切れた側
+  /// （碁縁では常に黒＝人間、白＝AI）で、その逆側が勝者となる。
+  void _handleTimeForfeit({required bool blackExpired}) {
+    _logger.i('⏱️ Time forfeit (blackExpired=$blackExpired)');
+    _clockTimer?.cancel();
+    ref.read(isGameActiveProvider.notifier).state = false;
+    ref.read(clearActiveAiGameProvider)();
+
+    final boardState = ref.read(gameBoardStateProvider);
+    final score = GoScoring.computeAreaScore(
+      boardState.stones,
+      boardState.boardSize,
+    );
+    final resultLabel = blackExpired ? 'lose' : 'win';
+
+    ref.read(logCustomEventProvider)(
+      eventName: 'ai_game_time_forfeit',
+      parameters: {
+        'result': resultLabel,
+        'ai_level': ref.read(aiLevelProvider),
+      },
+    );
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacementNamed(
+      '/game-result',
+      arguments: {
+        'result': resultLabel,
+        'blackScore': score.blackScore,
+        'whiteScore': score.whiteScore,
+      },
+    );
   }
 
   void _startHeartbeat() {
@@ -91,6 +165,7 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
   void dispose() {
     _aiMoveRequestTimer?.cancel();
     _heartbeatTimer?.cancel();
+    _clockTimer?.cancel();
     super.dispose();
   }
 
@@ -111,6 +186,11 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
     final movesCount = ref.watch(movesCountProvider);
     final moveHistory = ref.watch(moveHistoryProvider);
     final lastMove = moveHistory.isNotEmpty ? moveHistory.last : null;
+
+    // 項目5: オプションのタイマーモード。
+    final timeControl = ref.watch(activeTimeControlProvider);
+    final blackTimeRemaining = ref.watch(blackTimeRemainingProvider);
+    final whiteTimeRemaining = ref.watch(whiteTimeRemainingProvider);
 
     // React to the AI's move once Fuego resolves it: apply it to the board
     // (captures included) the same way a human move is applied.
@@ -274,6 +354,20 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
                   ],
                 ),
               ),
+
+              // 項目5: オプションのタイマーモード。timeControlがタイマー
+              // なしなら何も表示しない（既定の体験は変わらない）。
+              if (timeControl.isTimed)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: GoChessClock(
+                    blackRemaining: blackTimeRemaining ?? Duration.zero,
+                    whiteRemaining: whiteTimeRemaining ?? Duration.zero,
+                    isBlackTurn: boardState.isBlackTurn,
+                    blackLabel: l10n.blackClockLabel,
+                    whiteLabel: l10n.whiteClockLabel,
+                  ),
+                ),
 
               // Go board
               Expanded(

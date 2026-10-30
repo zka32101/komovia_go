@@ -41,9 +41,36 @@ class HomeScreen extends ConsumerWidget {
         title: const SizedBox.shrink(),
         flexibleSpace: SafeArea(
           child: Center(
-            child: Text(
-              '碁縁',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '碁縁',
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
+                // 項目2: 本文に埋もれていたプレミアムバッジを
+                // 上部メニューへ移動（常に見える位置にする）。
+                if (isSubscriptionActive) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.kin,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      l10n.homePremiumBadge,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.sumi,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
@@ -78,41 +105,23 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        currentUser?.displayName ?? l10n.homeDefaultPlayerName,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: AppColors.washi,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (isSubscriptionActive)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.kin,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            l10n.homePremiumBadge,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.sumi,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                    ],
+                  Text(
+                    currentUser?.displayName ?? l10n.homeDefaultPlayerName,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppColors.washi,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // Main action cards
+            // 項目1: すべてのカードが同じ重みで一列に並んでいて見づらい
+            // というフィードバックを受け、カテゴリ別のセクションに
+            // 整理した。常時最上部に出す「対局モード」(主CTA)と
+            // 「続きから」は、どのカテゴリにも属さない特別扱いとして
+            // そのまま先頭に残す - 以前からの到達経路は1つも変えて
+            // いない（全ての画面は従来どおりタップで開ける）。
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
@@ -152,7 +161,8 @@ class HomeScreen extends ConsumerWidget {
                     },
                   ),
 
-                  // Classic AI Game option
+                  // 対局 (Play)
+                  _buildSectionHeader(context, l10n.homeSectionPlayTitle),
                   _buildActionCard(
                     context,
                     title: l10n.homePlayAiGameTitle,
@@ -161,86 +171,7 @@ class HomeScreen extends ConsumerWidget {
                     color: AppColors.kin,
                     onTap: () => _navigateToAiGame(context, ref),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Daily Tsume-Go puzzle
-                  _buildActionCard(
-                    context,
-                    title: l10n.homeTodaysPuzzleTitle,
-                    subtitle: l10n.homeTodaysPuzzleSubtitle,
-                    icon: Icons.lightbulb,
-                    color: AppColors.aiLight,
-                    onTap: () => _navigateToTsumeGo(context),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Watch Kifu
-                  _buildActionCard(
-                    context,
-                    title: l10n.homeWatchLearnTitle,
-                    subtitle: l10n.homeWatchLearnSubtitle,
-                    icon: Icons.visibility,
-                    color: AppColors.wakatake,
-                    onTap: () => _navigateToKifuObservation(context),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Game History
-                  _buildActionCard(
-                    context,
-                    title: l10n.homeMyGamesTitle,
-                    subtitle: l10n.homeMyGamesSubtitle,
-                    icon: Icons.history,
-                    color: AppColors.fuji,
-                    onTap: () => _navigateToGameHistory(context),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Growth tracking (rating trend, win rate)
-                  _buildActionCard(
-                    context,
-                    title: l10n.homeGrowthTitle,
-                    subtitle: l10n.homeGrowthSubtitle,
-                    icon: Icons.trending_up,
-                    color: AppColors.wakatake,
-                    onTap: () => _navigateToGrowth(context),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Friends (add / requests / list)
-                  _buildActionCard(
-                    context,
-                    title: l10n.homeFriendsTitle,
-                    subtitle: l10n.homeFriendsSubtitle,
-                    icon: Icons.group_add,
-                    color: Colors.lightBlue[300]!,
-                    onTap: () => Navigator.of(context).pushNamed('/friends'),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 縁 (En) hub
-                  _buildActionCard(
-                    context,
-                    title: l10n.homeEnHubTitle,
-                    subtitle: l10n.homeEnHubSubtitle,
-                    icon: Icons.favorite,
-                    color: Colors.pink[300]!,
-                    onTap: () => _navigateToEnHub(context),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Tournament
-                  _buildActionCard(
-                    context,
-                    title: l10n.homeTournamentTitle,
-                    subtitle: l10n.homeTournamentSubtitle,
-                    icon: Icons.emoji_events,
-                    color: AppColors.kin,
-                    onTap: () => _navigateToTournament(context),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Active PvP games (マッチング/トーナメント経由で始めた対局に戻る)
+                  const SizedBox(height: 12),
                   _buildActionCard(
                     context,
                     title: l10n.homePvpGamesTitle,
@@ -249,9 +180,36 @@ class HomeScreen extends ConsumerWidget {
                     color: AppColors.shuLight,
                     onTap: () => _navigateToPvpGames(context),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  _buildActionCard(
+                    context,
+                    title: l10n.homeTournamentTitle,
+                    subtitle: l10n.homeTournamentSubtitle,
+                    icon: Icons.emoji_events,
+                    color: AppColors.kin,
+                    onTap: () => _navigateToTournament(context),
+                  ),
 
-                  // How to Play (persistent reference, unlike onboarding)
+                  // 学ぶ (Learn)
+                  _buildSectionHeader(context, l10n.homeSectionLearnTitle),
+                  _buildActionCard(
+                    context,
+                    title: l10n.homeTodaysPuzzleTitle,
+                    subtitle: l10n.homeTodaysPuzzleSubtitle,
+                    icon: Icons.lightbulb,
+                    color: AppColors.aiLight,
+                    onTap: () => _navigateToTsumeGo(context),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildActionCard(
+                    context,
+                    title: l10n.homeWatchLearnTitle,
+                    subtitle: l10n.homeWatchLearnSubtitle,
+                    icon: Icons.visibility,
+                    color: AppColors.wakatake,
+                    onTap: () => _navigateToKifuObservation(context),
+                  ),
+                  const SizedBox(height: 12),
                   _buildActionCard(
                     context,
                     title: l10n.homeHowToPlayTitle,
@@ -260,9 +218,7 @@ class HomeScreen extends ConsumerWidget {
                     color: Colors.teal[300]!,
                     onTap: () => _navigateToHowToPlay(context),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Joseki (strategy) library
+                  const SizedBox(height: 12),
                   _buildActionCard(
                     context,
                     title: l10n.homeJosekiTitle,
@@ -271,8 +227,47 @@ class HomeScreen extends ConsumerWidget {
                     color: Colors.indigo[300]!,
                     onTap: () => _navigateToJoseki(context),
                   ),
-                  const SizedBox(height: 16),
 
+                  // 交流 (Social)
+                  _buildSectionHeader(context, l10n.homeSectionSocialTitle),
+                  _buildActionCard(
+                    context,
+                    title: l10n.homeFriendsTitle,
+                    subtitle: l10n.homeFriendsSubtitle,
+                    icon: Icons.group_add,
+                    color: Colors.lightBlue[300]!,
+                    onTap: () => Navigator.of(context).pushNamed('/friends'),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildActionCard(
+                    context,
+                    title: l10n.homeEnHubTitle,
+                    subtitle: l10n.homeEnHubSubtitle,
+                    icon: Icons.favorite,
+                    color: Colors.pink[300]!,
+                    onTap: () => _navigateToEnHub(context),
+                  ),
+
+                  // 記録 (Records)
+                  _buildSectionHeader(context, l10n.homeSectionRecordsTitle),
+                  _buildActionCard(
+                    context,
+                    title: l10n.homeMyGamesTitle,
+                    subtitle: l10n.homeMyGamesSubtitle,
+                    icon: Icons.history,
+                    color: AppColors.fuji,
+                    onTap: () => _navigateToGameHistory(context),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildActionCard(
+                    context,
+                    title: l10n.homeGrowthTitle,
+                    subtitle: l10n.homeGrowthSubtitle,
+                    icon: Icons.trending_up,
+                    color: AppColors.wakatake,
+                    onTap: () => _navigateToGrowth(context),
+                  ),
+                  const SizedBox(height: 12),
                   // Analytics dashboard (win-rate charts + achievements) -
                   // previously registered as a route but with no navigation
                   // into it from anywhere in the app.
@@ -317,6 +312,34 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: 32),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 項目1: カテゴリセクションの見出し。
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 20, 4, 12),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 18,
+            decoration: BoxDecoration(
+              color: AppColors.kin,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppColors.washiDim,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1,
+                ),
+          ),
+        ],
       ),
     );
   }
