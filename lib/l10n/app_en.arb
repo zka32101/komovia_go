@@ -252,10 +252,7 @@
   "backToHomeButton": "Back to Home",
   "pleaseLoginToSaveMessage": "Please log in to save games",
   "gameSavedMessage": "Game saved!",
-  "failedToSaveGameMessage": "Failed to save game: {error}",
-  "@failedToSaveGameMessage": {
-    "placeholders": { "error": { "type": "String" } }
-  },
+  "failedToSaveGameMessage": "Could not save the game. Check your connection and try again.",
   "achievementUnlockedLabel": "Achievement Unlocked!",
   "aiReviewTitle": "AI Review",
   "aiReviewPrompt": "AI will review the game and explain good moves and areas to improve.",
