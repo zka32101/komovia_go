@@ -23,6 +23,13 @@
     "placeholders": { "appName": { "type": "String" } }
   },
 
+  "avatarLabel": "アバター",
+  "avatarPickerTitle": "アバターを選択",
+  "avatarUpdatedMessage": "アバターを更新しました",
+  "avatarUpdateFailedMessage": "アバターの更新に失敗しました: {error}",
+  "@avatarUpdateFailedMessage": {
+    "placeholders": { "error": { "type": "String" } }
+  },
   "displayNameLabel": "表示名",
   "displayNameHint": "名前を入力",
   "emailLabel": "メールアドレス",

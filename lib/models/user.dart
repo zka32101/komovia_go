@@ -17,6 +17,13 @@ class User {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Preset avatar id from komovia_core's `kAvatarIcons` catalog (e.g.
+  /// 'fox'), or null for every user who hasn't picked one yet (including
+  /// everyone who existed before this field was added). Never resolve this
+  /// directly — always go through `avatarIconById(user.avatarId)`, which
+  /// safely falls back to the shared default for null/unknown ids.
+  final String? avatarId;
+
   User({
     required this.uid,
     required this.email,
@@ -28,6 +35,7 @@ class User {
     required this.gamesPlayedCount,
     required this.createdAt,
     required this.updatedAt,
+    this.avatarId,
   });
 
   /// Create from Firestore document
@@ -52,6 +60,7 @@ class User {
       updatedAt: data['updatedAt'] is Timestamp
           ? (data['updatedAt'] as Timestamp).toDate()
           : DateTime.now(),
+      avatarId: data['avatarId'],
     );
   }
 
@@ -69,6 +78,7 @@ class User {
       'gamesPlayedCount': gamesPlayedCount,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'avatarId': avatarId,
     };
   }
 
@@ -87,6 +97,7 @@ class User {
     bool? tutorialCompleted,
     int? gamesPlayedCount,
     DateTime? updatedAt,
+    String? avatarId,
   }) {
     return User(
       uid: uid,
@@ -101,6 +112,7 @@ class User {
       gamesPlayedCount: gamesPlayedCount ?? this.gamesPlayedCount,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
+      avatarId: avatarId ?? this.avatarId,
     );
   }
 
