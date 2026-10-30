@@ -120,18 +120,17 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
 
   Widget _buildBoardSizeSelector() {
     final l10n = AppLocalizations.of(context)!;
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [9, 13, 19].map((size) {
         final selected = _boardSize == size;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: ChoiceChip(
-            label: Text(l10n.boardSizePathLabel(size)),
-            selected: selected,
-            onSelected: (_) => setState(() => _boardSize = size),
-            selectedColor: AppColors.kin,
-            backgroundColor: AppColors.sumiCard,
-          ),
+        return ChoiceChip(
+          label: Text(l10n.boardSizePathLabel(size)),
+          selected: selected,
+          onSelected: (_) => setState(() => _boardSize = size),
+          selectedColor: AppColors.kin,
+          backgroundColor: AppColors.sumiCard,
         );
       }).toList(),
     );
