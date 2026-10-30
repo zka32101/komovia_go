@@ -1254,5 +1254,10 @@
   "@sponsorPerMonth": {
     "placeholders": { "amount": { "type": "String" } }
   },
-  "twitchDefaultStreamTitle": "碁縁の対局を配信中"
+  "twitchDefaultStreamTitle": "碁縁の対局を配信中",
+  "puzzleLevelBeginner": "初心者向け",
+  "puzzleLevelElementary": "初級",
+  "puzzleLevelIntermediate": "中級",
+  "puzzleLevelAdvanced": "上級",
+  "puzzleLevelProfessional": "プロ級"
 }

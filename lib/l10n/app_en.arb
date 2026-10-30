@@ -1254,5 +1254,10 @@
   "@sponsorPerMonth": {
     "placeholders": { "amount": { "type": "String" } }
   },
-  "twitchDefaultStreamTitle": "Playing Go on GoEn"
+  "twitchDefaultStreamTitle": "Playing Go on GoEn",
+  "puzzleLevelBeginner": "Beginner",
+  "puzzleLevelElementary": "Elementary",
+  "puzzleLevelIntermediate": "Intermediate",
+  "puzzleLevelAdvanced": "Advanced",
+  "puzzleLevelProfessional": "Professional"
 }
