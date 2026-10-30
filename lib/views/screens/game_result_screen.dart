@@ -509,6 +509,8 @@ class GameResultScreen extends ConsumerWidget {
     switch (result) {
       case 'resign':
         return l10n.gameResultResignSubtitle;
+      case 'ai_resign':
+        return l10n.gameResultAiResignSubtitle;
       case 'draw':
         return l10n.gameResultDrawSubtitle;
       default:
@@ -518,6 +520,7 @@ class GameResultScreen extends ConsumerWidget {
 
   String? _determineWinner(String result, double blackScore, double whiteScore) {
     if (result == 'resign') return 'ai';
+    if (result == 'ai_resign') return 'player';
     if (blackScore > whiteScore) return 'player';
     if (whiteScore > blackScore) return 'ai';
     return 'draw';

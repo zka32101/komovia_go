@@ -62,6 +62,11 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
   static const _heartbeatInterval = Duration(minutes: 2);
   Timer? _heartbeatTimer;
 
+  /// Consecutive AI moves in a row for which AiResignationService has
+  /// judged the AI's position hopeless - reset to 0 whenever a check
+  /// comes back favorable, and whenever a new game starts.
+  int _aiBehindStreak = 0;
+
   @override
   void initState() {
     super.initState();
@@ -160,6 +165,21 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
           'move_number': ref.read(movesCountProvider),
         },
       );
+
+      // The AI plays white in this screen (see aiMoveProvider) and has no
+      // other notion of a hopeless position - without this it would keep
+      // playing until a human captures literally every stone (see
+      // AiResignationService's own doc comment).
+      final isHopeless = AiResignationService.isHopelesslyBehind(
+        stones: afterState.stones,
+        boardSize: afterState.boardSize,
+        aiIsBlack: false,
+      );
+      _aiBehindStreak = isHopeless ? _aiBehindStreak + 1 : 0;
+      if (_aiBehindStreak >= AiResignationService.consecutiveChecksRequired) {
+        _aiBehindStreak = 0;
+        _handleAiResignation(context, ref);
+      }
     });
 
     return Scaffold(
@@ -729,6 +749,60 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
     }
   }
 
+  /// Called once AiResignationService has judged the AI's position
+  /// hopeless for several moves in a row. Unlike [_handleResign] this
+  /// isn't a choice the player confirms - it's informational, with a
+  /// single acknowledgement button before moving on to the result screen.
+  void _handleAiResignation(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    _logger.i('AI resigned (hopeless position)');
+
+    final boardState = ref.read(gameBoardStateProvider);
+    final score = GoScoring.computeAreaScore(
+      boardState.stones,
+      boardState.boardSize,
+    );
+
+    ref.read(logCustomEventProvider)(
+      eventName: 'ai_resignation',
+      parameters: {
+        'ai_level': ref.read(aiLevelProvider),
+        'move_number': ref.read(movesCountProvider),
+      },
+    );
+    // Mark inactive so the board/buttons freeze immediately;
+    // startNewGameProvider (via New Game / Play Again) is what actually
+    // resets state for the next game.
+    ref.read(isGameActiveProvider.notifier).state = false;
+    // 中断・再開機能: AIの投了も終局なので「続きから」の対象から外す。
+    ref.read(clearActiveAiGameProvider)();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.primaryDark,
+        title: Text(l10n.aiResignedDialogTitle),
+        content: Text(l10n.aiResignedDialogContent),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushReplacementNamed(
+                '/game-result',
+                arguments: {
+                  'result': 'ai_resign',
+                  'blackScore': score.blackScore,
+                  'whiteScore': score.whiteScore,
+                },
+              );
+            },
+            child: Text(l10n.aiResignedOkButton),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _handleResign(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     _logger.w('Player resigned');
@@ -772,6 +846,7 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
 
   void _handleNewGame(BuildContext context, WidgetRef ref) {
     _logger.i('Starting new game');
+    _aiBehindStreak = 0;
     ref.read(startNewGameProvider)();
   }
 

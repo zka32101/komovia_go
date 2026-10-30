@@ -237,6 +237,7 @@
   "gameResultDefeatTitle": "敗北",
   "gameResultGameOverTitle": "対局終了",
   "gameResultResignSubtitle": "投了しました",
+  "gameResultAiResignSubtitle": "AIが投了しました",
   "gameResultDrawSubtitle": "引き分けで終了しました",
   "gameResultDefaultSubtitle": "対局が終了しました",
   "gameResignedMessage": "投了しました。最終スコアは計算されません。",
@@ -897,6 +898,9 @@
   "resignConfirmTitle": "投了しますか？",
   "resignConfirmContent": "この対局を投了します。よろしいですか？",
   "confirmResignButton": "投了する",
+  "aiResignedDialogTitle": "AIが投了しました",
+  "aiResignedDialogContent": "形勢が大きく開いたため、AIが投了しました。",
+  "aiResignedOkButton": "結果を見る",
   "scoreDiffLabel": "差: {value}",
   "@scoreDiffLabel": {
     "placeholders": {

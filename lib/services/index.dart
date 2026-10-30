@@ -42,3 +42,4 @@ export 'en_score_service.dart';
 export 'pvp_game_service.dart';
 export 'active_ai_game_service.dart';
 export 'purchase_service.dart';
+export 'ai_resignation_service.dart';
