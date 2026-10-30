@@ -198,11 +198,11 @@
   "bestValueBadge": "BEST VALUE",
   "faqTitle": "FAQ",
   "faqCancelQuestion": "Can I cancel anytime?",
-  "faqCancelAnswer": "Yes! Your subscription will be active until the end of the billing period. Cancel from the app settings at any time.",
+  "faqCancelAnswer": "Yes! Your subscription will be active until the end of the billing period. Cancel any time from Subscriptions in Google Play.",
   "faqPaymentQuestion": "What payment methods are accepted?",
-  "faqPaymentAnswer": "We accept all major credit cards via our secure payment processor.",
+  "faqPaymentAnswer": "Payment is handled by Google Play. You can use any payment method on your Google Play account.",
   "faqTrialQuestion": "Is there a free trial?",
-  "faqTrialAnswer": "Not currently, but our free plan gives you access to 3 AI games to try the experience.",
+  "faqTrialAnswer": "Not currently, but AI games at levels 1-5 are free to play.",
   "subscribedTitle": "You're Premium!",
   "subscribedDescription": "Enjoy unlimited access to all premium features",
   "subscriptionActivatedMessage": "Subscription activated! {plan} plan",
@@ -885,7 +885,7 @@
       "level": { "type": "int" }
     }
   },
-  "capturesBlackWhiteLabel": "Captures (Black/White)",
+  "capturesBlackWhiteLabel": "Stones lost (Black/White)",
   "passButton": "Pass",
   "resignButton": "Resign",
   "gameInProgressLabel": "Playing...",

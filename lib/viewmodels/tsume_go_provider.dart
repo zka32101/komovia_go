@@ -284,11 +284,11 @@ final selectedDifficultyProvider = StateProvider<int>((ref) {
 /// Available puzzle difficulties with labels
 final difficultyLevelsProvider = Provider<Map<int, String>>((ref) {
   return {
-    1: '初心者向け (Beginner)',
-    2: '初級 (Elementary)',
-    3: '中級 (Intermediate)',
-    4: '上級 (Advanced)',
-    5: 'プロ級 (Professional)',
+    1: '初心者向け',
+    2: '初級',
+    3: '中級',
+    4: '上級',
+    5: 'プロ級',
   };
 });
 
