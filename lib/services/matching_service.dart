@@ -11,6 +11,11 @@ class MatchingService {
   /// マッチ判定の許容レート差（この範囲内なら「縁がある」と判定）
   static const int maxRatingDiff = 200;
 
+  /// 待機列に入ってからこの時間を過ぎた人は、相手の候補にしない。
+  /// 離席・アプリ終了した人とマッチして、相手が来ない対局が作られるのを防ぐ。
+  /// 待機列からの削除はどこからも行っていないため、期限で見切る。
+  static const Duration maxQueueAge = Duration(minutes: 10);
+
   MatchingService(this._firestore);
 
   Future<void> joinQueue({
@@ -71,9 +76,11 @@ class MatchingService {
       MatchmakingQueueEntry? bestCandidate;
       int bestDiff = 1 << 30;
 
+      final now = DateTime.now();
       for (final doc in snapshots.docs) {
         if (doc.id == uid) continue;
         final entry = MatchmakingQueueEntry.fromFirestore(doc);
+        if (now.difference(entry.queuedAt) > maxQueueAge) continue;
         final diff = (entry.rating - rating).abs();
         if (diff <= maxRatingDiff && diff < bestDiff) {
           bestCandidate = entry;
