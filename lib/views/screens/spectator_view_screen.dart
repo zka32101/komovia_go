@@ -260,7 +260,7 @@ class _SpectatorViewScreenState extends ConsumerState<SpectatorViewScreen> {
       height: boardPixelSize,
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.kin, width: 2),
-        color: AppColors.kinLight.withOpacity(0.1),
+        color: AppColors.boardGray,
       ),
       child: Stack(
         children: [

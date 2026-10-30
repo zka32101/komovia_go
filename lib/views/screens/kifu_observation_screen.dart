@@ -527,12 +527,15 @@ class _KifuObservationScreenState extends ConsumerState<KifuObservationScreen> {
         ),
       ),
       decoration: BoxDecoration(
-        color: AppColors.kinLight.withOpacity(0.1),
+        color: AppColors.boardGray,
       ),
       child: Stack(
         children: [
           CustomPaint(
-            painter: GoBoardGridPainter(boardSize: boardSize),
+            painter: GoBoardGridPainter(
+              boardSize: boardSize,
+              lineColor: AppColors.sumi,
+            ),
             size: const Size(300, 300),
           ),
           ..._buildReplayStones(geometry, stones),

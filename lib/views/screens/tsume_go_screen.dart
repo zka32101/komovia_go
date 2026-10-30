@@ -423,13 +423,14 @@ class _TsumeGoScreenState extends ConsumerState<TsumeGoScreen> {
           ),
         ),
         decoration: BoxDecoration(
-          color: AppColors.kinLight.withOpacity(0.1),
+          color: AppColors.boardGray,
         ),
         child: Stack(
           children: [
             CustomPaint(
               painter: GoBoardGridPainter(
                 boardSize: boardSize,
+                lineColor: AppColors.sumi,
                 starPointColor: null,
               ),
               size: const Size(300, 300),

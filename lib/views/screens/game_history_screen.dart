@@ -522,7 +522,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
                   ),
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.kinLight.withOpacity(0.1),
+                  color: AppColors.boardGray,
                 ),
                 child: Builder(builder: (context) {
                   // game.sgfData is real move-order SGF (see sgf_parser.dart),
@@ -537,6 +537,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
                       CustomPaint(
                         painter: GoBoardGridPainter(
                           boardSize: boardSize,
+                          lineColor: AppColors.sumi,
                           starPointColor: null,
                         ),
                         size: const Size(300, 300),

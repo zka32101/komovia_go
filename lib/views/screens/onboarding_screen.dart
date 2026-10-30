@@ -351,7 +351,7 @@ class _MiniBoard extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.kin, width: 2),
         borderRadius: BorderRadius.circular(8),
-        color: AppColors.kinLight.withOpacity(0.1),
+        color: AppColors.boardGray,
       ),
       child: CustomPaint(painter: _MiniBoardPainter(stones)),
     );
@@ -368,7 +368,7 @@ class _MiniBoardPainter extends CustomPainter {
     final pad = size.width * 0.12;
     final step = (size.width - pad * 2) / (n - 1);
     final line = Paint()
-      ..color = AppColors.grey500
+      ..color = AppColors.sumi
       ..strokeWidth = 1;
     for (var i = 0; i < n; i++) {
       final v = pad + step * i;

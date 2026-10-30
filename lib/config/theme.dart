@@ -42,6 +42,9 @@ class AppColors {
   static const Color grey500 = Color(0xFF8C8272);
   static const Color grey700 = Color(0xFF5A5246);
   static const Color grey900 = sumiCard;
+  // ダークテーマ上に置く盤面の下地。暗い背景や黒石と溶け合わないよう、
+  // 黒石・白石のどちらとも差がつく中間の明るさにしてある。
+  static const Color boardGray = Color(0xFF7D766A);
   static const Color bgDark = sumi;
   static const Color bgLight = Color(0xFFF5EEDF);
 }
