@@ -120,7 +120,7 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        formatGoRank(rating),
+                        formatGoRank(rating, ja: Localizations.localeOf(context).languageCode == 'ja'),
                         style: const TextStyle(
                           color: AppColors.washi,
                           fontWeight: FontWeight.bold,
@@ -190,7 +190,7 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      connection.level,
+                      connection.levelLabel(ja: Localizations.localeOf(context).languageCode == 'ja'),
                       style: const TextStyle(color: AppColors.washi, fontWeight: FontWeight.bold),
                     ),
                     IconButton(

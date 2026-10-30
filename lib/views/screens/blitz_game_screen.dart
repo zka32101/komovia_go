@@ -206,8 +206,8 @@ class _BlitzGameScreenState extends ConsumerState<BlitzGameScreen> {
                   '${game.boardSize}×${game.boardSize}',
                 ),
                 _buildInfoColumn(
-                  '捕獲',
-                  '黒$_capturedWhite / 白$_capturedBlack',
+                  l10n.blitzCapturesLabel,
+                  l10n.blitzCapturesValue(_capturedWhite, _capturedBlack),
                 ),
               ],
             ),

@@ -359,7 +359,9 @@ class SponsorshipScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  '\$${(sponsor.amountUSD / 100).toStringAsFixed(2)}/月',
+                  AppLocalizations.of(context)!.sponsorPerMonth(
+                    '\$${(sponsor.amountUSD / 100).toStringAsFixed(2)}',
+                  ),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: AppColors.sumi,
                     fontWeight: FontWeight.bold,

@@ -94,16 +94,17 @@ enum FatefulMoveType {
     }
   }
 
-  String getDisplayName() {
+  /// 通知など画面外で使う場合は既定の日本語のまま。画面では [ja] を渡す。
+  String getDisplayName({bool ja = true}) {
     switch (this) {
       case FatefulMoveType.bigCapture:
-        return '大石を仕留めた一手';
+        return ja ? '大石を仕留めた一手' : 'Big capture';
       case FatefulMoveType.tesuji:
-        return '妙手';
+        return ja ? '妙手' : 'Tesuji';
       case FatefulMoveType.koFight:
-        return '劫の決め手';
+        return ja ? '劫の決め手' : 'Decisive ko';
       case FatefulMoveType.lifeAndDeath:
-        return '死活を決めた一手';
+        return ja ? '死活を決めた一手' : 'Life-and-death move';
     }
   }
 }

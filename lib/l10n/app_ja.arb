@@ -1161,5 +1161,103 @@
       "movesCount": { "type": "int" }
     }
   },
-  "youtubeUploadStartedMessage": "アップロードを開始しました"
+  "youtubeUploadStartedMessage": "アップロードを開始しました",
+  "friendListEmptyMessage": "フレンドがいません",
+  "friendMenuMessage": "メッセージ",
+  "friendMenuInvite": "対局招待",
+  "friendMenuBlock": "ブロック",
+  "friendListCompactEmptyMessage": "フレンドなし",
+  "chartNoDataMessage": "データなし",
+  "chartNeedTwoPointsMessage": "最少2つのデータポイントが必要です",
+  "shareGameWon": "今碁で勝利しました！",
+  "shareGameChallenged": "今碁で挑戦しました！",
+  "shareBoardSize": "{size}路盤",
+  "@shareBoardSize": {
+    "placeholders": { "size": { "type": "int" } }
+  },
+  "shareAiLevel": "AI レベル: {level}",
+  "@shareAiLevel": {
+    "placeholders": { "level": { "type": "int" } }
+  },
+  "shareBlackScore": "黒: {score}目",
+  "@shareBlackScore": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "shareWhiteScore": "白: {score}目",
+  "@shareWhiteScore": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "shareGameHashtagsFull": "#碁 #Go #碁縁 #AI碁 #オンライン碁",
+  "shareGameHashtags": "#碁 #Go #碁縁",
+  "sharePuzzleSolved": "詰碁に成功しました！",
+  "sharePuzzleChallenged": "詰碁にチャレンジしました！",
+  "shareDifficulty": "難易度: {label}",
+  "@shareDifficulty": {
+    "placeholders": { "label": { "type": "String" } }
+  },
+  "shareAttempts": "試行回数: {count}回",
+  "@shareAttempts": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "shareSolveTime": "解答時間: {time}",
+  "@shareSolveTime": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "shareStreak": "連続成功: {count}問",
+  "@shareStreak": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "sharePuzzleHashtagsFull": "#詰碁 #碁 #碁縁 #AI解説",
+  "sharePuzzleHashtags": "#詰碁 #碁 #碁縁",
+  "shareDifficultyEasy": "初級",
+  "shareDifficultyMedium": "中級",
+  "shareDifficultyHard": "上級",
+  "shareDifficultyMaster": "マスター",
+  "shareDurationSeconds": "{seconds}秒",
+  "@shareDurationSeconds": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "shareDurationMinutes": "{minutes}分{seconds}秒",
+  "@shareDurationMinutes": {
+    "placeholders": { "minutes": { "type": "int" }, "seconds": { "type": "int" } }
+  },
+  "shareSucceededMessage": "{platform}で共有しました",
+  "@shareSucceededMessage": {
+    "placeholders": { "platform": { "type": "String" } }
+  },
+  "shareCopiedMessage": "クリップボードにコピーしました",
+  "shareFailedMessage": "シェアに失敗しました",
+  "shareChooseTarget": "シェア先を選択",
+  "shareCopyToClipboard": "クリップボードにコピー",
+  "sharePreviewLabel": "プレビュー",
+  "shareProfileHeadline": "碁縁でのプログレス報告",
+  "shareProfileGames": "対局数: {count}",
+  "@shareProfileGames": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "shareProfileWins": "勝利数: {wins} (勝率: {rate}%)",
+  "@shareProfileWins": {
+    "placeholders": { "wins": { "type": "int" }, "rate": { "type": "String" } }
+  },
+  "shareProfilePuzzles": "詰碁: {count}問",
+  "@shareProfilePuzzles": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "shareProfileClosing": "AI解説で碁を上達しよう！",
+  "shareProfileHashtags": "#碁 #碁縁 #Go学習 #AI解説",
+  "blitzCapturesLabel": "捕獲",
+  "blitzCapturesValue": "黒{black} / 白{white}",
+  "@blitzCapturesValue": {
+    "placeholders": { "black": { "type": "int" }, "white": { "type": "int" } }
+  },
+  "sponsorPerMonth": "{amount}/月",
+  "@sponsorPerMonth": {
+    "placeholders": { "amount": { "type": "String" } }
+  },
+  "twitchDefaultStreamTitle": "碁縁の対局を配信中",
+  "puzzleLevelBeginner": "初心者向け",
+  "puzzleLevelElementary": "初級",
+  "puzzleLevelIntermediate": "中級",
+  "puzzleLevelAdvanced": "上級",
+  "puzzleLevelProfessional": "プロ級"
 }

@@ -496,7 +496,7 @@ class _TsumeGoScreenState extends ConsumerState<TsumeGoScreen> {
             spacing: 8,
             children: difficultyLevels.entries.map((entry) {
               final level = entry.key;
-              final label = entry.value;
+              final label = _levelLabel(l10n, level);
               final isSelected = selectedDifficulty == level;
 
               return ChoiceChip(
@@ -607,6 +607,21 @@ class _TsumeGoScreenState extends ConsumerState<TsumeGoScreen> {
         ],
       ),
     );
+  }
+
+  String _levelLabel(AppLocalizations l10n, int level) {
+    switch (level) {
+      case 1:
+        return l10n.puzzleLevelBeginner;
+      case 2:
+        return l10n.puzzleLevelElementary;
+      case 3:
+        return l10n.puzzleLevelIntermediate;
+      case 4:
+        return l10n.puzzleLevelAdvanced;
+      default:
+        return l10n.puzzleLevelProfessional;
+    }
   }
 
   String _getDifficultyLabel(int difficulty) {

@@ -281,14 +281,15 @@ final selectedDifficultyProvider = StateProvider<int>((ref) {
   return 1; // Default to easiest
 });
 
-/// Available puzzle difficulties with labels
+/// Available puzzle difficulties (1-5). Labels are localized by the screen
+/// (`puzzleLevel*` in the l10n files); the map values are only a fallback.
 final difficultyLevelsProvider = Provider<Map<int, String>>((ref) {
   return {
-    1: '初心者向け',
-    2: '初級',
-    3: '中級',
-    4: '上級',
-    5: 'プロ級',
+    1: 'Beginner',
+    2: 'Elementary',
+    3: 'Intermediate',
+    4: 'Advanced',
+    5: 'Professional',
   };
 });
 

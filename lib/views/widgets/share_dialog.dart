@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/index.dart';
 import 'package:komovia_go/config/theme.dart';
+import 'package:komovia_go/l10n/app_localizations.dart';
 
 /// Dialog for selecting a platform to share on
 class ShareDialog extends StatelessWidget {
@@ -31,8 +32,8 @@ class ShareDialog extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'シェア先を選択',
+                    Text(
+                      AppLocalizations.of(context)!.shareChooseTarget,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -97,7 +98,7 @@ class ShareDialog extends StatelessWidget {
                     const SizedBox(height: 12),
                     _PlatformButton(
                       icon: Icons.content_copy,
-                      label: 'クリップボードにコピー',
+                      label: AppLocalizations.of(context)!.shareCopyToClipboard,
                       color: AppColors.washiDim,
                       onTap: () {
                         onShare(SocialPlatform.clipboard);
@@ -113,17 +114,17 @@ class ShareDialog extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.washiDim,
+                  color: AppColors.sumiCard,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'プレビュー',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context)!.sharePreviewLabel,
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.grey,
+                        color: AppColors.washiDim,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -134,7 +135,7 @@ class ShareDialog extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.washiDim,
+                        color: AppColors.washi,
                         height: 1.5,
                       ),
                     ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:komovia_go/config/theme.dart';
+import 'package:komovia_go/l10n/app_localizations.dart';
 
 /// Widget for displaying bar chart (win rate by level/board size)
 class WinRateBarChartWidget extends StatelessWidget {
@@ -20,7 +21,7 @@ class WinRateBarChartWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (data.isEmpty) {
       return Center(
-        child: Text('データなし',
+        child: Text(AppLocalizations.of(context)!.chartNoDataMessage,
             style: TextStyle(color: AppColors.washiDim)),
       );
     }
@@ -143,7 +144,7 @@ class WinRateLineChartWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (values.isEmpty) {
       return Center(
-        child: Text('データなし',
+        child: Text(AppLocalizations.of(context)!.chartNoDataMessage,
             style: TextStyle(color: AppColors.washiDim)),
       );
     }
@@ -166,7 +167,7 @@ class WinRateLineChartWidget extends StatelessWidget {
             const SizedBox(height: 16),
             SizedBox(
               height: 150,
-              child: _buildLineChart(),
+              child: _buildLineChart(context),
             ),
           ],
         ),
@@ -174,10 +175,10 @@ class WinRateLineChartWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildLineChart() {
+  Widget _buildLineChart(BuildContext context) {
     if (values.length < 2) {
       return Center(
-        child: Text('最少2つのデータポイントが必要です',
+        child: Text(AppLocalizations.of(context)!.chartNeedTwoPointsMessage,
             style: TextStyle(color: AppColors.washiDim)),
       );
     }
@@ -309,7 +310,7 @@ class GameDistributionPieChartWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (data.isEmpty) {
       return Center(
-        child: Text('データなし',
+        child: Text(AppLocalizations.of(context)!.chartNoDataMessage,
             style: TextStyle(color: AppColors.washiDim)),
       );
     }

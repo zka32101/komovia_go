@@ -60,7 +60,7 @@ class FatefulMovesScreen extends ConsumerWidget {
               child: ListTile(
                 leading: Icon(_iconFor(move.type), color: Colors.orangeAccent),
                 title: Text(
-                  move.type.getDisplayName(),
+                  move.type.getDisplayName(ja: Localizations.localeOf(context).languageCode == 'ja'),
                   style: const TextStyle(color: AppColors.washi, fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text(

@@ -2,13 +2,15 @@
 ///
 /// 変換式: rating 2000 を初段の境界とし、100刻みで1段/1級ずつ変動する。
 /// 級位は30級を下限、段位は九段を上限とする（一般的なアマチュア表記に合わせる）。
-String formatGoRank(int rating) {
+///
+/// [ja] が false のときは英語表記(`9 kyu` / `1 dan`)で返す。
+String formatGoRank(int rating, {bool ja = true}) {
   if (rating >= 2000) {
-    final dan = ((rating - 2000) ~/ 100) + 1;
-    return '${_danKanji(dan.clamp(1, 9).toInt())}段';
+    final dan = (((rating - 2000) ~/ 100) + 1).clamp(1, 9).toInt();
+    return ja ? '${_danKanji(dan)}段' : '$dan dan';
   }
   final kyu = ((2000 - rating) / 100).ceil().clamp(1, 30);
-  return '$kyu級';
+  return ja ? '$kyu級' : '$kyu kyu';
 }
 
 const _danKanjiNumbers = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
