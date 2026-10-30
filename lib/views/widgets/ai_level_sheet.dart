@@ -233,8 +233,8 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
       onTap: () => setState(() => _selectedBoardSize = size),
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        width: 84,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        width: 100,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
           color: selected ? AppColors.kin : AppColors.sumi,
           borderRadius: BorderRadius.circular(10),

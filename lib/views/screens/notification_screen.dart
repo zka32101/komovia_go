@@ -27,7 +27,10 @@ class NotificationScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.sumi,
       appBar: AppBar(
-        title: Text(l10n.notificationsTitle),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(l10n.notificationsTitle),
+        ),
         backgroundColor: AppColors.sumiSurface,
         elevation: 0,
         actions: uid == null
