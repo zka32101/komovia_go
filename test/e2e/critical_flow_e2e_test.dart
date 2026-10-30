@@ -197,6 +197,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Confirm the AI-level picker sheet that now gates game start
+      await tester.ensureVisible(find.text('この強さで対局する'));
       await TestUtils.tap(tester, find.text('この強さで対局する'));
       await tester.pumpAndSettle();
 
@@ -472,6 +473,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Confirm the AI-level picker sheet that now gates game start
+      await tester.ensureVisible(find.text('この強さで対局する'));
       await TestUtils.tap(tester, find.text('この強さで対局する'));
       await tester.pumpAndSettle();
 

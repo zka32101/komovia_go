@@ -3,6 +3,7 @@
 // SNS Share widgets
 export 'share_button.dart';
 export 'share_dialog.dart';
+export 'go_chess_clock.dart';
 
 // Phase 68-71: Analytics & Social widgets
 export 'achievement_badge_widget.dart';

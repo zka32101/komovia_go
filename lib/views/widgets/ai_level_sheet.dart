@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:komovia_core/komovia_core.dart' as core;
 import 'package:komovia_go/config/theme.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
 import 'package:komovia_go/models/ai_opponent_config.dart';
@@ -70,8 +71,18 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
   // 短時間対局向けに5路・7路も選べるようにしている(2026-10 追加)。
   static const List<int> _boardSizes = [5, 7, 9, 13, 19];
 
+  // 項目5: オプションのタイマーモード。nullは「タイマーなし」
+  // （デフォルト、碁縁の既定の「NO TIMERS」体験はそのまま）。
+  static const List<Duration?> _timeOptions = [
+    null,
+    Duration(minutes: 5),
+    Duration(minutes: 10),
+    Duration(minutes: 20),
+  ];
+
   late int _selected;
   late int _selectedBoardSize;
+  late Duration? _selectedTimeLimit;
 
   @override
   void initState() {
@@ -81,6 +92,7 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
     // 購読が切れた後に前回の高レベルが残っていても、無料枠に丸める。
     _selected = isPremium ? last : last.clamp(1, AIOpponentConfig.freeMaxLevel);
     _selectedBoardSize = ref.read(quickBoardSizeProvider);
+    _selectedTimeLimit = ref.read(quickTimeControlProvider).initial;
   }
 
   String _boardSizeLabel(AppLocalizations l10n, int size) {
@@ -174,6 +186,30 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
             ),
             const SizedBox(height: 16),
             Text(
+              l10n.timeControlSheetLabel,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppColors.washi,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.timeControlSheetNote,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.washiDim,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final option in _timeOptions)
+                  _timeOptionChip(context, l10n, option),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
               l10n.aiLevelSheetTitle,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 color: AppColors.washi,
@@ -206,6 +242,10 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
                 onPressed: () {
                   ref.read(quickBoardSizeProvider.notifier).state =
                       _selectedBoardSize;
+                  ref.read(quickTimeControlProvider.notifier).state =
+                      _selectedTimeLimit == null
+                          ? const core.TimeControl.untimed()
+                          : core.TimeControl(initial: _selectedTimeLimit);
                   Navigator.of(context).pop(_selected);
                 },
                 style: ElevatedButton.styleFrom(
@@ -220,6 +260,32 @@ class _AiLevelSheetState extends ConsumerState<_AiLevelSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  String _timeOptionLabel(AppLocalizations l10n, Duration? option) {
+    if (option == null) return l10n.timeControlOptionNone;
+    return l10n.timeControlOptionMinutes(option.inMinutes);
+  }
+
+  Widget _timeOptionChip(
+    BuildContext context,
+    AppLocalizations l10n,
+    Duration? option,
+  ) {
+    final selected = option == _selectedTimeLimit;
+    return ChoiceChip(
+      selected: selected,
+      showCheckmark: false,
+      label: Text(_timeOptionLabel(l10n, option)),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.sumi : AppColors.washi,
+        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+      ),
+      selectedColor: AppColors.kin,
+      backgroundColor: AppColors.sumi,
+      side: BorderSide(color: AppColors.kin),
+      onSelected: (_) => setState(() => _selectedTimeLimit = option),
     );
   }
 

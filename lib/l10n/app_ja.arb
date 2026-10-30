@@ -94,6 +94,10 @@
   "homeGreeting": "おかえりなさい",
   "homeDefaultPlayerName": "プレイヤー",
   "homePremiumBadge": "プレミアム",
+  "homeSectionPlayTitle": "対局",
+  "homeSectionLearnTitle": "学ぶ",
+  "homeSectionSocialTitle": "交流",
+  "homeSectionRecordsTitle": "記録",
   "homeGameModesTitle": "対局モード",
   "homeGameModesSubtitle": "対局スタイルを選ぶ",
   "homePlayAiGameTitle": "AI対局",
@@ -884,6 +888,8 @@
     }
   },
   "capturesBlackWhiteLabel": "取られた石（黒/白）",
+  "blackClockLabel": "黒（あなた）",
+  "whiteClockLabel": "白（AI）",
   "passButton": "パス",
   "resignButton": "投了",
   "gameInProgressLabel": "対局中...",
@@ -1014,6 +1020,7 @@
   "previousButton": "前へ",
   "pauseButton": "一時停止",
   "playButton": "再生",
+  "playbackSpeedLabel": "速さ",
   "commentaryTitle": "解説",
   "commentaryPlaceholderMessage": "対局を進めると、ここにAIによる一手ごとの解説と戦略分析が表示されます。",
   "aboutKifuObservationTitle": "観戦モードについて",
@@ -1110,6 +1117,17 @@
     }
   },
   "aiLevelStartButton": "この強さで対局する",
+  "timeControlSheetLabel": "タイマーモード（任意）",
+  "timeControlSheetNote": "選ばなければ碁縁は従来どおりタイマーなしで対局します",
+  "timeControlOptionNone": "タイマーなし",
+  "timeControlOptionMinutes": "{minutes}分",
+  "@timeControlOptionMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "boardSizeSheetLabel": "盤面の大きさ",
   "boardSizeQuickNote": "5路・7路は数分で終わる短時間対局向けです",
   "boardSizeOption5": "5路（最短）",
