@@ -474,7 +474,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           children: [7, 9, 13, 19].map((size) {
             return SizedBox(width: w, child: ChoiceChip(
               showCheckmark: false,
-              label: SizedBox(width: double.infinity, child: Text('${size}×$size', textAlign: TextAlign.center)),
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 2),
+              label: SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('${size}×$size', textAlign: TextAlign.center),
+                ),
+              ),
               selected: _selectedBoardSize == size,
               onSelected: (selected) {
                 if (selected) {

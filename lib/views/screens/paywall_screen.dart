@@ -49,7 +49,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     return Scaffold(
       backgroundColor: AppColors.sumi,
       appBar: AppBar(
-        title: Text(l10n.paywallTitle),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(l10n.paywallTitle),
+        ),
         centerTitle: true,
         backgroundColor: AppColors.sumi,
         elevation: 0,
