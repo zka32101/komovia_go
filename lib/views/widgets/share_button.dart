@@ -4,6 +4,12 @@ import '../../models/index.dart';
 import '../../viewmodels/index.dart';
 import 'share_dialog.dart';
 import 'package:komovia_go/config/theme.dart';
+import 'package:komovia_go/l10n/app_localizations.dart';
+
+String _successMessage(AppLocalizations l10n, SocialPlatform platform) =>
+    platform == SocialPlatform.clipboard
+        ? l10n.shareCopiedMessage
+        : l10n.shareSucceededMessage(platform.displayName);
 
 /// Widget for sharing game results
 class GameShareButton extends ConsumerWidget {
@@ -21,7 +27,7 @@ class GameShareButton extends ConsumerWidget {
     return FloatingActionButton.extended(
       onPressed: () => _showShareDialog(context, ref),
       icon: const Icon(Icons.share),
-      label: const Text('シェア'),
+      label: Text(AppLocalizations.of(context)!.shareButton),
       backgroundColor: AppColors.kin,
     );
   }
@@ -30,30 +36,31 @@ class GameShareButton extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       builder: (context) => ShareDialog(
-        content: _generateShareContent(),
+        content: _generateShareContent(AppLocalizations.of(context)!),
         onShare: (platform) => _handleShare(context, ref, platform),
       ),
     );
   }
 
-  ShareContent _generateShareContent() {
-    final resultEmoji = gameData.result == 'win' ? '🎉' : '💪';
+  ShareContent _generateShareContent(AppLocalizations l10n) {
+    final won = gameData.result == 'win';
+    final resultEmoji = won ? '🎉' : '💪';
     final boardSizeEmoji = _getBoardSizeEmoji(gameData.boardSize);
 
     final text = '''
-$resultEmoji 今碁で${gameData.result == 'win' ? '勝利' : '挑戦'}しました！
+$resultEmoji ${won ? l10n.shareGameWon : l10n.shareGameChallenged}
 
-$boardSizeEmoji ${gameData.boardSize}路盤
-🤖 AI レベル: ${gameData.aiLevel}
-⚫ 黒: ${gameData.blackScore}目
-⚪ 白: ${gameData.whiteScore}目
+$boardSizeEmoji ${l10n.shareBoardSize(gameData.boardSize)}
+🤖 ${l10n.shareAiLevel(gameData.aiLevel)}
+⚫ ${l10n.shareBlackScore('${gameData.blackScore}')}
+⚪ ${l10n.shareWhiteScore('${gameData.whiteScore}')}
 
-#碁 #Go #碁縁 #AI碁 #オンライン碁
+${l10n.shareGameHashtagsFull}
 '''.trim();
 
     return ShareContent(
       text: text,
-      hashtags: '#碁 #Go #碁縁',
+      hashtags: l10n.shareGameHashtags,
       deepLink: 'goen://game/${gameData.gameId}',
     );
   }
@@ -63,7 +70,8 @@ $boardSizeEmoji ${gameData.boardSize}路盤
     WidgetRef ref,
     SocialPlatform platform,
   ) async {
-    final content = _generateShareContent();
+    final l10n = AppLocalizations.of(context)!;
+    final content = _generateShareContent(l10n);
     final success = await ref.read(
       shareWithPlatformProvider((content: content, platform: platform)).future,
     );
@@ -72,12 +80,12 @@ $boardSizeEmoji ${gameData.boardSize}路盤
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${platform.displayName}で共有しました')),
+        SnackBar(content: Text(_successMessage(l10n, platform))),
       );
       onShared?.call();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('シェアに失敗しました')),
+        SnackBar(content: Text(l10n.shareFailedMessage)),
       );
     }
   }
@@ -112,7 +120,7 @@ class PuzzleShareButton extends ConsumerWidget {
     return FloatingActionButton.extended(
       onPressed: () => _showShareDialog(context, ref),
       icon: const Icon(Icons.share),
-      label: const Text('シェア'),
+      label: Text(AppLocalizations.of(context)!.shareButton),
       backgroundColor: AppColors.aiLight,
     );
   }
@@ -121,30 +129,30 @@ class PuzzleShareButton extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       builder: (context) => ShareDialog(
-        content: _generateShareContent(),
+        content: _generateShareContent(AppLocalizations.of(context)!),
         onShare: (platform) => _handleShare(context, ref, platform),
       ),
     );
   }
 
-  ShareContent _generateShareContent() {
+  ShareContent _generateShareContent(AppLocalizations l10n) {
     final difficultyEmoji = _getDifficultyEmoji(puzzleData.difficulty);
     final achievementEmoji = puzzleData.isSolved ? '✨' : '💭';
 
     final text = '''
-$achievementEmoji 詰碁に${puzzleData.isSolved ? '成功' : 'チャレンジ'}しました！
+$achievementEmoji ${puzzleData.isSolved ? l10n.sharePuzzleSolved : l10n.sharePuzzleChallenged}
 
-$difficultyEmoji 難易度: ${_getDifficultyLabel(puzzleData.difficulty)}
-🎯 試行回数: ${puzzleData.attemptCount}回
-⏱️ 解答時間: ${_formatDuration(puzzleData.solvingTime)}
-🔥 連続成功: ${puzzleData.currentStreak}問
+$difficultyEmoji ${l10n.shareDifficulty(_getDifficultyLabel(l10n, puzzleData.difficulty))}
+🎯 ${l10n.shareAttempts(puzzleData.attemptCount)}
+⏱️ ${l10n.shareSolveTime(_formatDuration(l10n, puzzleData.solvingTime))}
+🔥 ${l10n.shareStreak(puzzleData.currentStreak)}
 
-#詰碁 #碁 #碁縁 #AI解説
+${l10n.sharePuzzleHashtagsFull}
 '''.trim();
 
     return ShareContent(
       text: text,
-      hashtags: '#詰碁 #碁 #碁縁',
+      hashtags: l10n.sharePuzzleHashtags,
       deepLink: 'goen://puzzle/${puzzleData.puzzleId}',
     );
   }
@@ -154,7 +162,8 @@ $difficultyEmoji 難易度: ${_getDifficultyLabel(puzzleData.difficulty)}
     WidgetRef ref,
     SocialPlatform platform,
   ) async {
-    final content = _generateShareContent();
+    final l10n = AppLocalizations.of(context)!;
+    final content = _generateShareContent(l10n);
     final success = await ref.read(
       shareWithPlatformProvider((content: content, platform: platform)).future,
     );
@@ -163,12 +172,12 @@ $difficultyEmoji 難易度: ${_getDifficultyLabel(puzzleData.difficulty)}
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${platform.displayName}で共有しました')),
+        SnackBar(content: Text(_successMessage(l10n, platform))),
       );
       onShared?.call();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('シェアに失敗しました')),
+        SnackBar(content: Text(l10n.shareFailedMessage)),
       );
     }
   }
@@ -188,22 +197,22 @@ $difficultyEmoji 難易度: ${_getDifficultyLabel(puzzleData.difficulty)}
     }
   }
 
-  String _getDifficultyLabel(String difficulty) {
-    const labels = {
-      'easy': '初級',
-      'medium': '中級',
-      'hard': '上級',
-      'master': 'マスター',
+  String _getDifficultyLabel(AppLocalizations l10n, String difficulty) {
+    final labels = {
+      'easy': l10n.shareDifficultyEasy,
+      'medium': l10n.shareDifficultyMedium,
+      'hard': l10n.shareDifficultyHard,
+      'master': l10n.shareDifficultyMaster,
     };
     return labels[difficulty] ?? difficulty;
   }
 
-  String _formatDuration(Duration duration) {
+  String _formatDuration(AppLocalizations l10n, Duration duration) {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
     if (minutes == 0) {
-      return '${seconds}秒';
+      return l10n.shareDurationSeconds(seconds);
     }
-    return '$minutes分${seconds}秒';
+    return l10n.shareDurationMinutes(minutes, seconds);
   }
 }

@@ -879,7 +879,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       totalPuzzlesSolved: totalPuzzlesSolved,
     );
 
-    final profileContent = _generateProfileShareContent(profileShareData);
+    final profileContent = _generateProfileShareContent(
+      AppLocalizations.of(context)!,
+      profileShareData,
+    );
 
     showModalBottomSheet(
       context: context,
@@ -896,24 +899,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  ShareContent _generateProfileShareContent(ProfileShareData data) {
+  ShareContent _generateProfileShareContent(
+    AppLocalizations l10n,
+    ProfileShareData data,
+  ) {
     final winRate = data.totalGamesPlayed > 0
         ? ((data.winCount / data.totalGamesPlayed) * 100).toStringAsFixed(1)
         : '0.0';
 
-    final text = '''🎓 碁縁でのプログレス報告
+    final text = '''🎓 ${l10n.shareProfileHeadline}
 
 👤 ${data.displayName}
-🎮 対局数: ${data.totalGamesPlayed}
-🏆 勝利数: ${data.winCount} (勝率: $winRate%)
-💯 詰碁: ${data.totalPuzzlesSolved}問
-🔥 連続成功: ${data.currentPuzzleStreak}問
+🎮 ${l10n.shareProfileGames(data.totalGamesPlayed)}
+🏆 ${l10n.shareProfileWins(data.winCount, winRate)}
+💯 ${l10n.shareProfilePuzzles(data.totalPuzzlesSolved)}
+🔥 ${l10n.shareStreak(data.currentPuzzleStreak)}
 
-AI解説で碁を上達しよう！''';
+${l10n.shareProfileClosing}''';
 
     return ShareContent(
       text: text,
-      hashtags: '#碁 #碁縁 #Go学習 #AI解説',
+      hashtags: l10n.shareProfileHashtags,
     );
   }
 

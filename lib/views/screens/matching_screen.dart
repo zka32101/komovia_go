@@ -104,7 +104,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
     ));
     final rating = rankAsync.valueOrNull?.rating ?? 1200;
     return Text(
-      l10n.myRankLabel(formatGoRank(rating), rating),
+      l10n.myRankLabel(formatGoRank(rating, ja: Localizations.localeOf(context).languageCode == 'ja'), rating),
       style: const TextStyle(color: AppColors.kin, fontWeight: FontWeight.bold),
     );
   }
@@ -152,8 +152,8 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            '${match.player1DisplayName} (${formatGoRank(match.player1Rating)}) vs '
-            '${match.player2DisplayName} (${formatGoRank(match.player2Rating)})',
+            '${match.player1DisplayName} (${formatGoRank(match.player1Rating, ja: Localizations.localeOf(context).languageCode == 'ja')}) vs '
+            '${match.player2DisplayName} (${formatGoRank(match.player2Rating, ja: Localizations.localeOf(context).languageCode == 'ja')})',
             style: const TextStyle(color: AppColors.washiDim),
           ),
           const SizedBox(height: 4),

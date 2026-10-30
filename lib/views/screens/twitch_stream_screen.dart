@@ -462,7 +462,8 @@ class TwitchStreamScreen extends ConsumerWidget {
     String uid,
   ) async {
     _logger.i('Starting Twitch stream');
-    final titleController = TextEditingController(text: '碁縁の対局を配信中');
+    final titleController =
+        TextEditingController(text: l10n.twitchDefaultStreamTitle);
 
     final title = await showDialog<String>(
       context: context,

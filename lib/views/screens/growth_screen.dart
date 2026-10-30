@@ -108,7 +108,7 @@ class _GrowthBody extends ConsumerWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  formatGoRank(rating),
+                  formatGoRank(rating, ja: Localizations.localeOf(context).languageCode == 'ja'),
                   style: TextStyle(
                     color: AppColors.kin,
                     fontSize: 32,

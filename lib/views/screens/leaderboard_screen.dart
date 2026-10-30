@@ -28,8 +28,8 @@ class LeaderboardScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          _buildPeriodSelector(ref, period),
-          _buildTypeSelector(ref, type),
+          _buildPeriodSelector(context, ref, period),
+          _buildTypeSelector(context, ref, type),
           Expanded(
             child: _buildLeaderboardList(ref, l10n, period, type),
           ),
@@ -38,7 +38,12 @@ class LeaderboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPeriodSelector(WidgetRef ref, LeaderboardPeriod current) {
+  Widget _buildPeriodSelector(
+    BuildContext context,
+    WidgetRef ref,
+    LeaderboardPeriod current,
+  ) {
+    final ja = Localizations.localeOf(context).languageCode == 'ja';
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Padding(
@@ -48,7 +53,7 @@ class LeaderboardScreen extends ConsumerWidget {
               .map((period) => Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: ChoiceChip(
-                      label: Text(period.getDisplayName()),
+                      label: Text(period.getDisplayName(ja: ja)),
                       selected: current == period,
                       onSelected: (selected) {
                         if (selected) {
@@ -66,7 +71,12 @@ class LeaderboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTypeSelector(WidgetRef ref, LeaderboardType current) {
+  Widget _buildTypeSelector(
+    BuildContext context,
+    WidgetRef ref,
+    LeaderboardType current,
+  ) {
+    final ja = Localizations.localeOf(context).languageCode == 'ja';
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Padding(
@@ -76,7 +86,7 @@ class LeaderboardScreen extends ConsumerWidget {
               .map((type) => Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: ChoiceChip(
-                      label: Text(type.getDisplayName()),
+                      label: Text(type.getDisplayName(ja: ja)),
                       selected: current == type,
                       onSelected: (selected) {
                         if (selected) {
@@ -162,7 +172,12 @@ class LeaderboardScreen extends ConsumerWidget {
           ),
         ),
         subtitle: Text(
-          l10n.leaderboardEntrySubtitle(entry.rating, formatGoRank(entry.rating), entry.gamesPlayed, entry.wins),
+          l10n.leaderboardEntrySubtitle(
+            entry.rating,
+            formatGoRank(entry.rating, ja: l10n.localeName == 'ja'),
+            entry.gamesPlayed,
+            entry.wins,
+          ),
           style: TextStyle(color: AppColors.washiDim, fontSize: 12),
         ),
         trailing: Column(

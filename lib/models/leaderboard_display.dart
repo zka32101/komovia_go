@@ -5,31 +5,31 @@ import 'package:komovia_core/komovia_core.dart';
 /// komovia_core's game-agnostic enums (which only know `toShortString`/
 /// `fromString`, used for Firestore path segments).
 extension LeaderboardPeriodDisplay on LeaderboardPeriod {
-  String getDisplayName() {
+  String getDisplayName({bool ja = true}) {
     switch (this) {
       case LeaderboardPeriod.daily:
-        return '日次';
+        return ja ? '日次' : 'Daily';
       case LeaderboardPeriod.weekly:
-        return '週間';
+        return ja ? '週間' : 'Weekly';
       case LeaderboardPeriod.monthly:
-        return '月間';
+        return ja ? '月間' : 'Monthly';
       case LeaderboardPeriod.allTime:
-        return '通算';
+        return ja ? '通算' : 'All time';
     }
   }
 }
 
 extension LeaderboardTypeDisplay on LeaderboardType {
-  String getDisplayName() {
+  String getDisplayName({bool ja = true}) {
     switch (this) {
       case LeaderboardType.rating:
-        return 'レーティング';
+        return ja ? 'レーティング' : 'Rating';
       case LeaderboardType.puzzles:
-        return '詰碁';
+        return ja ? '詰碁' : 'Tsume-go';
       case LeaderboardType.achievements:
-        return '実績';
+        return ja ? '実績' : 'Achievements';
       case LeaderboardType.tournament:
-        return 'トーナメント';
+        return ja ? 'トーナメント' : 'Tournament';
     }
   }
 }

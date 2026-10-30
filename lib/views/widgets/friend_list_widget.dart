@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_go/config/theme.dart';
+import 'package:komovia_go/l10n/app_localizations.dart';
 
 /// Widget for displaying a list of friends
 class FriendListWidget extends StatelessWidget {
@@ -40,7 +41,7 @@ class FriendListWidget extends StatelessWidget {
                 size: 48, color: AppColors.washiDim),
             const SizedBox(height: 16),
             Text(
-              'フレンドがいません',
+              AppLocalizations.of(context)!.friendListEmptyMessage,
               style: TextStyle(
                 color: AppColors.washiDim,
                 fontSize: 16,
@@ -163,7 +164,7 @@ class _FriendListItem extends StatelessWidget {
                         Icon(Icons.mail_outline,
                             size: 18, color: AppColors.washiDim),
                         const SizedBox(width: 12),
-                        const Text('メッセージ'),
+                        Text(AppLocalizations.of(context)!.friendMenuMessage),
                       ],
                     ),
                   ),
@@ -174,7 +175,7 @@ class _FriendListItem extends StatelessWidget {
                         Icon(Icons.sports_esports,
                             size: 18, color: AppColors.kin),
                         const SizedBox(width: 12),
-                        const Text('対局招待'),
+                        Text(AppLocalizations.of(context)!.friendMenuInvite),
                       ],
                     ),
                   ),
@@ -185,7 +186,7 @@ class _FriendListItem extends StatelessWidget {
                       children: [
                         Icon(Icons.block, size: 18, color: AppColors.shuLight),
                         const SizedBox(width: 12),
-                        Text('ブロック',
+                        Text(AppLocalizations.of(context)!.friendMenuBlock,
                             style: TextStyle(color: AppColors.shuLight)),
                       ],
                     ),
@@ -301,7 +302,7 @@ class FriendHorizontalListWidget extends StatelessWidget {
         height: 100,
         child: Center(
           child: Text(
-            'フレンドなし',
+            AppLocalizations.of(context)!.friendListCompactEmptyMessage,
             style: TextStyle(color: AppColors.washiDim),
           ),
         ),

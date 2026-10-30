@@ -1161,5 +1161,98 @@
       "movesCount": { "type": "int" }
     }
   },
-  "youtubeUploadStartedMessage": "Upload started"
+  "youtubeUploadStartedMessage": "Upload started",
+  "friendListEmptyMessage": "No friends yet",
+  "friendMenuMessage": "Message",
+  "friendMenuInvite": "Invite to game",
+  "friendMenuBlock": "Block",
+  "friendListCompactEmptyMessage": "No friends",
+  "chartNoDataMessage": "No data",
+  "chartNeedTwoPointsMessage": "At least 2 data points are needed",
+  "shareGameWon": "I won a game of Go!",
+  "shareGameChallenged": "I just played a game of Go!",
+  "shareBoardSize": "{size}x{size} board",
+  "@shareBoardSize": {
+    "placeholders": { "size": { "type": "int" } }
+  },
+  "shareAiLevel": "AI level: {level}",
+  "@shareAiLevel": {
+    "placeholders": { "level": { "type": "int" } }
+  },
+  "shareBlackScore": "Black: {score}",
+  "@shareBlackScore": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "shareWhiteScore": "White: {score}",
+  "@shareWhiteScore": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "shareGameHashtagsFull": "#Go #Baduk #GoEn #AIGo #OnlineGo",
+  "shareGameHashtags": "#Go #Baduk #GoEn",
+  "sharePuzzleSolved": "I solved a tsume-go puzzle!",
+  "sharePuzzleChallenged": "I tried a tsume-go puzzle!",
+  "shareDifficulty": "Difficulty: {label}",
+  "@shareDifficulty": {
+    "placeholders": { "label": { "type": "String" } }
+  },
+  "shareAttempts": "Attempts: {count}",
+  "@shareAttempts": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "shareSolveTime": "Time: {time}",
+  "@shareSolveTime": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "shareStreak": "Streak: {count}",
+  "@shareStreak": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "sharePuzzleHashtagsFull": "#TsumeGo #Go #GoEn",
+  "sharePuzzleHashtags": "#TsumeGo #Go #GoEn",
+  "shareDifficultyEasy": "Easy",
+  "shareDifficultyMedium": "Medium",
+  "shareDifficultyHard": "Hard",
+  "shareDifficultyMaster": "Master",
+  "shareDurationSeconds": "{seconds}s",
+  "@shareDurationSeconds": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "shareDurationMinutes": "{minutes}m {seconds}s",
+  "@shareDurationMinutes": {
+    "placeholders": { "minutes": { "type": "int" }, "seconds": { "type": "int" } }
+  },
+  "shareSucceededMessage": "Shared to {platform}",
+  "@shareSucceededMessage": {
+    "placeholders": { "platform": { "type": "String" } }
+  },
+  "shareCopiedMessage": "Copied to clipboard",
+  "shareFailedMessage": "Could not share",
+  "shareChooseTarget": "Share to",
+  "shareCopyToClipboard": "Copy to clipboard",
+  "sharePreviewLabel": "Preview",
+  "shareProfileHeadline": "My progress on GoEn",
+  "shareProfileGames": "Games played: {count}",
+  "@shareProfileGames": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "shareProfileWins": "Wins: {wins} (win rate: {rate}%)",
+  "@shareProfileWins": {
+    "placeholders": { "wins": { "type": "int" }, "rate": { "type": "String" } }
+  },
+  "shareProfilePuzzles": "Tsume-go solved: {count}",
+  "@shareProfilePuzzles": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "shareProfileClosing": "Improve your Go with AI explanations!",
+  "shareProfileHashtags": "#Go #Baduk #GoEn #LearnGo",
+  "blitzCapturesLabel": "Captures",
+  "blitzCapturesValue": "B {black} / W {white}",
+  "@blitzCapturesValue": {
+    "placeholders": { "black": { "type": "int" }, "white": { "type": "int" } }
+  },
+  "sponsorPerMonth": "{amount}/mo",
+  "@sponsorPerMonth": {
+    "placeholders": { "amount": { "type": "String" } }
+  },
+  "twitchDefaultStreamTitle": "Playing Go on GoEn"
 }

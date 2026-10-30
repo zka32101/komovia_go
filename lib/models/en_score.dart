@@ -24,11 +24,14 @@ class EnConnection {
     required this.calculatedAt,
   });
 
-  String get level {
-    if (score >= 80) return '深い縁';
-    if (score >= 50) return '育ちゆく縁';
-    if (score >= 20) return '芽生えた縁';
-    return '出会ったばかりの縁';
+  /// ログなど画面外で使う日本語の呼び名。画面では [levelLabel] を使う。
+  String get level => levelLabel(ja: true);
+
+  String levelLabel({required bool ja}) {
+    if (score >= 80) return ja ? '深い縁' : 'Deep bond';
+    if (score >= 50) return ja ? '育ちゆく縁' : 'Growing bond';
+    if (score >= 20) return ja ? '芽生えた縁' : 'Budding bond';
+    return ja ? '出会ったばかりの縁' : 'Newly met';
   }
 
   factory EnConnection.fromFirestore(
