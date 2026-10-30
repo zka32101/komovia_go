@@ -114,7 +114,7 @@ class ShareDialog extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.washiDim,
+                  color: AppColors.sumiCard,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -122,9 +122,9 @@ class ShareDialog extends StatelessWidget {
                   children: [
                     Text(
                       AppLocalizations.of(context)!.sharePreviewLabel,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.grey,
+                        color: AppColors.washiDim,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -135,7 +135,7 @@ class ShareDialog extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.washiDim,
+                        color: AppColors.washi,
                         height: 1.5,
                       ),
                     ),
