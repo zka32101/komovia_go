@@ -236,3 +236,30 @@ final completeTutorialProvider = Provider<Future<void> Function()>((ref) {
     }
   };
 });
+
+/// Persists the user's chosen preset avatar (komovia_core's `kAvatarIcons`
+/// id) and refreshes the cached/watched current user, same pattern as
+/// [completeTutorialProvider]/purchase_provider.dart's `_grantEntitlement`.
+final updateAvatarProvider = Provider<Future<void> Function(String)>((ref) {
+  final firestoreService = FirestoreService();
+
+  return (avatarId) async {
+    _logger.i('Updating avatar: $avatarId');
+    try {
+      final authService = ref.read(authServiceProvider);
+      final user = ref.read(currentUserProvider);
+      if (user == null) {
+        throw Exception('No user logged in');
+      }
+
+      final updated = user.copyWith(avatarId: avatarId, updatedAt: DateTime.now());
+      await firestoreService.saveUser(updated);
+      authService.refreshCachedUser(updated);
+      ref.invalidate(currentUserProvider);
+      _logger.i('✅ Avatar updated');
+    } catch (e) {
+      _logger.e('❌ Failed to update avatar: $e');
+      rethrow;
+    }
+  };
+});

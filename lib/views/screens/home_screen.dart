@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_go/models/index.dart';
 import 'package:komovia_go/viewmodels/index.dart';
 import 'package:komovia_go/utils/shoji_transition.dart';
@@ -105,12 +106,22 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    currentUser?.displayName ?? l10n.homeDefaultPlayerName,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppColors.washi,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        avatarIconById(currentUser?.avatarId).emoji,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        currentUser?.displayName ?? l10n.homeDefaultPlayerName,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: AppColors.washi,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

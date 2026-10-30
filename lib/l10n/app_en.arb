@@ -23,6 +23,13 @@
     "placeholders": { "appName": { "type": "String" } }
   },
 
+  "avatarLabel": "Avatar",
+  "avatarPickerTitle": "Choose an avatar",
+  "avatarUpdatedMessage": "Avatar updated!",
+  "avatarUpdateFailedMessage": "Failed to update avatar: {error}",
+  "@avatarUpdateFailedMessage": {
+    "placeholders": { "error": { "type": "String" } }
+  },
   "displayNameLabel": "Display Name",
   "displayNameHint": "Enter your name",
   "emailLabel": "Email",
