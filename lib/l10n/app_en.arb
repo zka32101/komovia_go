@@ -567,7 +567,7 @@
   "noBlockedUsersMessage": "No blocked users",
   "unblockButton": "Unblock",
   "noUsersFoundMessage": "No users found",
-  "gamesCountLabel": "{count} games",
+  "gamesCountLabel": "{count, plural, =1{1 game} other{{count} games}}",
   "@gamesCountLabel": { "placeholders": { "count": { "type": "int" } } },
   "pendingStatusLabel": "Pending",
   "addButton": "Add",
@@ -584,7 +584,7 @@
   "searchButton": "Search",
   "inviteToGameButton": "Invite to Game",
   "friendshipSinceTodayLabel": "Since today",
-  "friendshipDaysLabel": "{days} days",
+  "friendshipDaysLabel": "{days, plural, =1{1 day} other{{days} days}}",
   "@friendshipDaysLabel": { "placeholders": { "days": { "type": "int" } } },
   "friendshipMonthsLabel": "{months} months",
   "@friendshipMonthsLabel": { "placeholders": { "months": { "type": "int" } } },
@@ -704,7 +704,7 @@
   "@aiLevelColonLabel": { "placeholders": { "level": { "type": "int" } } },
   "handicapSectionLabel": "Handicap",
   "evenGameLabel": "Even game",
-  "stonesLabel": "{stones} stones",
+  "stonesLabel": "{stones, plural, =1{1 stone} other{{stones} stones}}",
   "@stonesLabel": { "placeholders": { "stones": { "type": "int" } } },
   "presetCreatedMessage": "Preset created",
   "presetUpdatedMessage": "Preset updated",
@@ -768,7 +768,7 @@
   "handicapSettingsTitle": "Handicap Game",
   "handicapIntroMessage": "The handicap stones are placed on the board first, then the game starts with White (the AI) to move.",
   "handicapStonesCountLabel": "Number of Handicap Stones",
-  "stonesCountShortLabel": "{count} stones",
+  "stonesCountShortLabel": "{count, plural, =1{1 stone} other{{count} stones}}",
   "@stonesCountShortLabel": { "placeholders": { "count": { "type": "int" } } },
 
   "puzzleRushSettingsTitle": "Puzzle Rush Settings",
@@ -928,7 +928,7 @@
   "hintTooltip": "Hint",
   "puzzleSharedSuccessMessage": "Puzzle shared successfully!",
   "attemptsLabel": "Attempts",
-  "movesToSolveLabel": "{count} moves to solve",
+  "movesToSolveLabel": "{count, plural, =1{1 move to solve} other{{count} moves to solve}}",
   "@movesToSolveLabel": {
     "placeholders": {
       "count": { "type": "int" }
@@ -961,7 +961,7 @@
   "couldNotLoadGamesMessage": "Could not load games",
   "noGamesYetMessage": "No games yet",
   "playFirstGameMessage": "Play your first AI game to see it here",
-  "gamesPlayedCountLabel": "{count} games played",
+  "gamesPlayedCountLabel": "{count, plural, =1{1 game played} other{{count} games played}}",
   "@gamesPlayedCountLabel": {
     "placeholders": {
       "count": { "type": "int" }
