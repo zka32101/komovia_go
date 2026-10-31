@@ -1327,5 +1327,17 @@
   "frameConditionTournament": "トーナメントで優勝する",
   "frameConditionTsumegoStreak": "詰碁を{days}日連続で解く",
   "@frameConditionTsumegoStreak": { "placeholders": { "days": { "type": "int" } } },
-  "frameConditionEnScore": "フレンドとの縁スコアを100にする"
+  "frameConditionEnScore": "フレンドとの縁スコアを100にする",
+  "aiAnalysisQuotaRemaining": "本日の無料AI分析: 残り{count}回",
+  "@aiAnalysisQuotaRemaining": {"placeholders": {"count": {"type": "int"}}},
+  "aiAnalysisUnlimitedLabel": "AI分析プラン: 無制限",
+  "aiAnalysisLimitTitle": "本日の上限に達しました",
+  "aiAnalysisLimitMessage": "今日のAI分析は上限に達しました。AI分析プランで無制限に。無料枠は毎日0時にリセットされます。",
+  "aiAnalysisPlanName": "AI分析プラン",
+  "aiAnalysisPlanPrice": "¥990/月",
+  "aiAnalysisPlanDescription": "対局後のAI振り返りを回数無制限で利用できます(無料は1日3回まで)。プレミアムとは別のプランです。",
+  "aiAnalysisPlanSubscribeButton": "AI分析プランに加入",
+  "aiAnalysisPlanPurchasedMessage": "AI分析プランに加入しました",
+  "aiAnalysisPlanActiveLabel": "加入中",
+  "laterButton": "あとで"
 }

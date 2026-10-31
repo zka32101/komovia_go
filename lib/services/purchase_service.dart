@@ -17,6 +17,24 @@ extension SubscriptionPlanProductId on SubscriptionPlan {
       };
 }
 
+/// AI分析プラン — 既存のプレミアム([SubscriptionPlan])とは独立した別売りの
+/// 月額商品(約¥990/月)。どちらか片方・両方・どちらも無し、のいずれもあり得る
+/// ため、SubscriptionPlanの一種ではなく兄弟型として切り出している
+/// (SubscriptionPlanに混ぜると、既存のpaywallの選択UIやsubscriptionActiveの
+/// 付与ロジックに誤って乗ってしまう)。現状は月額のみ。年額/買い切り版を
+/// 用意するかは今後の判断事項。
+enum AiAnalysisPlan { monthly }
+
+extension AiAnalysisPlanProductId on AiAnalysisPlan {
+  String get productId => switch (this) {
+        AiAnalysisPlan.monthly => PurchaseService.aiAnalysisMonthlyProductId,
+      };
+
+  Duration get entitlementLength => switch (this) {
+        AiAnalysisPlan.monthly => const Duration(days: 30),
+      };
+}
+
 /// Thin wrapper around the platform `in_app_purchase` plugin. Talks
 /// directly to the App Store/Play Store IAP APIs (no third-party
 /// account needed), but the product IDs below must still be created in
@@ -24,7 +42,12 @@ extension SubscriptionPlanProductId on SubscriptionPlan {
 class PurchaseService {
   static const String monthlyProductId = 'goen_premium_monthly';
   static const String annualProductId = 'goen_premium_annual';
-  static const Set<String> productIds = {monthlyProductId, annualProductId};
+  static const String aiAnalysisMonthlyProductId = 'goen_ai_analysis_monthly';
+  static const Set<String> productIds = {
+    monthlyProductId,
+    annualProductId,
+    aiAnalysisMonthlyProductId,
+  };
 
   final InAppPurchase _iap = InAppPurchase.instance;
   final Logger _logger = Logger();

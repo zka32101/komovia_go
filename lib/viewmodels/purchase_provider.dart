@@ -74,6 +74,30 @@ Future<void> _grantEntitlement({
   ref.invalidate(currentUserProvider);
 }
 
+/// AI分析プランの権利を付与する(既存プレミアムとは独立したフィールド)。
+/// [skipIfAlreadyActive]は_grantEntitlementと同じ理由(起動毎の再配信で
+/// 期限が延び続けるのを防ぐ)。
+Future<void> _grantAiAnalysisPlan({
+  required Ref ref,
+  required AuthService authService,
+  required FirestoreService firestoreService,
+  required AiAnalysisPlan plan,
+  bool skipIfAlreadyActive = false,
+}) async {
+  final uid = authService.currentUser?.uid;
+  if (uid == null) return;
+  final now = DateTime.now();
+  final freshUser = await firestoreService.getUser(uid) ?? authService.currentUser!;
+  if (skipIfAlreadyActive && freshUser.hasAiAnalysisPlan(now)) return;
+  final updated = freshUser.copyWith(
+    aiAnalysisPlanEndDate: now.add(plan.entitlementLength),
+    updatedAt: now,
+  );
+  await firestoreService.saveUser(updated);
+  authService.refreshCachedUser(updated);
+  ref.invalidate(currentUserProvider);
+}
+
 /// Records a one-time cosmetic purchase (non-consumable skin) on the
 /// user's own doc. Idempotent, so redelivered/restored transactions are
 /// safe to replay.
@@ -129,6 +153,24 @@ final purchaseRecoveryProvider = Provider<void>((ref) {
               await purchaseService.completePurchase(purchase);
             } catch (e) {
               _logger.e('Failed to sync cosmetic ${purchase.productID}: $e');
+            }
+            break;
+          }
+          final aiPlan = AiAnalysisPlan.values
+              .where((p) => p.productId == purchase.productID)
+              .firstOrNull;
+          if (aiPlan != null) {
+            try {
+              await _grantAiAnalysisPlan(
+                ref: ref,
+                authService: authService,
+                firestoreService: firestoreService,
+                plan: aiPlan,
+                skipIfAlreadyActive: true,
+              );
+              await purchaseService.completePurchase(purchase);
+            } catch (e) {
+              _logger.e('Failed to sync AI analysis plan: $e');
             }
             break;
           }
@@ -225,6 +267,25 @@ final purchaseSubscriptionProvider = Provider<Future<void> Function(Subscription
         purchaseService: purchaseService,
         productId: plan.productId,
         grant: () => _grantEntitlement(
+          ref: ref,
+          authService: authService,
+          firestoreService: firestoreService,
+          plan: plan,
+        ),
+      );
+});
+
+/// AI分析プラン(別売り月額)を購入する。フローは他の商品と共通。
+final purchaseAiAnalysisPlanProvider =
+    Provider<Future<void> Function(AiAnalysisPlan plan)>((ref) {
+  final purchaseService = ref.watch(purchaseServiceProvider);
+  final authService = ref.watch(authServiceProvider);
+  final firestoreService = FirestoreService();
+
+  return (plan) => _runPurchaseFlow(
+        purchaseService: purchaseService,
+        productId: plan.productId,
+        grant: () => _grantAiAnalysisPlan(
           ref: ref,
           authService: authService,
           firestoreService: firestoreService,

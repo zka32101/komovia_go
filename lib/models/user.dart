@@ -45,6 +45,14 @@ class User {
   /// monotonic/current stats are NOT stored here.
   final List<String> earnedFrameIds;
 
+  /// AI分析プラン(別売りの月額商品)の有効期限。null = 未加入。
+  /// 既存プレミアムの subscriptionActive/EndDate とは独立している。
+  final DateTime? aiAnalysisPlanEndDate;
+
+  /// AI分析プランが [now] 時点で有効か。
+  bool hasAiAnalysisPlan(DateTime now) =>
+      aiAnalysisPlanEndDate != null && aiAnalysisPlanEndDate!.isAfter(now);
+
   User({
     required this.uid,
     required this.email,
@@ -62,6 +70,7 @@ class User {
     this.purchasedCosmeticIds = const [],
     this.frameId,
     this.earnedFrameIds = const [],
+    this.aiAnalysisPlanEndDate,
   });
 
   /// Create from Firestore document
@@ -97,6 +106,9 @@ class User {
       earnedFrameIds:
           (data['earnedFrameIds'] as List?)?.whereType<String>().toList() ??
               const [],
+      aiAnalysisPlanEndDate: data['aiAnalysisPlanEndDate'] is Timestamp
+          ? (data['aiAnalysisPlanEndDate'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -120,6 +132,9 @@ class User {
       'purchasedCosmeticIds': purchasedCosmeticIds,
       'frameId': frameId,
       'earnedFrameIds': earnedFrameIds,
+      'aiAnalysisPlanEndDate': aiAnalysisPlanEndDate != null
+          ? Timestamp.fromDate(aiAnalysisPlanEndDate!)
+          : null,
     };
   }
 
@@ -144,6 +159,7 @@ class User {
     List<String>? purchasedCosmeticIds,
     Object? frameId = _unset,
     List<String>? earnedFrameIds,
+    Object? aiAnalysisPlanEndDate = _unset,
   }) {
     return User(
       uid: uid,
@@ -164,6 +180,9 @@ class User {
       purchasedCosmeticIds: purchasedCosmeticIds ?? this.purchasedCosmeticIds,
       frameId: identical(frameId, _unset) ? this.frameId : frameId as String?,
       earnedFrameIds: earnedFrameIds ?? this.earnedFrameIds,
+      aiAnalysisPlanEndDate: identical(aiAnalysisPlanEndDate, _unset)
+          ? this.aiAnalysisPlanEndDate
+          : aiAnalysisPlanEndDate as DateTime?,
     );
   }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/models/index.dart';
-import 'package:komovia_go/services/index.dart' show SubscriptionPlan, PurchaseUnavailableException;
+import 'package:komovia_go/services/index.dart' show SubscriptionPlan, AiAnalysisPlan, PurchaseUnavailableException;
 import 'package:komovia_go/viewmodels/index.dart';
 import 'package:komovia_go/config/theme.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
@@ -282,6 +282,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
           const SizedBox(height: 16),
 
+          _buildAiAnalysisPlanCard(context, l10n),
+
+          const SizedBox(height: 16),
+
           Text(
             l10n.cancelAnytimeNote,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -516,6 +520,52 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   /// 分析イベント用の安定した英語識別子（表示文言とは別に保つ:
   /// ログにはロケールに関わらず常に同じ値を送る必要があるため）。
+  /// AI分析プラン(プレミアムとは別売り)の購入カード。
+  Widget _buildAiAnalysisPlanCard(BuildContext context, AppLocalizations l10n) {
+    final hasPlan =
+        ref.watch(currentUserProvider)?.hasAiAnalysisPlan(DateTime.now()) ?? false;
+    return Container(
+      key: const Key('aiAnalysisPlanCard'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.sumiLine),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${l10n.aiAnalysisPlanName}  ${l10n.aiAnalysisPlanPrice}',
+              style: const TextStyle(color: AppColors.washi, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.aiAnalysisPlanDescription,
+              style: TextStyle(color: AppColors.washiDim, height: 1.5)),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: hasPlan
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        await ref.read(purchaseAiAnalysisPlanProvider)(AiAnalysisPlan.monthly);
+                        messenger.showSnackBar(
+                            SnackBar(content: Text(l10n.aiAnalysisPlanPurchasedMessage)));
+                      } catch (e) {
+                        messenger.showSnackBar(SnackBar(content: Text('$e')));
+                      }
+                    },
+              child: Text(hasPlan
+                  ? l10n.aiAnalysisPlanActiveLabel
+                  : l10n.aiAnalysisPlanSubscribeButton),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _planLabel(SubscriptionPlan plan) => switch (plan) {
         SubscriptionPlan.monthly => 'Monthly',
         SubscriptionPlan.annual => 'Annual',
