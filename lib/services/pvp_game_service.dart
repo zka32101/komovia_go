@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart' show AbandonmentForfeitPolicy;
 import 'package:logger/logger.dart';
 import '../models/pvp_game.dart';
 import 'go_rules.dart';
@@ -443,7 +444,10 @@ class PvpGameService {
   /// 対局を、放置勝ちとして終局させる。「NO TIMERS」方針（対局中に時間
   /// 制限を課さない）とは別物 — 何日も現実に動きが無い対局を永久に
   /// 「進行中」で残さないための救済措置であり、1手ごとの時間制限ではない。
-  static const Duration abandonmentThreshold = Duration(hours: 48);
+  /// komovia_coreの共有ポリシー（48時間 = [AbandonmentForfeitPolicy.slow]）。
+  static const AbandonmentForfeitPolicy abandonmentPolicy =
+      AbandonmentForfeitPolicy.slow;
+  static final Duration abandonmentThreshold = abandonmentPolicy.threshold;
 
   /// トランザクション内で読み取り・判定・書き込みを行い、resign()/pass()
   /// と同時に呼ばれても後勝ちで結果が上書きされないようにする。
@@ -475,8 +479,10 @@ class PvpGameService {
           return;
         }
 
-        final lastActivity = game.updatedAt ?? game.createdAt;
-        if (DateTime.now().difference(lastActivity) < abandonmentThreshold) {
+        if (!abandonmentPolicy.canClaim(
+          isClaimantsTurn: false, // checked just above
+          lastActivityAt: game.lastActivityAt,
+        )) {
           _logger.w('Game not stale enough yet for forfeit claim: $gameId');
           return;
         }

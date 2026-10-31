@@ -107,7 +107,7 @@ class PvpGamesListScreen extends ConsumerWidget {
     final myTurn = game.isTurnOf(uid);
     final canClaimForfeit = game.canClaimAbandonmentForfeit(
       uid,
-      threshold: PvpGameService.abandonmentThreshold,
+      policy: PvpGameService.abandonmentPolicy,
     );
 
     return Card(

@@ -139,7 +139,7 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
             _buildTimeoutClaimCard(context, l10n, game)
           else if (game.canClaimAbandonmentForfeit(
             widget.uid,
-            threshold: PvpGameService.abandonmentThreshold,
+            policy: PvpGameService.abandonmentPolicy,
           ))
             _buildAbandonmentClaimCard(context, l10n, game),
         ],
