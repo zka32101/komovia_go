@@ -38,6 +38,11 @@ class AdService {
   static Future<void> initialize() async {
     try {
       await MobileAds.instance.initialize();
+      // 大人向けプレミアムの位置付けに合わせ、成人向け・刺激的な広告を除外
+      // (バナー/インタースティシャル双方に適用される)。
+      await MobileAds.instance.updateRequestConfiguration(
+        RequestConfiguration(maxAdContentRating: MaxAdContentRating.pg),
+      );
       _logger.i('📢 AdMob initialized');
     } catch (e) {
       _logger.e('❌ AdMob initialization failed: $e');
@@ -72,9 +77,10 @@ class InterstitialAdController {
     );
   }
 
-  Future<void> showIfAvailable() async {
+  /// 表示を開始できたらtrue。
+  Future<bool> showIfAvailable() async {
     final ad = _ad;
-    if (ad == null) return;
+    if (ad == null) return false;
     _ad = null;
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
@@ -87,6 +93,7 @@ class InterstitialAdController {
       },
     );
     await ad.show();
+    return true;
   }
 
   void dispose() {
