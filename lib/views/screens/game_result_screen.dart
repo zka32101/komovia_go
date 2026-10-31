@@ -4,7 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:komovia_go/models/index.dart';
 import 'package:komovia_go/viewmodels/index.dart';
 import 'package:komovia_go/views/widgets/index.dart';
-import 'package:komovia_go/services/index.dart' show GameAnalysis;
+import 'package:komovia_go/services/index.dart' show GameAnalysis, AiAnalysisPlan;
 import 'package:komovia_go/utils/shoji_transition.dart';
 import 'package:komovia_go/utils/sgf_parser.dart';
 import 'ai_game_screen.dart';
@@ -724,12 +724,16 @@ class _AiReviewSectionState extends ConsumerState<_AiReviewSection> {
       _error = null;
     });
     try {
-      final analysis = await ref.read(generateGameAnalysisProvider)(
+      final analysis = await ref.read(gatedGenerateGameAnalysisProvider)(
         sgfData: widget.sgfData,
         kifuId: 'review-${DateTime.now().millisecondsSinceEpoch}',
       );
       if (!mounted) return;
       setState(() => _analysis = analysis);
+      ref.invalidate(aiAnalysisQuotaStoreProvider);
+    } on AiAnalysisQuotaExceededException {
+      if (!mounted) return;
+      await showAiAnalysisUpsellDialog(context, ref);
     } catch (e) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
@@ -768,6 +772,8 @@ class _AiReviewSectionState extends ConsumerState<_AiReviewSection> {
                         height: 1.6,
                       ),
                 ),
+                const SizedBox(height: 8),
+                _buildQuotaLabel(context, l10n),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
@@ -789,6 +795,16 @@ class _AiReviewSectionState extends ConsumerState<_AiReviewSection> {
         ],
       ),
     );
+  }
+
+  Widget _buildQuotaLabel(BuildContext context, AppLocalizations l10n) {
+    final now = DateTime.now();
+    final hasPlan = ref.watch(currentUserProvider)?.hasAiAnalysisPlan(now) ?? false;
+    final style = Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.washiDim);
+    if (hasPlan) return Text(l10n.aiAnalysisUnlimitedLabel, style: style);
+    final store = ref.watch(aiAnalysisQuotaStoreProvider).valueOrNull;
+    if (store == null) return const SizedBox.shrink();
+    return Text(l10n.aiAnalysisQuotaRemaining(store.remaining(now)), style: style);
   }
 
   Widget _buildAnalysis(BuildContext context, AppLocalizations l10n, GameAnalysis analysis) {
@@ -883,4 +899,38 @@ class _VictoryGlowState extends State<_VictoryGlow> with SingleTickerProviderSta
       child: widget.child,
     );
   }
+}
+
+/// AI振り返りの無料枠を使い切ったときのアップセル。そのまま購入フローへ進める。
+Future<void> showAiAnalysisUpsellDialog(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context)!;
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.aiAnalysisLimitTitle),
+      content: Text('${l10n.aiAnalysisLimitMessage}\n\n'
+          '${l10n.aiAnalysisPlanName}  ${l10n.aiAnalysisPlanPrice}'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: Text(l10n.laterButton),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            Navigator.of(dialogContext).pop();
+            try {
+              await ref.read(purchaseAiAnalysisPlanProvider)(AiAnalysisPlan.monthly);
+              messenger.showSnackBar(
+                SnackBar(content: Text(l10n.aiAnalysisPlanPurchasedMessage)),
+              );
+            } catch (e) {
+              messenger.showSnackBar(SnackBar(content: Text('$e')));
+            }
+          },
+          child: Text(l10n.aiAnalysisPlanSubscribeButton),
+        ),
+      ],
+    ),
+  );
 }

@@ -1327,5 +1327,17 @@
   "frameConditionTournament": "Win a tournament",
   "frameConditionTsumegoStreak": "Solve tsumego {days} days in a row",
   "@frameConditionTsumegoStreak": { "placeholders": { "days": { "type": "int" } } },
-  "frameConditionEnScore": "Reach an En score of 100 with a friend"
+  "frameConditionEnScore": "Reach an En score of 100 with a friend",
+  "aiAnalysisQuotaRemaining": "Free AI reviews left today: {count}",
+  "@aiAnalysisQuotaRemaining": {"placeholders": {"count": {"type": "int"}}},
+  "aiAnalysisUnlimitedLabel": "AI Analysis Plan: unlimited",
+  "aiAnalysisLimitTitle": "Daily limit reached",
+  "aiAnalysisLimitMessage": "You've used today's free AI reviews. Get unlimited reviews with the AI Analysis Plan. Free reviews reset daily at midnight.",
+  "aiAnalysisPlanName": "AI Analysis Plan",
+  "aiAnalysisPlanPrice": "¥990/month",
+  "aiAnalysisPlanDescription": "Unlimited post-game AI reviews (free users get 3 per day). Separate from Premium.",
+  "aiAnalysisPlanSubscribeButton": "Subscribe to AI Analysis Plan",
+  "aiAnalysisPlanPurchasedMessage": "Subscribed to the AI Analysis Plan",
+  "aiAnalysisPlanActiveLabel": "Active",
+  "laterButton": "Later"
 }
