@@ -56,3 +56,4 @@ export 'ai_review_provider.dart';
 export 'purchase_provider.dart';
 export 'cosmetic_provider.dart';
 export 'direct_message_provider.dart';
+export 'avatar_frame_provider.dart';

@@ -10,6 +10,7 @@ import 'package:komovia_go/viewmodels/index.dart';
 import 'package:komovia_go/views/widgets/index.dart';
 import 'package:komovia_go/views/widgets/ad_banner.dart';
 import 'package:komovia_go/views/widgets/avatar_picker_sheet.dart';
+import 'package:komovia_go/config/avatar_frames.dart';
 import 'package:komovia_go/config/theme.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
 import 'package:komovia_go/utils/komovia_cross_promo_roster.dart';
@@ -328,20 +329,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         InkWell(
           onTap: () => showAvatarPickerSheet(context, ref),
           borderRadius: BorderRadius.circular(32),
-          child: Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.sumiLine,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.kin),
-            ),
-            child: Text(
-              avatarIconById(user.avatarId).emoji,
-              style: const TextStyle(fontSize: 28),
-            ),
-          ),
+          child: Builder(builder: (context) {
+            final frame = ref.watch(displayedFrameProvider);
+            if (frame != null) {
+              return FramedAvatar(
+                emoji: avatarIconById(user.avatarId).emoji,
+                frame: frame,
+                background: AppColors.sumiLine,
+              );
+            }
+            return Container(
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.sumiLine,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.kin),
+              ),
+              child: Text(
+                avatarIconById(user.avatarId).emoji,
+                style: const TextStyle(fontSize: 28),
+              ),
+            );
+          }),
         ),
         const SizedBox(height: 16),
         Text(
