@@ -1,9 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_go/models/pvp_game.dart';
+import 'package:komovia_go/services/pvp_game_service.dart';
 
 void main() {
   group('PvpGame.canClaimAbandonmentForfeit', () {
     const threshold = Duration(hours: 48);
+    const policy = PvpGameService.abandonmentPolicy;
+
+    test('go keeps its 48h threshold via the shared core policy', () {
+      expect(policy.threshold, threshold);
+    });
 
     PvpGame buildGame({
       required DateTime updatedAt,
@@ -31,7 +37,7 @@ void main() {
 
     test('is false when the game is still fresh', () {
       final game = buildGame(updatedAt: DateTime.now());
-      expect(game.canClaimAbandonmentForfeit('white', threshold: threshold), isFalse);
+      expect(game.canClaimAbandonmentForfeit('white', policy: policy), isFalse);
     });
 
     test('is true for the waiting player once the game has gone stale', () {
@@ -40,7 +46,7 @@ void main() {
         isBlackTurn: true,
       );
       // It's black's turn, so white is waiting and may claim.
-      expect(game.canClaimAbandonmentForfeit('white', threshold: threshold), isTrue);
+      expect(game.canClaimAbandonmentForfeit('white', policy: policy), isTrue);
     });
 
     test('is false for the player whose own turn it currently is', () {
@@ -48,14 +54,14 @@ void main() {
         updatedAt: DateTime.now().subtract(threshold + const Duration(hours: 1)),
         isBlackTurn: true,
       );
-      expect(game.canClaimAbandonmentForfeit('black', threshold: threshold), isFalse);
+      expect(game.canClaimAbandonmentForfeit('black', policy: policy), isFalse);
     });
 
     test('is false for a non-participant', () {
       final game = buildGame(
         updatedAt: DateTime.now().subtract(threshold + const Duration(hours: 1)),
       );
-      expect(game.canClaimAbandonmentForfeit('stranger', threshold: threshold), isFalse);
+      expect(game.canClaimAbandonmentForfeit('stranger', policy: policy), isFalse);
     });
 
     test('is false once the game has already finished', () {
@@ -63,7 +69,7 @@ void main() {
         updatedAt: DateTime.now().subtract(threshold + const Duration(hours: 1)),
         status: 'finished',
       );
-      expect(game.canClaimAbandonmentForfeit('white', threshold: threshold), isFalse);
+      expect(game.canClaimAbandonmentForfeit('white', policy: policy), isFalse);
     });
 
     test('falls back to createdAt when updatedAt was never set', () {
@@ -83,7 +89,23 @@ void main() {
         status: 'active',
         createdAt: DateTime.now().subtract(threshold + const Duration(hours: 1)),
       );
-      expect(game.canClaimAbandonmentForfeit('white', threshold: threshold), isTrue);
+      expect(game.canClaimAbandonmentForfeit('white', policy: policy), isTrue);
+    });
+
+    test('is claimable at exactly the threshold, not a minute before', () {
+      final last = DateTime.utc(2026, 1, 1, 12);
+      final game = buildGame(updatedAt: last);
+      expect(
+        game.canClaimAbandonmentForfeit('white',
+            policy: policy, now: last.add(threshold)),
+        isTrue,
+      );
+      expect(
+        game.canClaimAbandonmentForfeit('white',
+            policy: policy,
+            now: last.add(threshold - const Duration(minutes: 1))),
+        isFalse,
+      );
     });
   });
 

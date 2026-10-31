@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart' show AbandonmentForfeitPolicy;
 
 /// 2人のプレイヤー間のリアルタイム対局（マッチング成立後の実対局）
 class PvpGame {
@@ -127,13 +128,24 @@ class PvpGame {
   /// [uid]が、相手が長期間応答していない対局の放置勝ちを申請できるか
   /// （PvpGameService.claimAbandonmentForfeit参照）。UIがボタンの表示判定
   /// に使い、サービス側のトランザクションでも同じ条件を再確認している。
-  bool canClaimAbandonmentForfeit(String uid, {required Duration threshold}) {
+  /// 時間判定（手番・経過時間）はkomovia_coreの[AbandonmentForfeitPolicy]
+  /// に委ねる（komovia_shogi/komovia_reversiaと共通）。
+  bool canClaimAbandonmentForfeit(
+    String uid, {
+    required AbandonmentForfeitPolicy policy,
+    DateTime? now,
+  }) {
     if (!isActive) return false;
     if (playerColorOf(uid) == 0) return false;
-    if (isTurnOf(uid)) return false;
-    final lastActivity = updatedAt ?? createdAt;
-    return DateTime.now().difference(lastActivity) >= threshold;
+    return policy.canClaim(
+      isClaimantsTurn: isTurnOf(uid),
+      lastActivityAt: lastActivityAt,
+      now: now,
+    );
   }
+
+  /// 最後に盤面が動いた時刻（未更新なら作成時刻）。
+  DateTime get lastActivityAt => updatedAt ?? createdAt;
 
   bool isTurnOf(String uid) {
     final color = playerColorOf(uid);
