@@ -569,11 +569,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   String _planLabel(SubscriptionPlan plan) => switch (plan) {
         SubscriptionPlan.monthly => 'Monthly',
         SubscriptionPlan.annual => 'Annual',
+        // Not sold in this app (no productId); never selectable on this screen.
+        SubscriptionPlan.lifetime => 'Lifetime',
       };
 
   String _planDisplayLabel(AppLocalizations l10n, SubscriptionPlan plan) => switch (plan) {
         SubscriptionPlan.monthly => l10n.monthlyLabel,
         SubscriptionPlan.annual => l10n.annualLabel,
+        SubscriptionPlan.lifetime => 'Lifetime',
       };
 
   /// ストアの現地通貨価格。取得できない間は日本円の既定価格を出す
@@ -584,6 +587,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     return switch (plan) {
       SubscriptionPlan.monthly => '¥300',
       SubscriptionPlan.annual => '¥2,400',
+      SubscriptionPlan.lifetime => '-',
     };
   }
 
@@ -595,6 +599,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     return switch (plan) {
       SubscriptionPlan.monthly => (price: 300.0, currency: 'JPY'),
       SubscriptionPlan.annual => (price: 2400.0, currency: 'JPY'),
+      SubscriptionPlan.lifetime => (price: 0.0, currency: 'JPY'),
     };
   }
 
