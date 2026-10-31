@@ -1,19 +1,24 @@
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:komovia_core/komovia_core.dart' show SubscriptionPlan;
 import 'package:logger/logger.dart';
 
-/// The two plans sold on the paywall.
-enum SubscriptionPlan { monthly, annual }
+// SubscriptionPlan itself (and its `entitlementLength`) comes from
+// komovia_core, shared with the sibling Komovia apps. It also enumerates a
+// `lifetime` case that this app does not currently sell: it has no store
+// product here, so [productId] is null for it and the paywall never offers
+// it. The plan is only ever used transiently during the purchase flow and
+// is never persisted (see `utils/entitlement_adapter.dart`), so adopting
+// core's enum changes no stored data.
+export 'package:komovia_core/komovia_core.dart'
+    show SubscriptionPlan, SubscriptionPlanEntitlementLength;
 
 extension SubscriptionPlanProductId on SubscriptionPlan {
-  String get productId => switch (this) {
+  /// The store product id for this plan in this app, or null when the plan
+  /// isn't sold here (currently only [SubscriptionPlan.lifetime]).
+  String? get productId => switch (this) {
         SubscriptionPlan.monthly => PurchaseService.monthlyProductId,
         SubscriptionPlan.annual => PurchaseService.annualProductId,
-      };
-
-  /// How long the entitlement lasts from purchase.
-  Duration get entitlementLength => switch (this) {
-        SubscriptionPlan.monthly => const Duration(days: 30),
-        SubscriptionPlan.annual => const Duration(days: 365),
+        SubscriptionPlan.lifetime => null,
       };
 }
 

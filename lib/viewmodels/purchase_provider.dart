@@ -18,7 +18,9 @@ final purchaseServiceProvider = Provider<PurchaseService>((ref) {
 /// can't be reached or the product isn't configured yet.
 final subscriptionProductProvider =
     FutureProvider.family<ProductDetails?, SubscriptionPlan>((ref, plan) {
-  return ref.watch(purchaseServiceProvider).fetchProduct(plan.productId);
+  final productId = plan.productId;
+  if (productId == null) return Future.value(null);
+  return ref.watch(purchaseServiceProvider).fetchProduct(productId);
 });
 
 /// Persists a successful purchase's entitlement to Firestore and refreshes
@@ -66,7 +68,12 @@ Future<void> _grantEntitlement({
   final updated = freshUser.copyWith(
     subscriptionActive: true,
     subscriptionStartDate: now,
-    subscriptionEndDate: now.add(plan.entitlementLength),
+    // entitlementLength is null only for lifetime, which this app never
+    // sells (no productId), so a lifetime grant can't reach here today; it
+    // would correctly mean "never expires".
+    subscriptionEndDate: plan.entitlementLength == null
+        ? null
+        : now.add(plan.entitlementLength!),
     updatedAt: now,
   );
   await firestoreService.saveUser(updated);
@@ -263,9 +270,15 @@ final purchaseSubscriptionProvider = Provider<Future<void> Function(Subscription
   final authService = ref.watch(authServiceProvider);
   final firestoreService = FirestoreService();
 
-  return (plan) => _runPurchaseFlow(
+  return (plan) {
+    final productId = plan.productId;
+    if (productId == null) {
+      return Future.error(
+          PurchaseUnavailableException('This plan is not available.'));
+    }
+    return _runPurchaseFlow(
         purchaseService: purchaseService,
-        productId: plan.productId,
+        productId: productId,
         grant: () => _grantEntitlement(
           ref: ref,
           authService: authService,
@@ -273,6 +286,7 @@ final purchaseSubscriptionProvider = Provider<Future<void> Function(Subscription
           plan: plan,
         ),
       );
+  };
 });
 
 /// AI分析プラン(別売り月額)を購入する。フローは他の商品と共通。
