@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:komovia_go/views/widgets/go_stone.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/models/pvp_game.dart';
@@ -312,12 +313,14 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.kin.withOpacity(0.35),
-              Colors.brown[700]!.withOpacity(0.45),
-              AppColors.kin.withOpacity(0.35),
-            ],
+            colors: ref.watch(selectedBoardSkinProvider).gradient,
           ),
+          image: ref.watch(selectedBoardSkinProvider).textureAsset == null
+              ? null
+              : DecorationImage(
+                  image: AssetImage(ref.watch(selectedBoardSkinProvider).textureAsset!),
+                  fit: BoxFit.cover,
+                ),
           boxShadow: [
             BoxShadow(
               color: AppColors.sumi.withOpacity(0.5),
@@ -331,8 +334,8 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
             CustomPaint(
               painter: GoBoardGridPainter(
                 boardSize: boardSize,
-                lineColor: AppColors.sumi,
-                starPointColor: Colors.black54,
+                lineColor: ref.watch(selectedBoardSkinProvider).lineColor,
+                starPointColor: ref.watch(selectedBoardSkinProvider).lineColor,
               ),
               size: const Size(boardPixelSize, boardPixelSize),
             ),
@@ -382,29 +385,15 @@ class _PvpGameScreenState extends ConsumerState<PvpGameScreen> {
         final stone = stones[row][col];
         if (stone != 0) {
           final isBlack = stone == 1;
-          final border = isBlack ? null : Border.all(color: AppColors.washiDim, width: 0.5);
           final center = geometry.intersectionOffset(row, col);
           stoneWidgets.add(
             Positioned(
               left: center.dx - stoneRadius,
               top: center.dy - stoneRadius,
-              child: Container(
-                width: stoneRadius * 2,
-                height: stoneRadius * 2,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: border,
-                  gradient: RadialGradient(
-                    center: const Alignment(-0.35, -0.4),
-                    radius: 0.9,
-                    colors: isBlack
-                        ? [AppColors.washiDim, AppColors.sumi]
-                        : [AppColors.washi, AppColors.washiDim],
-                  ),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black45, blurRadius: 5, offset: Offset(1.5, 2.5)),
-                  ],
-                ),
+              child: GoStone(
+                radius: stoneRadius,
+                isBlack: isBlack,
+                skin: ref.watch(selectedStoneSkinProvider),
               ),
             ),
           );

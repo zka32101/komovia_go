@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:komovia_go/models/go_skins.dart';
 
 /// A Go stone with a soft contact shadow and a small specular highlight.
 /// Single source of truth for stone appearance across every board screen.
@@ -8,6 +9,7 @@ class GoStone extends StatelessWidget {
     required this.radius,
     required this.isBlack,
     this.child,
+    this.skin,
   });
 
   final double radius;
@@ -16,6 +18,9 @@ class GoStone extends StatelessWidget {
   /// Optional overlay centred on the stone (e.g. a dead-stone mark).
   final Widget? child;
 
+  /// Stone set to draw with; null = the default set.
+  final GoStoneSkin? skin;
+
   @override
   Widget build(BuildContext context) {
     final d = radius * 2;
@@ -23,7 +28,7 @@ class GoStone extends StatelessWidget {
       width: d,
       height: d,
       child: CustomPaint(
-        painter: _GoStonePainter(isBlack: isBlack),
+        painter: _GoStonePainter(isBlack: isBlack, skin: skin ?? stoneSkinById(null)),
         child: child == null ? null : Center(child: child),
       ),
     );
@@ -31,8 +36,9 @@ class GoStone extends StatelessWidget {
 }
 
 class _GoStonePainter extends CustomPainter {
-  _GoStonePainter({required this.isBlack});
+  _GoStonePainter({required this.isBlack, required this.skin});
   final bool isBlack;
+  final GoStoneSkin skin;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -54,9 +60,7 @@ class _GoStonePainter extends CustomPainter {
       ..shader = RadialGradient(
         center: const Alignment(-0.38, -0.42),
         radius: 1.0,
-        colors: isBlack
-            ? const [Color(0xFF4A4A4A), Color(0xFF151515), Color(0xFF050505)]
-            : const [Color(0xFFFFFFFF), Color(0xFFF1EDE2), Color(0xFFC9C3B3)],
+        colors: isBlack ? skin.blackColors : skin.whiteColors,
         stops: const [0.0, 0.55, 1.0],
       ).createShader(rect);
     canvas.drawCircle(c, r, body);
@@ -74,6 +78,7 @@ class _GoStonePainter extends CustomPainter {
     }
 
     // Specular highlight.
+    if (!skin.glossy) return;
     canvas.drawCircle(
       c + Offset(-r * 0.36, -r * 0.40),
       r * 0.22,
@@ -84,5 +89,5 @@ class _GoStonePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GoStonePainter old) => old.isBlack != isBlack;
+  bool shouldRepaint(_GoStonePainter old) => old.isBlack != isBlack || old.skin != skin;
 }

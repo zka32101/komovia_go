@@ -1288,5 +1288,17 @@
   "puzzleLevelElementary": "Elementary",
   "puzzleLevelIntermediate": "Intermediate",
   "puzzleLevelAdvanced": "Advanced",
-  "puzzleLevelProfessional": "Professional"
+  "puzzleLevelProfessional": "Professional",
+  "cosmeticShopTitle": "Board & Stone Skins",
+  "cosmeticShopBoardSection": "Board skins",
+  "cosmeticShopStoneSection": "Stone sets",
+  "cosmeticOwned": "Owned",
+  "cosmeticEquipped": "In use",
+  "cosmeticEquip": "Use",
+  "cosmeticBuy": "Buy",
+  "cosmeticSubscribeToUnlock": "Included with Premium",
+  "cosmeticFree": "Free",
+  "cosmeticPurchaseSuccess": "Purchase complete",
+  "cosmeticPurchaseFailed": "Purchase failed",
+  "cosmeticLoginRequired": "Please sign in first"
 }

@@ -24,6 +24,14 @@ class User {
   /// safely falls back to the shared default for null/unknown ids.
   final String? avatarId;
 
+  /// Selected cosmetic skins (see `go_skins.dart`); null = default. Always
+  /// resolve through `boardSkinById`/`stoneSkinById`, which fall back safely.
+  final String? boardSkinId;
+  final String? stoneSkinId;
+
+  /// Store product ids of one-time cosmetic purchases this user owns.
+  final List<String> purchasedCosmeticIds;
+
   User({
     required this.uid,
     required this.email,
@@ -36,6 +44,9 @@ class User {
     required this.createdAt,
     required this.updatedAt,
     this.avatarId,
+    this.boardSkinId,
+    this.stoneSkinId,
+    this.purchasedCosmeticIds = const [],
   });
 
   /// Create from Firestore document
@@ -61,6 +72,12 @@ class User {
           ? (data['updatedAt'] as Timestamp).toDate()
           : DateTime.now(),
       avatarId: data['avatarId'],
+      boardSkinId: data['boardSkinId'] as String?,
+      stoneSkinId: data['stoneSkinId'] as String?,
+      purchasedCosmeticIds: (data['purchasedCosmeticIds'] as List?)
+              ?.whereType<String>()
+              .toList() ??
+          const [],
     );
   }
 
@@ -79,6 +96,9 @@ class User {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'avatarId': avatarId,
+      'boardSkinId': boardSkinId,
+      'stoneSkinId': stoneSkinId,
+      'purchasedCosmeticIds': purchasedCosmeticIds,
     };
   }
 
@@ -98,6 +118,9 @@ class User {
     int? gamesPlayedCount,
     DateTime? updatedAt,
     String? avatarId,
+    String? boardSkinId,
+    String? stoneSkinId,
+    List<String>? purchasedCosmeticIds,
   }) {
     return User(
       uid: uid,
@@ -113,6 +136,9 @@ class User {
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       avatarId: avatarId ?? this.avatarId,
+      boardSkinId: boardSkinId ?? this.boardSkinId,
+      stoneSkinId: stoneSkinId ?? this.stoneSkinId,
+      purchasedCosmeticIds: purchasedCosmeticIds ?? this.purchasedCosmeticIds,
     );
   }
 
