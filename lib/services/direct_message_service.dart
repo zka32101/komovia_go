@@ -107,7 +107,7 @@ class DirectMessageService {
         'lastMessage': trimmed,
         'lastMessageAt': Timestamp.fromDate(now),
         'lastSenderUid': fromUid,
-        'unreadCount.$toUid': FieldValue.increment(1),
+        'unreadCount': {toUid: FieldValue.increment(1)},
       },
       SetOptions(merge: true),
     );

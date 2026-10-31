@@ -93,6 +93,25 @@ void main() {
       expect(messages.docs, hasLength(2));
     });
 
+    test('repeated replies increment the recipient\'s nested unreadCount entry '
+        '(no literal dotted top-level field)', () async {
+      for (final text in ['Hello!', 'Thank you!', 'Hello!']) {
+        await service.sendMessage(
+          fromUid: 'uid1',
+          fromDisplayName: 'Alice',
+          toUid: 'uid2',
+          toDisplayName: 'Bob',
+          content: text,
+        );
+      }
+      final threadId = DirectMessageService.threadIdFor('uid1', 'uid2');
+      final data = (await firestore.collection('message_threads').doc(threadId).get()).data()!;
+      expect(data.keys.where((k) => k.startsWith('unreadCount.')), isEmpty);
+      final unread = Map<String, dynamic>.from(data['unreadCount'] as Map);
+      expect(unread['uid2'], equals(3));
+      expect(unread.containsKey('uid1'), isFalse);
+    });
+
     test('markThreadRead resets only the given user\'s unread count', () async {
       await service.sendMessage(
         fromUid: 'uid1',
