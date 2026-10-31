@@ -32,6 +32,19 @@ class User {
   /// Store product ids of one-time cosmetic purchases this user owns.
   final List<String> purchasedCosmeticIds;
 
+  /// Selected avatar frame id from `lib/config/avatar_frames.dart`'s
+  /// catalog, or null for no frame. Frames are earned, never purchased;
+  /// always resolve via `resolveDisplayedFrame` so a frame that's no
+  /// longer unlocked (e.g. a rank-based frame after losing that rank)
+  /// silently stops rendering instead of trusting this stored value.
+  final String? frameId;
+
+  /// "Sticky" frame unlocks for point-in-time achievements that can't be
+  /// re-derived live from currently tracked stats (a tsume-go streak that
+  /// has since broken, a past max En score). Frames derivable live from
+  /// monotonic/current stats are NOT stored here.
+  final List<String> earnedFrameIds;
+
   User({
     required this.uid,
     required this.email,
@@ -47,6 +60,8 @@ class User {
     this.boardSkinId,
     this.stoneSkinId,
     this.purchasedCosmeticIds = const [],
+    this.frameId,
+    this.earnedFrameIds = const [],
   });
 
   /// Create from Firestore document
@@ -78,6 +93,10 @@ class User {
               ?.whereType<String>()
               .toList() ??
           const [],
+      frameId: data['frameId'] as String?,
+      earnedFrameIds:
+          (data['earnedFrameIds'] as List?)?.whereType<String>().toList() ??
+              const [],
     );
   }
 
@@ -99,6 +118,8 @@ class User {
       'boardSkinId': boardSkinId,
       'stoneSkinId': stoneSkinId,
       'purchasedCosmeticIds': purchasedCosmeticIds,
+      'frameId': frameId,
+      'earnedFrameIds': earnedFrameIds,
     };
   }
 
@@ -121,6 +142,8 @@ class User {
     String? boardSkinId,
     String? stoneSkinId,
     List<String>? purchasedCosmeticIds,
+    Object? frameId = _unset,
+    List<String>? earnedFrameIds,
   }) {
     return User(
       uid: uid,
@@ -139,6 +162,8 @@ class User {
       boardSkinId: boardSkinId ?? this.boardSkinId,
       stoneSkinId: stoneSkinId ?? this.stoneSkinId,
       purchasedCosmeticIds: purchasedCosmeticIds ?? this.purchasedCosmeticIds,
+      frameId: identical(frameId, _unset) ? this.frameId : frameId as String?,
+      earnedFrameIds: earnedFrameIds ?? this.earnedFrameIds,
     );
   }
 

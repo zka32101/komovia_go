@@ -9,6 +9,7 @@ import 'package:komovia_go/views/widgets/ad_banner.dart';
 import 'package:komovia_go/views/widgets/ai_level_sheet.dart';
 import 'ai_game_screen.dart';
 import 'game_mode_selector_screen.dart';
+import 'package:komovia_go/config/avatar_frames.dart';
 import 'package:komovia_go/config/theme.dart';
 import 'package:komovia_go/l10n/app_localizations.dart';
 
@@ -109,9 +110,10 @@ class HomeScreen extends ConsumerWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        avatarIconById(currentUser?.avatarId).emoji,
-                        style: const TextStyle(fontSize: 24),
+                      FramedAvatar(
+                        emoji: avatarIconById(currentUser?.avatarId).emoji,
+                        frame: ref.watch(displayedFrameProvider),
+                        size: 40,
                       ),
                       const SizedBox(width: 8),
                       Text(
