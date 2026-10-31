@@ -134,6 +134,7 @@ class GoEnApp extends ConsumerWidget {
         '/growth': (_) => const GrowthScreen(),
         '/settings': (_) => const SettingsScreen(),
         '/paywall': (_) => const PaywallScreen(),
+        '/cosmetic-shop': (_) => const CosmeticShopScreen(),
         // Phase 68-71: SNS Integration, Social Features, Analytics
         '/friends': (_) => const FriendsScreen(),
         '/leaderboard': (_) => const LeaderboardScreen(),

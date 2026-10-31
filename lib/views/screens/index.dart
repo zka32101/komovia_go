@@ -13,6 +13,7 @@ export 'kifu_observation_screen.dart';
 export 'game_history_screen.dart';
 export 'settings_screen.dart';
 export 'paywall_screen.dart';
+export 'cosmetic_shop_screen.dart';
 export 'youtube_share_screen.dart';
 export 'twitch_stream_screen.dart';
 export 'sponsorship_screen.dart';

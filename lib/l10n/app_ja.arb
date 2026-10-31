@@ -1288,5 +1288,17 @@
   "puzzleLevelElementary": "初級",
   "puzzleLevelIntermediate": "中級",
   "puzzleLevelAdvanced": "上級",
-  "puzzleLevelProfessional": "プロ級"
+  "puzzleLevelProfessional": "プロ級",
+  "cosmeticShopTitle": "盤・碁石スキン",
+  "cosmeticShopBoardSection": "碁盤スキン",
+  "cosmeticShopStoneSection": "碁石セット",
+  "cosmeticOwned": "所有済み",
+  "cosmeticEquipped": "使用中",
+  "cosmeticEquip": "使う",
+  "cosmeticBuy": "購入",
+  "cosmeticSubscribeToUnlock": "プレミアム会員で利用可",
+  "cosmeticFree": "無料",
+  "cosmeticPurchaseSuccess": "購入が完了しました",
+  "cosmeticPurchaseFailed": "購入できませんでした",
+  "cosmeticLoginRequired": "ログインしてください"
 }

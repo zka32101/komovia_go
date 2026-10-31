@@ -5,6 +5,7 @@ import 'package:riverpod/riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:komovia_go/services/index.dart';
 import 'package:komovia_go/viewmodels/auth_provider.dart';
+import 'package:komovia_go/models/go_skins.dart';
 
 final _logger = Logger();
 
@@ -73,6 +74,28 @@ Future<void> _grantEntitlement({
   ref.invalidate(currentUserProvider);
 }
 
+/// Records a one-time cosmetic purchase (non-consumable skin) on the
+/// user's own doc. Idempotent, so redelivered/restored transactions are
+/// safe to replay.
+Future<void> _grantCosmetic({
+  required Ref ref,
+  required AuthService authService,
+  required FirestoreService firestoreService,
+  required String productId,
+}) async {
+  final uid = authService.currentUser?.uid;
+  if (uid == null) return;
+  final freshUser = await firestoreService.getUser(uid) ?? authService.currentUser!;
+  if (freshUser.purchasedCosmeticIds.contains(productId)) return;
+  final updated = freshUser.copyWith(
+    purchasedCosmeticIds: [...freshUser.purchasedCosmeticIds, productId],
+    updatedAt: DateTime.now(),
+  );
+  await firestoreService.saveUser(updated);
+  authService.refreshCachedUser(updated);
+  ref.invalidate(currentUserProvider);
+}
+
 /// Listens for purchases for as long as the app is running, independent of
 /// any interactive purchase flow. `InAppPurchase.purchaseStream` redelivers
 /// any transaction that was never acknowledged via `completePurchase` on
@@ -95,6 +118,20 @@ final purchaseRecoveryProvider = Provider<void>((ref) {
       switch (purchase.status) {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
+          if (kCosmeticProductIds.contains(purchase.productID)) {
+            try {
+              await _grantCosmetic(
+                ref: ref,
+                authService: authService,
+                firestoreService: firestoreService,
+                productId: purchase.productID,
+              );
+              await purchaseService.completePurchase(purchase);
+            } catch (e) {
+              _logger.e('Failed to sync cosmetic ${purchase.productID}: $e');
+            }
+            break;
+          }
           SubscriptionPlan? plan;
           try {
             plan = SubscriptionPlan.values
@@ -184,72 +221,111 @@ final purchaseSubscriptionProvider = Provider<Future<void> Function(Subscription
   final authService = ref.watch(authServiceProvider);
   final firestoreService = FirestoreService();
 
-  return (plan) async {
-    _logger.i('Purchase initiated: ${plan.name}');
+  return (plan) => _runPurchaseFlow(
+        purchaseService: purchaseService,
+        productId: plan.productId,
+        grant: () => _grantEntitlement(
+          ref: ref,
+          authService: authService,
+          firestoreService: firestoreService,
+          plan: plan,
+        ),
+      );
+});
 
-    final available = await purchaseService.isAvailable();
-    if (!available) {
-      throw PurchaseUnavailableException('この端末では購入機能を利用できません。');
-    }
+/// Buys a one-time cosmetic skin (non-consumable) through the exact same
+/// query → buy → await PurchaseDetails → persist → acknowledge flow as
+/// subscriptions; the result is recorded in `User.purchasedCosmeticIds`.
+final purchaseCosmeticProvider = Provider<Future<void> Function(String productId)>((ref) {
+  final purchaseService = ref.watch(purchaseServiceProvider);
+  final authService = ref.watch(authServiceProvider);
+  final firestoreService = FirestoreService();
 
-    final product = await purchaseService.fetchProduct(plan.productId);
-    if (product == null) {
-      throw PurchaseUnavailableException('このプランは現在ご購入いただけません。しばらくしてから再度お試しください。');
-    }
+  return (productId) => _runPurchaseFlow(
+        purchaseService: purchaseService,
+        productId: productId,
+        grant: () => _grantCosmetic(
+          ref: ref,
+          authService: authService,
+          firestoreService: firestoreService,
+          productId: productId,
+        ),
+      );
+});
 
-    final completer = Completer<PurchaseDetails>();
-    late final StreamSubscription<List<PurchaseDetails>> subscription;
-    subscription = purchaseService.purchaseStream.listen(
-      (purchases) {
-        for (final purchase in purchases) {
-          if (purchase.productID != product.id || completer.isCompleted) continue;
-          switch (purchase.status) {
-            case PurchaseStatus.purchased:
-            case PurchaseStatus.restored:
-              completer.complete(purchase);
-              break;
-            case PurchaseStatus.error:
-              // Acknowledge it too, or the store will keep redelivering
-              // this failed transaction on every future launch.
-              purchaseService.completePurchase(purchase);
-              completer.completeError(purchase.error ?? Exception('Purchase failed'));
-              break;
-            case PurchaseStatus.canceled:
-              purchaseService.completePurchase(purchase);
-              completer.completeError(Exception('canceled'));
-              break;
-            case PurchaseStatus.pending:
-              break;
-          }
+/// Shared interactive purchase flow. Throws [PurchaseUnavailableException]
+/// when the store or product isn't available yet rather than faking success.
+Future<void> _runPurchaseFlow({
+  required PurchaseService purchaseService,
+  required String productId,
+  required Future<void> Function() grant,
+}) async {
+  _logger.i('Purchase initiated: $productId');
+
+  final available = await purchaseService.isAvailable();
+  if (!available) {
+    throw PurchaseUnavailableException('この端末では購入機能を利用できません。');
+  }
+
+  final product = await purchaseService.fetchProduct(productId);
+  if (product == null) {
+    throw PurchaseUnavailableException('このプランは現在ご購入いただけません。しばらくしてから再度お試しください。');
+  }
+
+  final completer = Completer<PurchaseDetails>();
+  late final StreamSubscription<List<PurchaseDetails>> subscription;
+  subscription = purchaseService.purchaseStream.listen(
+    (purchases) {
+      for (final purchase in purchases) {
+        if (purchase.productID != product.id || completer.isCompleted) continue;
+        switch (purchase.status) {
+          case PurchaseStatus.purchased:
+          case PurchaseStatus.restored:
+            completer.complete(purchase);
+            break;
+          case PurchaseStatus.error:
+            // Acknowledge it too, or the store will keep redelivering
+            // this failed transaction on every future launch.
+            purchaseService.completePurchase(purchase);
+            completer.completeError(purchase.error ?? Exception('Purchase failed'));
+            break;
+          case PurchaseStatus.canceled:
+            purchaseService.completePurchase(purchase);
+            completer.completeError(Exception('canceled'));
+            break;
+          case PurchaseStatus.pending:
+            break;
         }
-      },
-      onError: (Object e) {
-        if (!completer.isCompleted) completer.completeError(e);
-      },
+      }
+    },
+    onError: (Object e) {
+      if (!completer.isCompleted) completer.completeError(e);
+    },
+  );
+
+  try {
+    final started = await purchaseService.buy(product);
+    if (!started) {
+      throw Exception('Failed to start purchase flow');
+    }
+
+    final purchase = await completer.future.timeout(
+      const Duration(minutes: 5),
+      onTimeout: () => throw Exception('Purchase timed out'),
     );
 
-    try {
-      final started = await purchaseService.buy(product);
-      if (!started) {
-        throw Exception('Failed to start purchase flow');
-      }
+    await grant();
 
-      final purchase = await completer.future.timeout(
-        const Duration(minutes: 5),
-        onTimeout: () => throw Exception('Purchase timed out'),
-      );
+    await purchaseService.completePurchase(purchase);
+    _logger.i('✅ Purchase completed: ${product.id}');
+  } finally {
+    await subscription.cancel();
+  }
+}
 
-      await _grantEntitlement(
-        ref: ref,
-        authService: authService,
-        firestoreService: firestoreService,
-        plan: plan,
-      );
-
-      await purchaseService.completePurchase(purchase);
-      _logger.i('✅ Purchase completed: ${product.id}');
-    } finally {
-      await subscription.cancel();
-    }
-  };
+/// Store listing (localized price) for a cosmetic skin product; null when
+/// the store can't be reached or the product isn't configured yet.
+final cosmeticProductProvider =
+    FutureProvider.family<ProductDetails?, String>((ref, productId) {
+  return ref.watch(purchaseServiceProvider).fetchProduct(productId);
 });

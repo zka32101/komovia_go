@@ -30,9 +30,6 @@ final _logger = Logger();
 /// - Move-by-move game recording
 ///
 /// Priority: Aha moment path - Capture stone on first move
-/// Ink colour for grid lines and star points drawn on the wooden board.
-const Color _woodLine = Color(0xB83A2711);
-
 class AIGameScreen extends ConsumerStatefulWidget {
   const AIGameScreen({Key? key}) : super(key: key);
 
@@ -497,17 +494,7 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
               border: Border.all(color: AppColors.primaryDark, width: 3),
               borderRadius: BorderRadius.circular(4),
             ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFC79A5C), // 榧(かや)材の明るい木目色
-                  Color(0xFFA87C45),
-                  Color(0xFFC79A5C),
-                ],
-              ),
+            decoration: ref.watch(selectedBoardSkinProvider).decoration(
               boxShadow: [
                 BoxShadow(
                   color: AppColors.sumi.withOpacity(0.5),
@@ -522,14 +509,14 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
                 CustomPaint(
                   painter: GoBoardGridPainter(
                     boardSize: boardSize,
-                    lineColor: _woodLine,
-                    starPointColor: _woodLine,
+                    lineColor: ref.watch(selectedBoardSkinProvider).lineColor,
+                    starPointColor: ref.watch(selectedBoardSkinProvider).lineColor,
                   ),
                   size: Size(boardPixelSize, boardPixelSize),
                 ),
 
                 // Stones
-                ..._buildStones(geometry, boardState.stones),
+                ..._buildStones(geometry, boardState.stones, ref.watch(selectedStoneSkinProvider)),
 
                 // 初心者向け: アタリの石と打てない点の可視化（設定でオフにできる）
                 if (ref.watch(dangerHintsProvider))
@@ -630,6 +617,7 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
   List<Widget> _buildStones(
     GoBoardGeometry geometry,
     List<List<int>> stones,
+    GoStoneSkin stoneSkin,
   ) {
     final stoneWidgets = <Widget>[];
     final stoneRadius = geometry.pitch * 0.4;
@@ -646,7 +634,7 @@ class _AIGameScreenState extends ConsumerState<AIGameScreen> {
             Positioned(
               left: center.dx - stoneRadius,
               top: center.dy - stoneRadius,
-              child: GoStone(radius: stoneRadius, isBlack: isBlack),
+              child: GoStone(radius: stoneRadius, isBlack: isBlack, skin: stoneSkin),
             ),
           );
         }

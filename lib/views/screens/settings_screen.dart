@@ -721,6 +721,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         _buildConnectionRow(
           context,
+          icon: Icons.palette,
+          label: l10n.cosmeticShopTitle,
+          onTap: () => Navigator.of(context).pushNamed('/cosmetic-shop'),
+        ),
+        const Divider(color: AppColors.sumiLine, height: 24),
+        _buildConnectionRow(
+          context,
           icon: Icons.favorite,
           label: l10n.sponsorshipLabel,
           onTap: () => Navigator.of(context).pushNamed('/sponsorship'),
