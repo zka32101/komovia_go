@@ -232,7 +232,9 @@ class FriendService {
 
       final otherRef = _friendDoc(friendUid, currentUid);
       final otherDoc = await otherRef.get();
-      if (otherDoc.exists && otherDoc.data()?['status'] != 'blocked') {
+      final otherSide =
+          otherDoc.exists ? _friendshipFromDoc(friendUid, otherDoc) : null;
+      if (otherSide != null && shouldMirrorBlockOnto(otherSide)) {
         await otherRef.update({'status': 'blocked', 'blockedBy': currentUid});
       }
 
@@ -270,8 +272,7 @@ class FriendService {
       final otherRef = _friendDoc(friendUid, currentUid);
       final otherDoc = await otherRef.get();
       if (otherDoc.exists &&
-          otherDoc.data()?['status'] == 'blocked' &&
-          otherDoc.data()?['blockedBy'] == currentUid) {
+          _friendshipFromDoc(friendUid, otherDoc).wasBlockedBy(currentUid)) {
         await otherRef.delete();
       }
 
