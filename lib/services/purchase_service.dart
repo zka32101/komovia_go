@@ -1,5 +1,5 @@
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:komovia_core/komovia_core.dart' show SubscriptionPlan;
+import 'package:komovia_core/komovia_core.dart' show AiAnalysisPlan, SubscriptionPlan;
 import 'package:logger/logger.dart';
 
 // SubscriptionPlan itself (and its `entitlementLength`) comes from
@@ -10,7 +10,12 @@ import 'package:logger/logger.dart';
 // is never persisted (see `utils/entitlement_adapter.dart`), so adopting
 // core's enum changes no stored data.
 export 'package:komovia_core/komovia_core.dart'
-    show SubscriptionPlan, SubscriptionPlanEntitlementLength;
+    show
+        AiAnalysisPlan,
+        AiAnalysisPlanEntitlementLength,
+        PurchaseUnavailableException,
+        SubscriptionPlan,
+        SubscriptionPlanEntitlementLength;
 
 extension SubscriptionPlanProductId on SubscriptionPlan {
   /// The store product id for this plan in this app, or null when the plan
@@ -28,15 +33,10 @@ extension SubscriptionPlanProductId on SubscriptionPlan {
 /// (SubscriptionPlanに混ぜると、既存のpaywallの選択UIやsubscriptionActiveの
 /// 付与ロジックに誤って乗ってしまう)。現状は月額のみ。年額/買い切り版を
 /// 用意するかは今後の判断事項。
-enum AiAnalysisPlan { monthly }
-
+// AiAnalysisPlan itself and its entitlementLength now come from komovia_core.
 extension AiAnalysisPlanProductId on AiAnalysisPlan {
   String get productId => switch (this) {
         AiAnalysisPlan.monthly => PurchaseService.aiAnalysisMonthlyProductId,
-      };
-
-  Duration get entitlementLength => switch (this) {
-        AiAnalysisPlan.monthly => const Duration(days: 30),
       };
 }
 
@@ -108,16 +108,4 @@ class PurchaseService {
     }
     return Future.value();
   }
-}
-
-/// Thrown when a purchase can't proceed because the store or product isn't
-/// available (e.g. product IDs not yet configured in App Store
-/// Connect/Play Console) — distinct from the user cancelling or a genuine
-/// payment failure, so the UI can show an honest, specific message.
-class PurchaseUnavailableException implements Exception {
-  final String message;
-  PurchaseUnavailableException(this.message);
-
-  @override
-  String toString() => message;
 }
