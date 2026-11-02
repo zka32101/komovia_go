@@ -3,10 +3,10 @@ import 'package:komovia_core/komovia_core.dart' show SubscriptionPlan;
 import 'package:logger/logger.dart';
 
 // SubscriptionPlan itself (and its `entitlementLength`) comes from
-// komovia_core, shared with the sibling Komovia apps. It also enumerates a
-// `lifetime` case that this app does not currently sell: it has no store
-// product here, so [productId] is null for it and the paywall never offers
-// it. The plan is only ever used transiently during the purchase flow and
+// komovia_core, shared with the sibling Komovia apps. The `lifetime` case
+// is a one-time (non-consumable) purchase: permanent premium plus the
+// lifetime-exclusive cosmetics (see `go_skins.dart`/`avatar_frames.dart`).
+// The plan is only ever used transiently during the purchase flow and
 // is never persisted (see `utils/entitlement_adapter.dart`), so adopting
 // core's enum changes no stored data.
 export 'package:komovia_core/komovia_core.dart'
@@ -14,11 +14,11 @@ export 'package:komovia_core/komovia_core.dart'
 
 extension SubscriptionPlanProductId on SubscriptionPlan {
   /// The store product id for this plan in this app, or null when the plan
-  /// isn't sold here (currently only [SubscriptionPlan.lifetime]).
+  /// isn't sold here (every plan is currently sold).
   String? get productId => switch (this) {
         SubscriptionPlan.monthly => PurchaseService.monthlyProductId,
         SubscriptionPlan.annual => PurchaseService.annualProductId,
-        SubscriptionPlan.lifetime => null,
+        SubscriptionPlan.lifetime => PurchaseService.lifetimeProductId,
       };
 }
 
@@ -47,10 +47,12 @@ extension AiAnalysisPlanProductId on AiAnalysisPlan {
 class PurchaseService {
   static const String monthlyProductId = 'goen_premium_monthly';
   static const String annualProductId = 'goen_premium_annual';
+  static const String lifetimeProductId = 'goen_premium_lifetime';
   static const String aiAnalysisMonthlyProductId = 'goen_ai_analysis_monthly';
   static const Set<String> productIds = {
     monthlyProductId,
     annualProductId,
+    lifetimeProductId,
     aiAnalysisMonthlyProductId,
   };
 

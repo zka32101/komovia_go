@@ -226,6 +226,24 @@ void main() {
       expect(findRichText('2,400'), findsWidgets);
     });
 
+    testWidgets('can select the lifetime (one-time) plan',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        TestUtils.buildTestableWidget(
+          child: const PaywallScreen(),
+          container: container,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('買い切り'));
+      await tester.tap(find.text('買い切り'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('永久サポーター'), findsWidgets);
+      expect(find.textContaining('買い切り'), findsWidgets);
+    });
+
     testWidgets('pricing cards have descriptions', (WidgetTester tester) async {
       await tester.pumpWidget(
         TestUtils.buildTestableWidget(

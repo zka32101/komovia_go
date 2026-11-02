@@ -1339,5 +1339,12 @@
   "aiAnalysisPlanSubscribeButton": "Subscribe to AI Analysis Plan",
   "aiAnalysisPlanPurchasedMessage": "Subscribed to the AI Analysis Plan",
   "aiAnalysisPlanActiveLabel": "Active",
-  "laterButton": "Later"
+  "laterButton": "Later",
+  "lifetimeLabel": "Lifetime",
+  "priceOneTimeSuffix": " (one-time)",
+  "lifetimePlanDescription": "Premium forever with a single purchase. Includes the exclusive \"Eternal Makie Board\" skin and the \"Lifetime Supporter\" frame",
+  "frameNameLifetimeSupporter": "Lifetime Supporter",
+  "frameConditionLifetimePurchase": "Purchase the lifetime plan",
+  "cosmeticLifetimeExclusive": "Lifetime purchasers only",
+  "cosmeticLifetimeUnlock": "Get with Lifetime"
 }

@@ -22,8 +22,10 @@ void main() {
           PurchaseService.annualProductId);
     });
 
-    test('lifetime is not sold in this app', () {
-      expect(SubscriptionPlan.lifetime.productId, isNull);
+    test('lifetime is sold as goen_premium_lifetime', () {
+      expect(SubscriptionPlan.lifetime.productId, 'goen_premium_lifetime');
+      expect(PurchaseService.productIds, contains('goen_premium_lifetime'));
+      expect(SubscriptionPlan.lifetime.entitlementLength, isNull);
     });
 
     test('product-id reverse lookup still resolves sold plans', () {

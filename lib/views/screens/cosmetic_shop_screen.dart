@@ -145,6 +145,8 @@ class _CosmeticTileState extends ConsumerState<_CosmeticTile> {
       status = l10n.cosmeticOwned;
     } else if (item.includedWithSubscription) {
       status = l10n.cosmeticSubscribeToUnlock;
+    } else if (item.includedWithLifetime) {
+      status = l10n.cosmeticLifetimeExclusive;
     } else {
       status = '';
     }
@@ -161,6 +163,12 @@ class _CosmeticTileState extends ConsumerState<_CosmeticTile> {
       action = FilledButton(
         onPressed: () => Navigator.of(context).pushNamed('/paywall'),
         child: Text(l10n.cosmeticSubscribeToUnlock),
+      );
+    } else if (item.includedWithLifetime) {
+      // Lifetime-purchase exclusive: never sold individually.
+      action = FilledButton(
+        onPressed: () => Navigator.of(context).pushNamed('/paywall'),
+        child: Text(l10n.cosmeticLifetimeUnlock),
       );
     } else {
       final productId = item.iapProductId!;

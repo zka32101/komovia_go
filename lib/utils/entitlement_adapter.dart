@@ -7,8 +7,11 @@ import 'package:komovia_go/models/index.dart';
 ///
 /// This app has no per-purchase `plan` field on [User] (see
 /// `PurchaseService.SubscriptionPlan`, used only transiently during the
-/// purchase flow, never persisted) - [Entitlement.plan] is always `null`
-/// here rather than guessed from the start/end date span.
+/// purchase flow, never persisted). The one plan that IS recoverable is
+/// lifetime: only a lifetime purchase stores an active entitlement with no
+/// `subscriptionEndDate`, so that shape maps to [SubscriptionPlan.lifetime]
+/// (making [Entitlement.isLifetime] work). Otherwise [Entitlement.plan] is
+/// `null` rather than guessed from the start/end date span.
 ///
 /// Per [Entitlement]'s own doc comment, each app's purchase service maps
 /// its existing fields onto this shape rather than renaming them -
@@ -18,5 +21,12 @@ extension UserEntitlement on User {
         isActive: subscriptionActive,
         startedAt: subscriptionStartDate,
         expiresAt: subscriptionEndDate,
+        plan: isLifetimePurchaser ? SubscriptionPlan.lifetime : null,
       );
+
+  /// Active entitlement with no expiry = a one-time lifetime purchase.
+  bool get isLifetimePurchaser =>
+      subscriptionActive &&
+      subscriptionStartDate != null &&
+      subscriptionEndDate == null;
 }

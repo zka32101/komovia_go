@@ -1339,5 +1339,12 @@
   "aiAnalysisPlanSubscribeButton": "AI分析プランに加入",
   "aiAnalysisPlanPurchasedMessage": "AI分析プランに加入しました",
   "aiAnalysisPlanActiveLabel": "加入中",
-  "laterButton": "あとで"
+  "laterButton": "あとで",
+  "lifetimeLabel": "買い切り",
+  "priceOneTimeSuffix": "（一回払い）",
+  "lifetimePlanDescription": "一度の購入でプレミアム機能を永久に。限定盤「永久記念盤（金蒔絵）」と限定フレーム「永久サポーター」付き",
+  "frameNameLifetimeSupporter": "永久サポーター",
+  "frameConditionLifetimePurchase": "買い切りプランを購入する",
+  "cosmeticLifetimeExclusive": "買い切り購入者限定",
+  "cosmeticLifetimeUnlock": "買い切りで入手"
 }

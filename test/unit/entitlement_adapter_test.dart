@@ -57,5 +57,19 @@ void main() {
       final entitlement = _user(subscriptionActive: false).toEntitlement();
       expect(entitlement.isCurrentlyActive(), isFalse);
     });
+
+    test('active entitlement with no end date is a lifetime purchase', () {
+      final user = _user(subscriptionActive: true);
+      expect(user.isLifetimePurchaser, isTrue);
+      expect(user.toEntitlement().isLifetime, isTrue);
+    });
+
+    test('a monthly/annual subscriber is not a lifetime purchaser', () {
+      final user = _user(
+          subscriptionActive: true, subscriptionEndDate: DateTime(2099));
+      expect(user.isLifetimePurchaser, isFalse);
+      expect(user.toEntitlement().isLifetime, isFalse);
+      expect(user.toEntitlement().plan, isNull);
+    });
   });
 }

@@ -6,6 +6,8 @@ import 'package:logger/logger.dart';
 import 'package:komovia_go/services/index.dart';
 import 'package:komovia_go/viewmodels/auth_provider.dart';
 import 'package:komovia_go/models/go_skins.dart';
+import 'package:komovia_go/config/avatar_frames.dart';
+import 'package:komovia_go/utils/entitlement_adapter.dart';
 
 final _logger = Logger();
 
@@ -55,6 +57,14 @@ Future<void> _grantEntitlement({
   // time. This only protects an already-active entitlement; it can't
   // detect a stale purchase being replayed against an *expired* one
   // (that needs real receipt verification, which this app doesn't have).
+  // A lifetime purchaser keeps lifetime: a late monthly/annual renewal or
+  // redelivery must never overwrite the never-expiring entitlement with a
+  // finite end date.
+  if (plan != SubscriptionPlan.lifetime && freshUser.isLifetimePurchaser) {
+    _logger.i('Skipping $plan grant for $uid: already a lifetime purchaser');
+    return;
+  }
+
   if (skipIfAlreadyActive &&
       freshUser.subscriptionActive &&
       freshUser.subscriptionEndDate != null &&
@@ -65,15 +75,24 @@ Future<void> _grantEntitlement({
     return;
   }
 
+  final isLifetime = plan == SubscriptionPlan.lifetime;
   final updated = freshUser.copyWith(
     subscriptionActive: true,
-    subscriptionStartDate: now,
-    // entitlementLength is null only for lifetime, which this app never
-    // sells (no productId), so a lifetime grant can't reach here today; it
-    // would correctly mean "never expires".
+    // A redelivered lifetime purchase keeps its original start date.
+    subscriptionStartDate: isLifetime && freshUser.isLifetimePurchaser
+        ? freshUser.subscriptionStartDate
+        : now,
+    // entitlementLength is null only for lifetime: "never expires".
     subscriptionEndDate: plan.entitlementLength == null
         ? null
         : now.add(plan.entitlementLength!),
+    // Lifetime purchase also grants the lifetime-exclusive avatar frame,
+    // persisted the same way sticky achievement frames are (earnedFrameIds,
+    // see avatar_frame_provider.dart). Idempotent for redeliveries.
+    earnedFrameIds: isLifetime &&
+            !freshUser.earnedFrameIds.contains(FrameIds.lifetimeSupporter)
+        ? [...freshUser.earnedFrameIds, FrameIds.lifetimeSupporter]
+        : null,
     updatedAt: now,
   );
   await firestoreService.saveUser(updated);
@@ -251,8 +270,9 @@ final restorePurchasesProvider = Provider<Future<bool> Function()>((ref) {
     final now = DateTime.now();
     return user != null &&
         user.subscriptionActive &&
-        user.subscriptionEndDate != null &&
-        user.subscriptionEndDate!.isAfter(now);
+        (user.isLifetimePurchaser ||
+            (user.subscriptionEndDate != null &&
+                user.subscriptionEndDate!.isAfter(now)));
   };
 });
 

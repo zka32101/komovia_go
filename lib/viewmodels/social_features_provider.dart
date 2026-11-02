@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod/riverpod.dart';
 import '../models/extended_game_models.dart';
-import 'package:komovia_core/komovia_core.dart';
+import 'package:komovia_core/komovia_core.dart' hide GameInvitation;
 import '../models/pvp_game.dart';
 import '../services/friend_service.dart';
 import '../services/game_invitation_service.dart';
