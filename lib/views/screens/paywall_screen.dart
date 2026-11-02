@@ -25,7 +25,6 @@ class PaywallScreen extends ConsumerStatefulWidget {
 }
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
-  bool _showAnnual = false;
   SubscriptionPlan _selectedPlan = SubscriptionPlan.monthly;
 
   @override
@@ -197,7 +196,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          // Toggle between monthly and annual
+          // Plan selector: monthly / annual / lifetime (one-time purchase)
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
@@ -207,78 +206,39 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             ),
             child: Row(
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() {
-                      _showAnnual = false;
-                      _selectedPlan = SubscriptionPlan.monthly;
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        color: !_showAnnual
-                            ? AppColors.kin.withOpacity(0.2)
-                            : Colors.transparent,
-                      ),
-                      child: Text(
-                        l10n.monthlyLabel,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: !_showAnnual ? AppColors.kin : AppColors.washiDim,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() {
-                      _showAnnual = true;
-                      _selectedPlan = SubscriptionPlan.annual;
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        color: _showAnnual
-                            ? AppColors.kin.withOpacity(0.2)
-                            : Colors.transparent,
-                      ),
-                      child: Text(
-                        l10n.annualLabel,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: _showAnnual ? AppColors.kin : AppColors.washiDim,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                for (final plan in SubscriptionPlan.values)
+                  Expanded(child: _buildPlanToggle(context, l10n, plan)),
               ],
             ),
           ),
 
           const SizedBox(height: 24),
 
-          if (!_showAnnual)
-            _buildPricingCard(
-              context,
-              title: l10n.monthlyLabel,
-              price: _priceLabel(SubscriptionPlan.monthly),
-              period: l10n.pricePerMonthSuffix,
-              description: l10n.monthlyPlanDescription,
-            )
-          else
-            _buildPricingCard(
-              context,
-              title: l10n.annualLabel,
-              price: _priceLabel(SubscriptionPlan.annual),
-              period: l10n.pricePerYearSuffix,
-              description: l10n.annualPlanDescription,
-              isBestValue: true,
-              l10n: l10n,
-            ),
+          switch (_selectedPlan) {
+            SubscriptionPlan.monthly => _buildPricingCard(
+                context,
+                title: l10n.monthlyLabel,
+                price: _priceLabel(SubscriptionPlan.monthly),
+                period: l10n.pricePerMonthSuffix,
+                description: l10n.monthlyPlanDescription,
+              ),
+            SubscriptionPlan.annual => _buildPricingCard(
+                context,
+                title: l10n.annualLabel,
+                price: _priceLabel(SubscriptionPlan.annual),
+                period: l10n.pricePerYearSuffix,
+                description: l10n.annualPlanDescription,
+                isBestValue: true,
+                l10n: l10n,
+              ),
+            SubscriptionPlan.lifetime => _buildPricingCard(
+                context,
+                title: l10n.lifetimeLabel,
+                price: _priceLabel(SubscriptionPlan.lifetime),
+                period: l10n.priceOneTimeSuffix,
+                description: l10n.lifetimePlanDescription,
+              ),
+          },
 
           const SizedBox(height: 16),
 
@@ -566,21 +526,43 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     );
   }
 
+  Widget _buildPlanToggle(
+      BuildContext context, AppLocalizations l10n, SubscriptionPlan plan) {
+    final selected = _selectedPlan == plan;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedPlan = plan),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          color: selected ? AppColors.kin.withOpacity(0.2) : Colors.transparent,
+        ),
+        child: Text(
+          _planDisplayLabel(l10n, plan),
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: selected ? AppColors.kin : AppColors.washiDim,
+              ),
+        ),
+      ),
+    );
+  }
+
   String _planLabel(SubscriptionPlan plan) => switch (plan) {
         SubscriptionPlan.monthly => 'Monthly',
         SubscriptionPlan.annual => 'Annual',
-        // Not sold in this app (no productId); never selectable on this screen.
         SubscriptionPlan.lifetime => 'Lifetime',
       };
 
   String _planDisplayLabel(AppLocalizations l10n, SubscriptionPlan plan) => switch (plan) {
         SubscriptionPlan.monthly => l10n.monthlyLabel,
         SubscriptionPlan.annual => l10n.annualLabel,
-        SubscriptionPlan.lifetime => 'Lifetime',
+        SubscriptionPlan.lifetime => l10n.lifetimeLabel,
       };
 
   /// ストアの現地通貨価格。取得できない間は日本円の既定価格を出す
-  /// （実際の請求額は常にストア側の設定が正）。
+  /// （実際の請求額は常にストア側の設定が正）。買い切りは既定価格を
+  /// 持たず、ストアから取得できるまで「-」を表示する。
   String _priceLabel(SubscriptionPlan plan) {
     final product = ref.watch(subscriptionProductProvider(plan)).valueOrNull;
     if (product != null) return product.price;

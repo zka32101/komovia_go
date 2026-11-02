@@ -29,6 +29,12 @@ class FrameIds {
   static const tsumegoStreak3 = 'tsumego_streak_3';
   static const tsumegoStreak30 = 'tsumego_streak_30';
   static const enScore100 = 'en_score_100';
+
+  /// Lifetime-purchase exclusive — the one explicit exception to "frames are
+  /// earned through play only" (see komovia_core's [AvatarFrame] doc).
+  /// Granted into `earnedFrameIds` by `purchase_provider.dart` when a
+  /// lifetime purchase completes.
+  static const lifetimeSupporter = 'lifetime_supporter';
 }
 
 const List<AvatarFrame> kGoAvatarFrames = [
@@ -43,6 +49,12 @@ const List<AvatarFrame> kGoAvatarFrames = [
   AvatarFrame(id: FrameIds.wins100, name: '100勝', tier: FrameTier.gold),
   AvatarFrame(id: FrameIds.enScore100, name: '縁スコア100', tier: FrameTier.gold),
   AvatarFrame(id: FrameIds.games1000, name: '1000局達成', tier: FrameTier.platinum),
+  AvatarFrame(
+    id: FrameIds.lifetimeSupporter,
+    name: '永久サポーター',
+    tier: FrameTier.platinum,
+    lifetimeExclusive: true,
+  ),
 ];
 
 /// Frames whose unlock is persisted once met (see class doc above).
@@ -50,6 +62,9 @@ const Set<String> kStickyFrameIds = {
   FrameIds.tsumegoStreak3,
   FrameIds.tsumegoStreak30,
   FrameIds.enScore100,
+  // Not derived from stats at all: only ever present because the lifetime
+  // purchase flow persisted it to earnedFrameIds.
+  FrameIds.lifetimeSupporter,
 };
 
 AvatarFrame? avatarFrameById(String? id) {
@@ -146,6 +161,8 @@ String localizedFrameName(AppLocalizations l10n, String id) {
       return l10n.frameNameTsumegoStreak(30);
     case FrameIds.enScore100:
       return l10n.frameNameEnScore100;
+    case FrameIds.lifetimeSupporter:
+      return l10n.frameNameLifetimeSupporter;
   }
   return id;
 }
@@ -172,6 +189,8 @@ String localizedFrameCondition(AppLocalizations l10n, String id) {
       return l10n.frameConditionTsumegoStreak(3);
     case FrameIds.tsumegoStreak30:
       return l10n.frameConditionTsumegoStreak(30);
+    case FrameIds.lifetimeSupporter:
+      return l10n.frameConditionLifetimePurchase;
     case FrameIds.enScore100:
       return l10n.frameConditionEnScore;
   }

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import '../../models/index.dart';
 import '../../viewmodels/index.dart';
-import 'package:komovia_core/komovia_core.dart';
+import 'package:komovia_core/komovia_core.dart' hide GameInvitation;
 import '../widgets/index.dart';
 import 'friend_profile_screen.dart';
 import 'chat_screen.dart';

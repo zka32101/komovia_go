@@ -12,11 +12,13 @@ final purchasedCosmeticIdsProvider = Provider<Set<String>>((ref) {
   return ref.watch(currentUserProvider)?.purchasedCosmeticIds.toSet() ?? const {};
 });
 
-/// Whether the current user owns [item] (free / subscription / purchased).
+/// Whether the current user owns [item] (free / subscription / lifetime /
+/// purchased).
 final cosmeticOwnedProvider = Provider.family<bool, CosmeticItem>((ref, item) {
   return item.isOwnedBy(
     hasActiveSubscription: ref.watch(isSubscriptionActiveProvider),
     purchasedProductIds: ref.watch(purchasedCosmeticIdsProvider),
+    isLifetimePurchaser: ref.watch(userEntitlementProvider).isLifetime,
   );
 });
 

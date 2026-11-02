@@ -62,6 +62,9 @@ class GoStoneSkin {
 const kDefaultBoardSkinId = 'board_kaya_classic';
 const kDefaultStoneSkinId = 'stone_classic';
 
+/// Board skin granted only to one-time lifetime purchasers. Never rename.
+const kLifetimeBoardSkinId = 'board_lifetime_makie';
+
 /// Product ids for individually purchasable (non-consumable) skins.
 const kBoardSkinStoneSlabProductId = 'goen_skin_board_stone_slab';
 const kBoardSkinMinimalProductId = 'goen_skin_board_minimal';
@@ -96,6 +99,18 @@ const List<GoBoardSkin> kGoBoardSkins = [
     gradient: [Color(0xFF7A4E2A), Color(0xFF5C3A1E), Color(0xFF7A4E2A)],
     lineColor: Color(0xFFE8D2A8),
     textureAsset: 'assets/skins/board_dark_kaya.png',
+  ),
+  // --- lifetime-purchase exclusive (never sold individually, not part of
+  // monthly/annual premium) ---
+  GoBoardSkin(
+    item: CosmeticItem(
+      id: kLifetimeBoardSkinId,
+      category: kBoardSkinCategory,
+      name: '永久記念盤（金蒔絵）',
+      includedWithLifetime: true,
+    ),
+    gradient: [Color(0xFF2A1A10), Color(0xFF3D2614), Color(0xFF2A1A10)],
+    lineColor: Color(0xFFE6C15A),
   ),
   GoBoardSkin(
     item: CosmeticItem(
